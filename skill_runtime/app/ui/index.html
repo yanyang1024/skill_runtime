@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skill Growth Studio</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="logo">🌱 Skill Growth Studio</div>
+      <select id="skill-selector">
+        <option value="tech-doc-didactic-rewriter">tech-doc-didactic-rewriter</option>
+      </select>
+      <div id="global-status" class="status idle">就绪</div>
+    </header>
+    <div class="layout">
+      <nav class="sidebar">
+        <section>
+          <h3>生命周期</h3>
+          <ul>
+            <li data-tab="skill" class="active">Skill 预览</li>
+            <li data-tab="observe">Observe</li>
+            <li data-tab="grow">Grow</li>
+            <li data-tab="rehearse">Rehearse</li>
+            <li data-tab="api">API Docs</li>
+            <li data-tab="stabilize">Stabilize</li>
+          </ul>
+        </section>
+        <section>
+          <h3>文件</h3>
+          <div id="file-tree">加载中…</div>
+        </section>
+      </nav>
+      <main class="workspace" id="workspace">
+        <!-- dynamic panels -->
+      </main>
+    </div>
+  </div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

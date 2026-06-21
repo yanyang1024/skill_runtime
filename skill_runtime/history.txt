@@ -1,0 +1,1027 @@
+
+
+
+
+你这版思考已经可以收敛成一个第一版应用了。我的建议是：不要先做一个复杂的“Skill 管理平台”，而是先做一个本地化的 Skill Growth Studio，它的核心能力就是：
+
+从真实会话日志和工具日志中观察 Skill 的运行轨迹，生成生长建议，拉起 preview skill 进行排练测试，最后把满意的版本稳定沉淀。
+
+你定义的四个动词很好：
+
+Observe   观察运行轨迹
+Grow      生成生长建议
+Rehearse  预览排练测试
+Stabilize 稳定沉淀固化
+
+第一版就围绕这四个动词做，不要扩散。
+
+⸻
+
+1. 第一版应用定位
+
+我建议把这个应用定义成：
+
+Skill Growth Studio：基于 OpenCode runtime 的本地化 Skill 生命周期管理应用。它通过标准化 session log、tool log、script log 和用户反馈，生成 Runtime Replay Card 与 Growth Proposal；系统自动构造 preview skill，在隔离临时目录中启动 OpenCode server 做排练测试，并在自动 Quality Gate 后将满意版本稳定化。
+
+它不是一个普通 prompt 编辑器，也不是普通 Git diff 工具，而是一个：
+
+Skill 运行观察器
++ Skill 生长建议器
++ Preview Skill 排练场
++ Skill 稳定化工具
+
+OpenCode 本身适合作为底层 runtime：它支持 skills 作为 repo/home 下可发现的 SKILL.md 指令，并通过原生 skill 工具按需加载；skills 可以放在 .opencode/skills/<name>/SKILL.md 等目录中。  OpenCode 也支持插件机制，可以通过 hooks 扩展行为、集成外部服务或修改默认行为，适合用来做日志采集、trace 输出和质量门禁触发。 
+
+⸻
+
+2. 总体架构：一个控制平面 + 多个 OpenCode 实验 runtime
+
+第一版可以拆成两层。
+
+Skill Growth Studio
+│
+├── Control Plane 控制平面
+│   ├── Observe：日志读取、trace 标准化、Runtime Replay Card
+│   ├── Grow：问题/模式分析、生长建议、preview skill diff
+│   ├── Rehearse：创建临时实验目录，启动 OpenCode server
+│   └── Stabilize：Quality Gate、版本沉淀、changelog、归档
+│
+└── Runtime Plane 运行平面
+    ├── stable opencode runtime
+    ├── preview opencode runtime
+    ├── quality-gate opencode runtime
+    └── replay opencode runtime
+
+这里的关键是：一个应用里可以多开 OpenCode，但每个 OpenCode 实例承担不同角色。
+
+stable runtime
+用于当前正式 skill 的真实会话。
+preview runtime
+用于测试候选 skill。
+quality-gate runtime
+用于批量交叉 review、检查过时配置、检查文件耦合问题。
+replay runtime
+用于根据历史 session log 复现实验。
+
+OpenCode 的配置机制也适合这种做法：它支持全局配置、项目配置，以及通过 OPENCODE_CONFIG_DIR 指定自定义配置目录；自定义目录会按 OpenCode 的配置结构搜索 agents、commands、modes、plugins 等内容。  这意味着你可以为每个 preview 实验目录生成独立的 .opencode/ 和 config dir，从而实现隔离测试。
+
+⸻
+
+3. 推荐目录结构
+
+第一版可以先用一个本地项目目录承载整个应用。
+
+skill-growth-studio/
+│
+├── app/
+│   ├── server/                  # 控制平面后端
+│   ├── ui/                      # 简单 Web UI，可嵌入/跳转 opencode web
+│   └── workers/                 # observe/grow/rehearse/stabilize 任务
+│
+├── skills/
+│   └── etch-skill/
+│       ├── stable/              # 当前稳定版
+│       │   ├── SKILL.md
+│       │   ├── references/
+│       │   ├── tools/
+│       │   ├── agents/
+│       │   ├── opencode.json
+│       │   └── skill.yaml
+│       │
+│       ├── previews/            # 候选预览版
+│       │   ├── preview-0001/
+│       │   └── preview-0002/
+│       │
+│       ├── releases/            # 历史稳定版本
+│       └── archive/             # 废弃/失败版本
+│
+├── traces/
+│   └── etch-skill/
+│       ├── raw_sessions/
+│       ├── normalized/
+│       ├── replay_cards/
+│       ├── tool_logs/
+│       ├── script_logs/
+│       └── director_notes/
+│
+├── proposals/
+│   └── etch-skill/
+│       ├── growth-proposal-0001.md
+│       ├── patch-0001.diff
+│       └── quality-report-0001.md
+│
+├── experiments/
+│   └── etch-skill/
+│       ├── rehearse-0001/        # 临时实验工作区
+│       └── quality-gate-0001/
+│
+└── configs/
+    ├── model-providers/
+    ├── opencode-templates/
+    └── bwrap-profiles/
+
+这里最重要的是把 stable / preview / experiment / trace / proposal 分开。
+不要直接在正式 skill 上实验。
+
+⸻
+
+4. 四个核心动作的具体设计
+
+A. Observe：观察运行轨迹
+
+Observe 的目标不是“总结聊天记录”，而是把真实 runtime 行为整理成可优化对象。
+
+输入：
+
+原始 session log
+原始用户语句
+assistant 回复
+tool call 记录
+script stdout/stderr
+API 请求/响应摘要
+用户反馈
+开发者备注
+当前 skill 文件状态
+
+输出：
+
+Runtime Trace
+Runtime Replay Card
+Growth Candidates
+
+你特别提到“需要提取 session log 里的原始用户语句构造 Runtime Replay Card”，这个是对的。Replay Card 不能只写 AI 总结，一定要保留关键原始用户语句，否则后面会丢失真实体验信号。
+
+Runtime Replay Card 示例
+
+# Runtime Replay Card
+## 基本信息
+- skill: etch-skill
+- skill_version: stable-0.2.1
+- session_id: s-20260620-001
+- source: opencode runtime
+- replay_status: parsed
+## 原始用户语句摘录
+> 我现在基于新的skill...又进行了一次会话，会话基本完成了任务但是直观感觉...
+> 梳理下之前的分析，再检查下会话日志里体现出来的其它问题...生成一版修改方案
+## 用户真实意图
+用户不是要求单点修复，而是希望 Agent 基于完整会话体验，重新梳理 skill 当前问题，并形成一版完整修改方案。
+## Agent 行为摘要
+- 读取了部分 skill 文件
+- 分析了部分日志
+- 中途提出确认问题
+- 未完成全量分析
+## 体验信号
+- 用户不喜欢中间停顿确认
+- 用户希望 Agent 先完成全量分析
+- 用户希望生成完整方案后再一键确认
+## 工具/脚本信号
+- 本轮未发现关键 tool failure
+- 未触发自动 quality gate
+- 未形成 preview skill
+## 可生长机会
+1. 增加“全量分析优先，不中途停顿”的正向引导
+2. 增加“批量 edit 后自动跑 Quality Gate”
+3. 增加“Growth Proposal 后一键确认执行”
+4. 增加 replay runtime，用历史日志复现实验
+
+Observe 阶段不要改文件，只负责整理证据。
+
+⸻
+
+B. Grow：生成生长建议
+
+Grow 的目标是：把 Observe 结果变成 Growth Proposal。
+
+Growth Proposal 不应该只包含 SKILL.md diff，而应该分成几类：
+
+Positive Guidance Update
+正向引导更新
+Context Guide Update
+上下文加载/澄清策略更新
+Tool / Script Backlog
+工具或脚本增强建议
+Endpoint Manifest Update
+API 端点变化建议
+Quality Gate Update
+检查规则增强
+Preview Skill Plan
+候选 skill 版本计划
+
+你的几个 Pattern 可以直接固化为 Grow 阶段的默认规则。
+
+⸻
+
+Pattern #1：会话体验驱动 skill 修改
+
+触发语句：
+
+我现在基于新的skill...又进行了一次会话，会话基本完成了任务但是直观感觉...
+梳理下之前的分析，再检查下会话日志里体现出来的其它问题...生成一版修改方案
+
+对应系统行为：
+
+读取最新 session log
+读取当前 stable skill
+读取最近 proposals
+读取最近 director notes
+生成 Runtime Replay Card
+生成 Growth Proposal
+生成 preview skill diff
+
+关键要求：
+
+不要只围绕用户明确指出的问题修，要主动检查日志里暴露的其他问题。
+
+⸻
+
+Pattern #2：批量编辑后自动 Quality Gate
+
+触发场景：
+
+每次批量编辑完成
+每次更新完 skill 各个文件
+每次生成 preview skill
+每次 promote stable 前
+
+自动执行：
+
+检查 SKILL.md 与 references 是否一致
+检查 agent 配置卡片是否过时
+检查 tool_registry 是否与实际 tools 文件一致
+检查 endpoint_manifest 是否有废弃端点
+检查 output template 是否和 workflow 冲突
+检查新旧规则是否互相矛盾
+检查是否引入过多“不要/禁止”而缺少正向路径
+
+你给的常用语句可以变成内置 Quality Gate prompt：
+
+检查文件的最新情况，请 review the change 和 agent 配置卡片和 skill 的各个部分的设计，看看还有没有对应的过时的部分需要进一步更新的和不合理不耦合的部分需要修改的。
+
+这个流程应该自动触发，而不是等用户手动说。
+
+⸻
+
+Pattern #3：极简确认执行
+
+你的设计很对：第一版不应该把用户拖进复杂选择题。
+
+Growth Proposal 输出后，用户只需要三个按钮：
+
+确认生成 preview
+重新梳理
+放弃本轮
+
+更进一步，默认可以是：
+
+一键确认
+
+系统自动决定：
+
+哪些进入 SKILL.md
+哪些进入 context guide
+哪些进入 tool backlog
+哪些进入 quality gate
+哪些只作为 director note
+
+这符合你的原则：
+
+信任 Agent 能力，非必要不做选择题。
+
+⸻
+
+Pattern #4：要求重新梳理
+
+触发语句：
+
+梳理下之前的分析，再检查下会话日志里体现出来的其它问题，以及检查skill和智能体配置的文件最新状态。分析为了解决对应的问题应该做怎样的修改，生成一版修改方案。
+
+对应系统行为：
+
+清空上一轮局部假设
+重新读取完整上下文
+重新生成 Runtime Replay Card
+重新检查 skill package 最新状态
+重新生成 Growth Proposal
+不要中途停顿提问
+
+这是一个很重要的产品模式：用户不是要你接着刚才那点继续，而是要你 重新建立全局视图。
+
+所以 Grow 阶段应该支持：
+
+incremental mode
+增量分析
+full-rescan mode
+全量重扫
+
+用户说“重新梳理”时，必须进入 full-rescan mode。
+
+⸻
+
+C. Rehearse：预览排练测试
+
+Rehearse 是你这个应用区别于普通 diff 管理的关键。
+
+它不是让用户看 diff 审批，而是：
+
+生成 preview skill，在临时目录里启动一个 OpenCode server，让用户用真实对话体验这个候选版本。
+
+流程：
+
+Growth Proposal
+  ↓
+生成 preview skill package
+  ↓
+创建 experiments/rehearse-xxxx/
+  ↓
+复制 preview skill、references、tools、agents、config
+  ↓
+用 bwrap 隔离文件系统
+  ↓
+设置 OPENCODE_CONFIG_DIR
+  ↓
+启动 preview opencode server
+  ↓
+用户进入 preview chat 测试
+  ↓
+记录 director notes
+
+OpenCode 的 subagent 机制也适合在 Rehearse 阶段做上下文隔离：OpenCode 支持 primary agents 和 subagents，subagents 可以由 primary agent 自动调用，也可以通过 @ 手动调用；内置 Explore/Scout 这类只读 agent 也适合做分析和检查类任务。 
+
+你可以定义几个 preview 专用 agent：
+
+@trace-curator
+只读分析 runtime trace
+@growth-planner
+生成生长建议
+@quality-reviewer
+交叉检查 skill 文件一致性
+@director-assistant
+陪用户做 preview skill 体验测试
+@tool-gap-analyst
+分析是否应该新增 tool/API/script
+
+⸻
+
+D. Stabilize：稳定沉淀固化
+
+Stabilize 不是简单 merge。
+
+它要判断本轮 preview 的结果应该沉淀为什么：
+
+稳定版 SKILL.md 更新
+reference 更新
+context guide 更新
+tool backlog
+script wrapper
+endpoint manifest
+quality gate rule
+golden replay case
+director preference
+
+推荐流程：
+
+preview chat 完成
+  ↓
+收集 director notes
+  ↓
+自动 Quality Gate
+  ↓
+生成 stabilize report
+  ↓
+一键 Promote / Revise / Discard
+
+Promote 后自动生成：
+
+CHANGELOG.md
+release snapshot
+rollback point
+golden replay case
+accepted growth notes
+
+⸻
+
+5. 第一版核心数据结构
+
+5.1 Runtime Trace 标准格式
+
+你的 Runtime Trace 第一版不用太复杂，但必须覆盖“会话、上下文、工具、脚本、反馈、生长机会”。
+
+{
+  "trace_id": "trace_20260620_001",
+  "skill_id": "etch-skill",
+  "skill_version": "stable-0.2.1",
+  "session_id": "session_001",
+  "created_at": "2026-06-20T10:00:00-07:00",
+  "raw_user_utterances": [
+    {
+      "turn_id": "u1",
+      "text": "我现在基于新的skill...又进行了一次会话，会话基本完成了任务但是直观感觉..."
+    },
+    {
+      "turn_id": "u2",
+      "text": "梳理下之前的分析，再检查下会话日志里体现出来的其它问题...生成一版修改方案"
+    }
+  ],
+  "intent_summary": "用户希望基于新 skill 的实际会话体验，重新梳理问题并生成完整修改方案。",
+  "context_used": [
+    {
+      "type": "skill_file",
+      "path": "SKILL.md",
+      "version": "stable-0.2.1"
+    },
+    {
+      "type": "reference",
+      "path": "references/workflow.md"
+    }
+  ],
+  "tool_calls": [
+    {
+      "tool_name": "read_session_log",
+      "status": "success",
+      "input_summary": "读取本轮 opencode session log",
+      "output_summary": "提取 12 轮用户/agent 对话"
+    }
+  ],
+  "script_calls": [
+    {
+      "script_name": "normalize_trace.py",
+      "status": "success",
+      "stdout_summary": "生成 normalized trace",
+      "stderr_summary": ""
+    }
+  ],
+  "outcome_signals": {
+    "task_completed": true,
+    "user_satisfied": null,
+    "user_feedback_summary": "任务基本完成，但用户直观感觉流程不够自然，希望重新梳理。",
+    "hard_failures": [],
+    "soft_issues": [
+      "中途停顿确认过多",
+      "没有主动全量检查",
+      "缺少自动 quality gate"
+    ]
+  },
+  "growth_candidates": [
+    {
+      "type": "positive_guidance",
+      "summary": "增加全量分析优先，不中途停顿提问的规则"
+    },
+    {
+      "type": "quality_gate",
+      "summary": "批量 edit 后自动触发交叉一致性检查"
+    },
+    {
+      "type": "rehearsal",
+      "summary": "生成 preview skill 并通过 OpenCode server 做排练测试"
+    }
+  ]
+}
+
+⸻
+
+5.2 Tool / Script Log 标准格式
+
+这个很重要，因为你希望从“会话时使用脚本的日志”里优化 skill。
+
+{
+  "call_id": "script_001",
+  "trace_id": "trace_20260620_001",
+  "skill_id": "etch-skill",
+  "runtime": "preview-opencode",
+  "script_name": "check_skill_consistency.py",
+  "script_version": "0.1.0",
+  "working_dir": "experiments/quality-gate-0001",
+  "input_files": [
+    "SKILL.md",
+    "references/workflow.md",
+    "agents/growth-planner.md",
+    "tool_registry.yaml"
+  ],
+  "status": "success",
+  "duration_ms": 1380,
+  "stdout_summary": "发现 2 个过时描述，1 个 tool_registry 与实际文件不一致",
+  "stderr_summary": "",
+  "artifacts": [
+    "quality-report-0001.md"
+  ],
+  "business_signal": {
+    "used_for_growth": true,
+    "requires_patch": true,
+    "severity": "medium"
+  }
+}
+
+关键字段是 business_signal。
+因为脚本成功不代表对 skill 生长有用。
+
+⸻
+
+5.3 Growth Proposal 格式
+
+# Growth Proposal: etch-skill preview-0003
+## 触发来源
+- session trace: trace_20260620_001
+- user pattern: 重新梳理 + 不希望中途停顿
+- current skill: stable-0.2.1
+## 观察结论
+1. 当前 skill 在会话后优化场景中，会过早请求用户确认。
+2. 当前 skill 缺少“全量分析优先”的正向引导。
+3. 批量编辑后没有自动触发 Quality Gate。
+4. 会话成功/失败信号没有被结构化沉淀为 replay card。
+## 推荐生长动作
+### A. Positive Guidance
+在 SKILL.md 中增加：
+- 遇到用户要求“梳理/重新梳理/检查日志/生成修改方案”时，先完成全量分析，不中途停顿提问。
+- 如果信息不足，先基于当前文件和日志做合理假设并继续推进。
+### B. Runtime Trace
+新增 normalized trace schema：
+- raw_user_utterances
+- context_used
+- tool_calls
+- script_calls
+- outcome_signals
+- growth_candidates
+### C. Quality Gate
+新增自动检查：
+- skill 文件交叉一致性
+- agent 配置卡片是否过时
+- tool_registry 与实际工具文件是否一致
+- 是否存在过多禁止式规则但缺少正向路径
+### D. Rehearsal
+生成 preview skill，并在临时目录中启动 OpenCode preview server 做测试。
+## 一键执行计划
+1. 生成 preview-0003
+2. 应用 skill diff
+3. 生成 quality gate prompt
+4. 生成 replay card 模板
+5. 启动 preview runtime
+
+⸻
+
+6. 应用中的 5 个核心页面
+
+第一版 UI 可以很简单。
+
+页面 1：Skill Dashboard
+
+展示：
+
+当前 stable 版本
+最近 preview 版本
+最近 runtime traces
+最近 growth proposals
+最近 quality gate 结果
+一键 Observe / Grow / Rehearse / Stabilize
+
+⸻
+
+页面 2：Observe / Runtime Replay
+
+展示 Runtime Replay Card。
+
+重点是让用户看到：
+
+原始用户语句
+Agent 做了什么
+用了哪些 tool/script
+哪些地方成功
+哪些地方不自然
+可生长机会是什么
+
+⸻
+
+页面 3：Grow / Growth Proposal
+
+展示：
+
+生长建议
+推荐修改文件
+preview diff
+tool backlog
+quality gate 更新
+一键确认
+重新梳理
+
+这里不要做很多选择题。
+
+⸻
+
+页面 4：Rehearse / Preview Chat
+
+嵌入或跳转到 preview OpenCode Web。
+
+展示：
+
+你正在测试 preview-0003
+本版变化摘要
+测试建议语句
+导演反馈按钮
+
+导演反馈按钮可以很轻：
+
+更自然
+太啰嗦
+问太多
+问太少
+流程对
+工具用错
+结果太泛
+可以稳定化
+重新生成
+
+⸻
+
+页面 5：Stabilize / Release
+
+展示：
+
+quality gate 是否通过
+本版改变了什么
+哪些成功模式被沉淀
+哪些失败模式被规避
+哪些 tool backlog 被创建
+Promote / Revise / Discard
+
+⸻
+
+7. OpenCode 多实例运行设计
+
+你现在想用：
+
+@different-ai/opencode-browser@4.6.1
+@opencode-ai/plugin@1.15.1
+@opencode-ai/opencode-ai@1.17.8
+
+这里我建议第一版不要强依赖这些包的深层 API，先做“进程级编排”。
+
+也就是：
+
+Skill Growth Studio 后端
+  ↓
+创建临时目录
+  ↓
+写入 opencode.json / .opencode/skills / .opencode/plugins
+  ↓
+设置 OPENCODE_CONFIG_DIR
+  ↓
+启动 opencode server
+  ↓
+记录端口和 workspace
+  ↓
+UI 跳转/嵌入 opencode web
+
+因为 OpenCode 官方文档明确支持自定义配置目录 OPENCODE_CONFIG_DIR，并会在该目录中搜索 agents、commands、modes、plugins 等结构。  插件也可以从项目级 .opencode/plugins/ 或全局目录加载，或在配置中指定 npm 包。  这让“每个 preview 一个独立 OpenCode runtime”成为比较自然的实现方式。
+
+⸻
+
+8. bwrap 隔离建议
+
+你的 bwrap 思路是对的。第一版可以做三种隔离 profile。
+
+observe profile：只读
+
+用于读取 logs 和 skill 文件。
+
+允许读：
+- skills/<skill>/stable
+- traces/<skill>
+- proposals/<skill>
+允许写：
+- traces/<skill>/normalized
+- traces/<skill>/replay_cards
+
+rehearse profile：preview 可写
+
+用于 preview skill 实验。
+
+允许读：
+- skills/<skill>/stable
+- traces/<skill>
+- configs/
+允许写：
+- experiments/rehearse-xxxx
+- skills/<skill>/previews/preview-xxxx
+
+stabilize profile：受控写
+
+用于 promote。
+
+允许读：
+- preview skill
+- quality report
+- director notes
+允许写：
+- skills/<skill>/stable
+- skills/<skill>/releases
+- CHANGELOG.md
+
+真正危险的操作，比如删除 release、写生产 API、修改全局工具，第一版全部不开放。
+
+⸻
+
+9. Agent / Subagent 设计
+
+OpenCode 支持 primary agent 和 subagent，primary agent 负责主会话，subagent 可以被主 agent 自动调用或手动 @ 调用。  第一版可以定义 5 个专用 agent。
+
+1. observe-agent
+负责读取 session log、tool log、script log，生成 Runtime Replay Card。
+2. grow-agent
+负责从 replay card 和 skill 当前状态生成 Growth Proposal。
+3. patch-agent
+负责生成 preview skill 文件改动。
+4. quality-agent
+负责批量 edit 后自动交叉 review。
+5. director-agent
+负责 preview chat 中收集体验反馈，并把自然语言反馈转成 director notes。
+
+其中 quality-agent 最好是只读或受限写。OpenCode 内置 Plan agent 本身就是一个适合“分析和建议但不修改代码”的受限 agent；官方文档描述 Plan agent 默认将文件编辑和 bash 设为 ask，适合分析代码和创建计划而不实际修改。  你可以借鉴这个模式，把 quality-agent 设置成只读检查。
+
+⸻
+
+10. 自动 Quality Gate 设计
+
+你强调：
+
+批量 edit 后自动触发交叉一致性检查，不等用户手动触发。
+
+这个必须进入第一版。
+
+每次发生这些事件时触发：
+
+preview skill 生成后
+批量编辑完成后
+用户点击“一键确认”后
+promote stable 前
+
+Quality Gate 第一版检查 8 件事：
+
+1. SKILL.md 是否仍然符合 skill frontmatter 规范
+2. SKILL.md 中的工具名是否存在于 tool_registry
+3. references 中的 workflow 是否和 SKILL.md 主流程一致
+4. agent 配置卡片是否引用了过时 skill/tool/API
+5. endpoint_manifest 是否存在 deprecated endpoint 仍被推荐使用
+6. 是否新增了禁止式规则，但没有给正向替代路径
+7. 是否新增了中途确认点，违背“先全量分析”的原则
+8. 是否缺少本轮 growth proposal 对应的 replay/golden case
+
+OpenCode skill 文档要求 SKILL.md 以 YAML frontmatter 开头，并识别 name、description、license、compatibility、metadata 等字段；name 也有小写、连字符和长度限制。  这些可以做成第一批静态检查。
+
+⸻
+
+11. 一键确认模式
+
+你提出“一键确认模式”，我建议做成这样的状态机：
+
+Growth Proposal generated
+  ↓
+用户点击：确认
+  ↓
+系统自动：
+  1. 创建 preview skill
+  2. 应用 diff
+  3. 运行 quality gate
+  4. 启动 preview runtime
+  5. 打开 preview chat
+
+用户不需要选择“改哪个文件、是否更新 reference、是否新增 eval”。
+这些由系统根据 Growth Proposal 自动判断。
+
+只有在高风险情况下才打断：
+
+需要新增写权限 tool
+需要调用生产 API
+需要删除旧能力
+需要修改全局配置
+
+其他都默认进入 preview，而不是进入正式稳定版。
+
+这就兼顾了：
+
+减少审批
+保留安全
+让人体验 preview
+
+⸻
+
+12. Pattern 固化为内置 Intents
+
+你给的 4 个 Pattern 可以直接变成系统内置 intent router。
+
+Intent 1：Session Experience Review
+
+识别语句：
+
+我现在基于新的skill...
+又进行了一次会话...
+会话基本完成了任务但是直观感觉...
+
+系统动作：
+
+Observe latest session
+Generate replay card
+Analyze soft experience issues
+Generate growth proposal
+
+⸻
+
+Intent 2：Post-Edit Quality Review
+
+识别语句：
+
+检查文件的最新情况
+review the change
+看看有没有过时的部分
+不合理不耦合的部分
+
+系统动作：
+
+Run quality gate
+Cross-review skill/reference/agents/tools
+Generate quality report
+Generate patch if safe
+
+⸻
+
+Intent 3：One-Click Best Update
+
+识别语句：
+
+请根据现在的实际应用场景和skill的情况决定最合适的更新方案
+
+系统动作：
+
+No multiple-choice question
+Use current evidence
+Generate best-effort proposal
+Create preview
+Run quality gate
+
+⸻
+
+Intent 4：Full Rescan / Reframe
+
+识别语句：
+
+梳理下之前的分析
+再检查下会话日志
+检查skill和智能体配置的文件最新状态
+生成一版修改方案
+
+系统动作：
+
+Ignore partial previous plan
+Reload latest files
+Reload latest traces
+Rebuild global view
+Generate full proposal
+Do not stop mid-analysis
+
+这个 intent 非常重要，因为它直接对应你的真实使用习惯。
+
+⸻
+
+13. 第一版最小技术栈
+
+基于你“不依赖在线服务、本地开源部署”的要求，我建议：
+
+后端：
+Node.js / Bun / Python FastAPI 均可
+LLM：
+本地 SGLang Qwen3.6-27B
+OpenAI v1-compatible endpoint
+Agent runtime：
+OpenCode CLI / OpenCode server / OpenCode Web
+隔离：
+bwrap
+临时目录
+独立 OPENCODE_CONFIG_DIR
+独立端口
+存储：
+本地文件优先
+JSONL + YAML + Markdown
+后续再考虑 SQLite
+前端：
+极简 Web UI
+只做四个 tab：
+Observe / Grow / Rehearse / Stabilize
+
+第一版不要上数据库也可以。
+因为你的对象天然适合文件化：
+
+trace.jsonl
+growth-proposal.md
+patch.diff
+quality-report.md
+director-notes.yaml
+SKILL.md
+
+⸻
+
+14. 第一版核心流程串起来
+
+完整流程如下：
+
+用户完成一轮基于 stable skill 的会话
+  ↓
+OpenCode plugin / 外部脚本收集 session log、tool log、script log
+  ↓
+Observe：
+  标准化 Runtime Trace
+  生成 Runtime Replay Card
+  提取原始用户语句和体验信号
+  ↓
+Grow：
+  读取当前 skill package 最新状态
+  生成 Growth Proposal
+  生成 preview diff
+  生成 tool/script/API/context 建议
+  ↓
+一键确认
+  ↓
+Rehearse：
+  创建 preview skill 临时目录
+  设置 OPENCODE_CONFIG_DIR
+  使用 bwrap 隔离
+  启动 preview OpenCode server
+  用户进行 preview chat
+  ↓
+记录 director notes
+  ↓
+Stabilize：
+  自动 Quality Gate
+  生成 release report
+  Promote / Revise / Discard
+
+这就是第一版闭环。
+
+⸻
+
+15. 第一版可以先实现的 6 个命令
+
+哪怕没有 UI，也可以先 CLI 跑通。
+
+skill-growth observe --skill etch-skill --session latest
+skill-growth grow --skill etch-skill --trace latest
+skill-growth confirm --proposal latest
+skill-growth rehearse --skill etch-skill --preview latest
+skill-growth quality --skill etch-skill --preview latest
+skill-growth stabilize --skill etch-skill --preview latest
+
+UI 只是这些命令的包装。
+
+⸻
+
+16. 第一版应用结构最终建议
+
+我会把第一版定义成下面这样：
+
+Skill Growth Studio v0.1
+目标：
+用最少人工确认点，把真实会话日志、工具日志、脚本日志和用户反馈转成 preview skill，并通过 OpenCode runtime 排练测试后稳定沉淀。
+核心原则：
+1. 全量分析优先，不中途停顿提问。
+2. 正向引导优先，少写禁止式规则。
+3. 真正的禁止下沉到 tool、script、permission、bwrap 环境。
+4. 批量 edit 后自动 Quality Gate。
+5. 人类不是审批员，而是导演；主要通过 preview chat 体验和反馈。
+6. 默认一键确认，只有高风险动作才暂停。
+7. 所有过程文件化，可回放、可比较、可回滚。
+四个动作：
+Observe：生成 Runtime Replay Card。
+Grow：生成 Growth Proposal。
+Rehearse：启动 preview OpenCode runtime 做排练。
+Stabilize：跑 Quality Gate 并 promote stable。
+底层 runtime：
+OpenCode 多实例：
+- stable instance
+- preview instance
+- quality instance
+- replay instance
+隔离方式：
+- 临时目录
+- OPENCODE_CONFIG_DIR
+- bwrap
+- subagent 上下文隔离
+- tool permission profile
+
+⸻
+
+17. 我建议你第一步先做什么
+
+不要先做完整 UI。
+先做最小闭环：
+
+1. 定义 Runtime Trace JSONL
+2. 写 observe 脚本：raw session log -> replay card
+3. 写 grow prompt/agent：replay card + skill files -> growth proposal
+4. 写 preview builder：proposal -> preview skill dir
+5. 写 quality gate：preview skill -> quality report
+6. 手动启动 preview opencode server 测试
+
+这六步跑通后，再做 Web UI。
+
+第一版的核心成功标准不是“功能多”，而是：
+
+你能不能在一次真实会话后，用 1 条命令生成 replay card，用 1 条命令生成 preview skill，用 1 个 preview OpenCode 会话验证体验。
+
+这个闭环跑通，你的 Skill Growth Studio 就成立了。

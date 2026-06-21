@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "logLevel": "INFO",
+  "share": "disabled",
+  "snapshot": true,
+  "enabled_providers": ["sglang"],
+  "provider": {
+    "sglang": {
+      "id": "sglang",
+      "options": {
+        "baseURL": "http://localhost:8000/v1",
+        "apiKey": "sk-no-key-required"
+      }
+    }
+  },
+  "model": "sglang/qwen3.6-27b",
+  "small_model": "sglang/qwen3.6-27b"
+}

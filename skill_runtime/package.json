@@ -1,0 +1,37 @@
+{
+  "name": "skill_runtime",
+  "version": "1.0.0",
+  "description": "Skill Growth Studio v0.1 - 本地 Skill 生命周期管理应用",
+  "type": "module",
+  "main": "dist/app/server/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch app/server/index.ts",
+    "start": "node dist/app/server/index.js",
+    "cli": "tsx app/cli/index.ts",
+    "test": "tsx --test tests/**/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@different-ai/opencode-browser": "^4.6.1",
+    "@opencode-ai/plugin": "^1.15.1",
+    "@opencode-ai/sdk": "^1.15.1",
+    "cross-spawn": "^7.0.6",
+    "effect": "^4.0.0-beta.65",
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3",
+    "marked": "^15.0.7",
+    "tar": "^7.4.3",
+    "yaml": "^2.9.0",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.15.12",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

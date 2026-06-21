@@ -1,0 +1,29 @@
+# 默认 Quality Gate 检查清单
+# 批量 edit 后自动运行
+
+checks:
+  skill_files:
+    - id: frontmatter_exists
+      name: SKILL.md frontmatter 存在
+    - id: positive_guidance
+      name: 禁止式规则不过多，且存在正向替代路径
+  consistency:
+    - id: references_exist
+      name: SKILL.md 引用的 reference 文件存在
+    - id: tool_registry_aligned
+      name: tool_registry 与实际 tools/ 文件一致
+  api:
+    - id: no_inactive_endpoint_usage
+      name: SKILL.md 不引用未 active 的 endpoint
+    - id: new_endpoints_have_tests
+      name: 新 endpoint 有基础测试
+  archive:
+    - id: no_delete_operations
+      name: 无 delete 操作，全部转为 archive
+    - id: archive_manifest_exists
+      name: archive manifest 已生成
+  experience:
+    - id: no_mid_analysis_questions
+      name: 不在分析中间停顿提问
+    - id: one_click_confirm
+      name: 支持一键确认路径

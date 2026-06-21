@@ -1,0 +1,23 @@
+# 本地 SGLang OpenAI v1 兼容接口配置
+# Skill Growth Studio 启动 OpenCode server 时会读取此配置注入 OPENCODE_CONFIG_CONTENT
+
+provider:
+  sglang:
+    id: sglang
+    name: Local SGLang
+    api: openai-compatible
+    options:
+      baseURL: http://localhost:8000/v1
+      apiKey: "sk-no-key-required"
+    models:
+      qwen3.6-27b:
+        id: qwen3.6-27b
+        name: Qwen3.6 27B
+        tool_call: true
+        attachment: false
+        reasoning: true
+        temperature: true
+
+opencode_defaults:
+  model: sglang/qwen3.6-27b
+  small_model: sglang/qwen3.6-27b

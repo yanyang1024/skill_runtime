@@ -1,0 +1,1 @@
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../../../app/workers/observe/index.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,YAAY,EAA0C,MAAM,+BAA+B,CAAC;AAU1G,wBAAsB,UAAU,CAAC,OAAO,EAAE,MAAM,GAAG,OAAO,CAAC;IAAE,KAAK,EAAE,MAAM,CAAC;IAAC,KAAK,EAAE,YAAY,CAAA;CAAE,CAAC,CAoGjG"}

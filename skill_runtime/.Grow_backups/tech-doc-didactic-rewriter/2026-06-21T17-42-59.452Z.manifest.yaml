@@ -1,0 +1,12 @@
+snapshot_id: snapshot-2026-06-21T17-42-59.452Z
+created_at: 2026-06-21T17:42:59.457Z
+skill_id: tech-doc-didactic-rewriter
+path: /home/yy/skill_runtime/.Grow_backups/tech-doc-didactic-rewriter/2026-06-21T17-42-59.452Z.tar.gz
+included:
+  - skills/tech-doc-didactic-rewriter/stable
+  - skills/tech-doc-didactic-rewriter/previews
+  - skills/tech-doc-didactic-rewriter/releases
+  - skills/tech-doc-didactic-rewriter/.archive
+triggered_by: grow-live-run
+source_run: grow-1782063779443
+restore_command: skill-growth restore --snapshot snapshot-2026-06-21T17-42-59.452Z
