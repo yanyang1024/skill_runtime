@@ -1,0 +1,1226 @@
+Skill Growth Studio v0.1 应用结构：
+
+这版设计的核心变化是：
+
+Observe 负责增殖：从 runtime 中发现生长机会。
+Grow 负责凋亡：审查、克制、合并、归档，避免 skill 无限膨胀。
+Rehearse 负责排练：在隔离 OpenCode runtime 中测试 preview skill。
+Stabilize 负责稳定化：快照、归档、打包、发布稳定版本。
+
+⸻
+
+1. 重新定义四个动词
+
+之前我们把四个动词理解为流程步骤，现在可以进一步赋予它们“生命周期含义”。
+
+Observe   = 增殖 / 发现可能性
+Grow      = 凋亡 / 克制与整理
+Rehearse  = 排练 / 体验验证
+Stabilize = 固化 / 稳定沉淀
+
+Observe：Background Review，负责“学到了什么”
+
+Observe 不改文件。
+Observe 的职责是复盘 runtime，决定：
+
+这次会话学到了什么？
+用户真实用法是什么？
+哪些成功路径值得沉淀？
+哪些失败点暴露了能力缺口？
+哪些 API / tool / context / workflow 有生长机会？
+哪些原始用户语句应该作为 replay evidence 保留？
+
+所以 Observe 阶段输出的是：
+
+Runtime Trace
+Runtime Replay Card
+Growth Opportunities
+API / Tool Gap Candidates
+Positive Pattern Candidates
+
+Observe 是“发散”的，负责增殖可能性。
+
+⸻
+
+Grow：Curator，负责“哪些不该长”
+
+Grow 不是简单执行修改。
+Grow 是一个 curator，负责审查 Observe 产生的大量可能性，然后做克制：
+
+哪些建议应该进入 skill？
+哪些只是 session preference？
+哪些应该进入 tool backlog？
+哪些应该合并到旧文件？
+哪些旧配置已经过时，应该归档？
+哪些文件不该继续增长？
+哪些修改风险太大，只能进入 preview？
+
+所以 Grow 是“收敛”的，负责凋亡、合并、归档、打包。
+
+你这个定义很关键，因为如果没有 Grow 的凋亡机制，Skill 会变成：
+
+越来越长的 SKILL.md
+越来越多的 reference
+越来越多重复规则
+越来越多过时 API 描述
+越来越多没人敢删的旧配置
+
+所以第一版必须明确：
+
+Observe 可以大胆发现，Grow 必须保守执行。
+
+⸻
+
+Rehearse：Preview Skill 排练
+
+Rehearse 不直接发布。
+它负责：
+
+新建临时目录
+加载 preview skill
+启动 preview OpenCode server
+让用户进行测试会话
+记录 director notes
+
+这里用户不是审批员，而是导演。
+
+⸻
+
+Stabilize：稳定沉淀
+
+Stabilize 负责把排练通过的版本沉淀为 stable。
+
+它必须做：
+
+正式维护前打快照
+永不删除，只归档
+生成 changelog
+打包 release
+保留 rollback 点
+记录本轮生长原因
+
+⸻
+
+2. 第一版总体架构
+
+我建议第一版应用结构如下：
+
+Skill Growth Studio v0.1
+Control Plane
+├── Observe Engine
+│   ├── Runtime Trace Normalizer
+│   ├── Background Reviewer
+│   ├── Runtime Replay Card Builder
+│   └── Growth Opportunity Miner
+│
+├── Grow Engine
+│   ├── Growth Curator
+│   ├── Dry-run Planner
+│   ├── Archive Planner
+│   ├── Snapshot Manager
+│   ├── API Endpoint Curator
+│   └── Quality Gate Runner
+│
+├── Rehearse Engine
+│   ├── Preview Skill Builder
+│   ├── Temp Workspace Manager
+│   ├── OpenCode Server Launcher
+│   └── Director Feedback Collector
+│
+└── Stabilize Engine
+    ├── Promote Manager
+    ├── Release Packager
+    ├── Changelog Generator
+    ├── Archive Manager
+    └── Rollback Manager
+Runtime Plane
+├── stable opencode runtime
+├── preview opencode runtime
+├── quality-gate opencode runtime
+└── replay opencode runtime
+
+第一版可以完全本地化：
+
+LLM：本地 SGLang + Qwen3.6-27B + OpenAI v1-compatible API
+Runtime：OpenCode / OpenCode Web
+隔离：bwrap + 临时目录 + 独立 OPENCODE_CONFIG_DIR
+存储：本地文件系统，JSONL/YAML/Markdown
+UI：极简 Web UI 或 CLI 先行
+
+⸻
+
+3. 推荐项目目录结构
+
+skill-growth-studio/
+│
+├── app/
+│   ├── server/
+│   ├── ui/
+│   ├── cli/
+│   └── workers/
+│
+├── skills/
+│   └── etch-skill/
+│       ├── stable/
+│       │   ├── SKILL.md
+│       │   ├── skill.yaml
+│       │   ├── references/
+│       │   ├── tools/
+│       │   ├── agents/
+│       │   ├── evals/
+│       │   ├── endpoint_manifest.yaml
+│       │   └── tool_registry.yaml
+│       │
+│       ├── previews/
+│       │   ├── preview-0001/
+│       │   └── preview-0002/
+│       │
+│       ├── releases/
+│       │   ├── v0.1.0/
+│       │   └── v0.1.1/
+│       │
+│       └── .archive/
+│           ├── 2026-06-21T08-30-12Z/
+│           └── 2026-06-21T10-15-03Z/
+│
+├── traces/
+│   └── etch-skill/
+│       ├── raw_sessions/
+│       ├── raw_tool_logs/
+│       ├── raw_script_logs/
+│       ├── normalized/
+│       ├── replay_cards/
+│       └── director_notes/
+│
+├── growth_runs/
+│   └── etch-skill/
+│       ├── run-0001/
+│       │   ├── observe-report.md
+│       │   ├── runtime-trace.json
+│       │   ├── replay-card.md
+│       │   ├── growth-opportunities.yaml
+│       │   ├── dry-run-plan.yaml
+│       │   ├── growth-proposal.md
+│       │   ├── patch.diff
+│       │   ├── quality-report.md
+│       │   └── api-endpoint-report.md
+│       └── run-0002/
+│
+├── experiments/
+│   └── etch-skill/
+│       ├── rehearse-0001/
+│       ├── rehearse-0002/
+│       └── quality-gate-0001/
+│
+├── api_docs/
+│   └── etch-skill/
+│       ├── raw/
+│       ├── normalized/
+│       ├── endpoint_tests/
+│       └── api_requirements/
+│
+├── .Grow_backups/
+│   └── etch-skill/
+│       ├── 2026-06-21T08-30-12Z.tar.gz
+│       └── 2026-06-21T10-15-03Z.tar.gz
+│
+└── configs/
+    ├── model-providers/
+    ├── bwrap-profiles/
+    ├── opencode-templates/
+    └── quality-gates/
+
+几个关键点：
+
+1. skills/<skill>/stable 是当前稳定版。
+2. previews 只放候选版本。
+3. releases 放正式发布快照。
+4. .archive 只归档，不删除。
+5. .Grow_backups 每次正式维护前打 tar.gz 快照。
+6. growth_runs 保存每次 Observe/Grow/Rehearse/Stabilize 的完整过程。
+
+⸻
+
+4. Observe：Background Review 详细设计
+
+Observe 是第一步，但它不只是“读日志”。
+
+它要做的是：
+
+把 runtime 中的自然信号转成可讨论、可增长的材料。
+
+4.1 输入
+
+1. session log
+2. tool log
+3. script log
+4. 用户反馈
+5. director notes
+6. 当前 stable skill 文件
+7. 当前 tool registry
+8. 当前 endpoint manifest
+9. 可选 API 文档
+
+4.2 输出
+
+1. normalized runtime trace
+2. runtime replay card
+3. growth opportunities
+4. positive patterns
+5. failure patterns
+6. tool/api gap candidates
+
+4.3 Observe 不做的事
+
+Observe 阶段明确不做：
+
+不改 SKILL.md
+不改 references
+不改 tools
+不归档文件
+不生成最终 diff
+不要求用户中间确认
+
+它只复盘。
+
+⸻
+
+4.4 Runtime Trace 标准格式
+
+{
+  "trace_id": "trace_20260621_001",
+  "skill_id": "etch-skill",
+  "skill_version": "stable-0.2.1",
+  "session_id": "session_001",
+  "created_at": "2026-06-21T08:30:12Z",
+  "raw_user_utterances": [
+    {
+      "turn_id": "u1",
+      "text": "我现在基于新的skill...又进行了一次会话，会话基本完成了任务但是直观感觉..."
+    },
+    {
+      "turn_id": "u2",
+      "text": "梳理下之前的分析，再检查下会话日志里体现出来的其它问题...生成一版修改方案"
+    }
+  ],
+  "intent_summary": "用户希望基于真实会话体验，对 skill 当前问题进行全量复盘并形成修改方案。",
+  "runtime_context": {
+    "skill_files": [
+      "SKILL.md",
+      "references/workflow.md",
+      "tool_registry.yaml",
+      "endpoint_manifest.yaml"
+    ],
+    "tools_available": [
+      "read_session_log",
+      "skill_consistency_check",
+      "api_endpoint_check"
+    ],
+    "api_docs_available": true
+  },
+  "tool_calls": [
+    {
+      "tool_name": "read_session_log",
+      "status": "success",
+      "summary": "读取并解析最新 opencode 会话日志"
+    }
+  ],
+  "script_calls": [
+    {
+      "script_name": "normalize_trace.py",
+      "status": "success",
+      "summary": "生成标准化 runtime trace"
+    }
+  ],
+  "hard_signals": {
+    "tool_failures": [],
+    "api_failures": [],
+    "schema_errors": [],
+    "quality_gate_failures": []
+  },
+  "soft_signals": {
+    "user_experience": [
+      "用户不希望中间停顿确认",
+      "用户希望先做全量分析",
+      "用户希望一键确认执行"
+    ],
+    "director_notes": []
+  },
+  "growth_candidates": [
+    {
+      "type": "positive_guidance",
+      "summary": "增加全量分析优先的行为规则"
+    },
+    {
+      "type": "quality_gate",
+      "summary": "批量编辑后自动交叉 review"
+    },
+    {
+      "type": "api_endpoint_flow",
+      "summary": "如果 API 文档出现新增端点，需要测试后再进入 skill"
+    }
+  ]
+}
+
+⸻
+
+4.5 Runtime Replay Card
+
+Replay Card 应该人能看、Agent 也能继续用。
+
+# Runtime Replay Card
+## 1. 本次会话学到了什么
+本次会话显示，用户在进行 skill 迭代时，更倾向于让 Agent 完成完整复盘，而不是在分析中间停下来问确认问题。
+## 2. 原始用户语句证据
+> 我现在基于新的skill...又进行了一次会话，会话基本完成了任务但是直观感觉...
+> 梳理下之前的分析，再检查下会话日志里体现出来的其它问题...生成一版修改方案
+> 请根据现在的实际应用场景和skill的情况决定最合适的更新方案
+## 3. 行为观察
+- 用户希望 Agent 主动读取完整日志和最新 skill 文件。
+- 用户不希望被迫做细碎选择。
+- 用户希望 Growth Proposal 输出后可以一键确认。
+- 用户希望每次批量编辑后自动进行交叉 review。
+## 4. 成功信号
+- 会话基本完成任务。
+- 用户认可“围绕 Observe / Grow / Rehearse / Stabilize”的四阶段设计。
+- 用户认可“Human-as-Director”而不是人工逐条审批。
+## 5. 需要生长的方向
+- 增加 background review 能力。
+- 增加 dry-run curator。
+- 增加自动快照。
+- 增加永不删除、只归档。
+- 增加 API endpoint 从文档检查到 tool/skill 更新的流程。
+## 6. 初步生长建议
+- Observe 输出 growth opportunities，而不是直接改文件。
+- Grow 默认 dry-run，生成完整操作计划。
+- live run 前自动打包整个 skills 目录。
+- 过时文件移动到 .archive，不删除。
+- API 新端点必须经过基础测试再进入 skill。
+
+⸻
+
+5. Grow：Dry-run Curator 详细设计
+
+Grow 是第二阶段，负责把 Observe 的发散结果变成可执行但克制的方案。
+
+你的关键要求是：
+
+curator run --dry-run 先列出这一轮想干的事，一个字都不动库。审完报告后，觉得 OK 再 live run。
+
+这个应该成为第一版核心机制。
+
+⸻
+
+5.1 Grow 默认 dry-run
+
+所有 Grow 操作默认都是 dry-run。
+
+skill-growth grow --skill etch-skill --trace latest --dry-run
+
+它输出：
+
+growth-proposal.md
+dry-run-plan.yaml
+patch.diff
+archive-plan.yaml
+api-endpoint-report.md
+quality-preview.md
+
+但不修改任何正式文件。
+
+⸻
+
+5.2 Dry-run Plan 格式
+
+run_id: grow-20260621-083012
+skill_id: etch-skill
+mode: dry-run
+source_trace: trace_20260621_001
+summary:
+  intent: "基于最新会话日志和用户反馈生成 skill 生命周期维护方案"
+  risk_level: medium
+  live_run_requires_snapshot: true
+planned_operations:
+  - op_id: op-001
+    type: update_file
+    target: skills/etch-skill/stable/SKILL.md
+    reason: "增加全量分析优先、不在中途停顿提问的正向引导"
+    evidence:
+      - "用户多次要求重新梳理，而不是回答中间确认问题"
+    dry_run_result: "would_update"
+    risk: low
+  - op_id: op-002
+    type: update_file
+    target: skills/etch-skill/stable/references/workflow.md
+    reason: "补充 Observe/Grow/Rehearse/Stabilize 工作流"
+    dry_run_result: "would_update"
+    risk: low
+  - op_id: op-003
+    type: archive_file
+    target: skills/etch-skill/stable/references/old_api_notes.md
+    archive_to: skills/etch-skill/.archive/2026-06-21T08-30-12Z/references/old_api_notes.md
+    reason: "该文件描述旧 API 端点，已被 endpoint_manifest.yaml 替代"
+    dry_run_result: "would_archive"
+    risk: medium
+  - op_id: op-004
+    type: update_endpoint_manifest
+    target: skills/etch-skill/stable/endpoint_manifest.yaml
+    reason: "API 文档中出现新 endpoint，需要进入 manifest 并生成基础测试"
+    dry_run_result: "would_update"
+    risk: medium
+  - op_id: op-005
+    type: create_quality_gate
+    target: skills/etch-skill/stable/evals/quality_gate_post_edit.yaml
+    reason: "批量编辑后自动进行交叉一致性检查"
+    dry_run_result: "would_create"
+    risk: low
+quality_gates_to_run:
+  - skill_consistency_check
+  - tool_registry_check
+  - endpoint_manifest_check
+  - positive_guidance_check
+  - archive_safety_check
+live_run_requirements:
+  - create_snapshot_before_write
+  - never_delete_archive_only
+  - run_quality_gate_after_write
+
+⸻
+
+5.3 Growth Proposal
+
+Growth Proposal 是给用户看的方案，不是底层操作列表。
+
+# Growth Proposal
+## 本轮目标
+基于最新 session log、工具日志、用户反馈和 skill 文件状态，对 etch-skill 进行一次生命周期维护。
+## Observe 学到的内容
+1. 用户希望 Agent 进行全量复盘，而不是中途停顿提问。
+2. 用户希望批量编辑后自动进行交叉 review。
+3. 用户希望 Growth Proposal 后一键确认。
+4. 用户希望所有正式维护前有快照。
+5. 用户希望过时文件归档，而不是删除。
+6. 用户希望 API 新端点从文档检查、基础测试到 skill 更新形成完整流程。
+## Grow 的克制判断
+本轮不直接扩大 SKILL.md，而是：
+- 将行为规则写入核心 SKILL.md。
+- 将流程细节放入 references/workflow.md。
+- 将 API 信息放入 endpoint_manifest.yaml。
+- 将端点测试放入 api_docs/endpoint_tests。
+- 将过时 API 文档归档到 .archive。
+- 不删除任何历史文件。
+## 计划修改
+### 1. SKILL.md
+增加正向引导：
+- 当用户要求“梳理 / 重新梳理 / 检查日志 / 生成修改方案”时，先完成全量分析。
+- 不在分析中间停顿提问。
+- 如果信息不足，基于当前文件和日志做合理假设并继续推进。
+- Growth Proposal 输出后，优先提供一键确认路径。
+### 2. workflow.md
+补充 Observe / Grow / Rehearse / Stabilize 四阶段流程。
+### 3. endpoint_manifest.yaml
+如果 API 文档发现新增端点：
+- 先加入 candidate 状态。
+- 生成基础测试。
+- 测试通过后再加入 active 状态。
+- 再决定是否写入 Skill 的工具引导。
+### 4. .archive
+过时文件移动到 .archive，不删除。
+### 5. Quality Gate
+批量编辑后自动检查：
+- skill 与 reference 是否一致。
+- agent 配置是否过时。
+- endpoint manifest 是否与 API docs 对齐。
+- tool registry 是否与实际工具一致。
+- 是否引入过多禁止式规则而缺少正向替代路径。
+## 一键确认后系统会做什么
+1. 创建 .Grow_backups 快照。
+2. 应用文件修改。
+3. 归档过时文件。
+4. 生成 preview skill。
+5. 运行自动 Quality Gate。
+6. 启动 Rehearse runtime。
+
+⸻
+
+6. 永不删除，只归档
+
+这是第一版必须实现的安全原则。
+
+6.1 规则
+
+任何 Grow / Stabilize 操作都不允许 delete。
+所有“删除”都转换成 archive。
+
+例如：
+
+delete references/old_api_notes.md
+
+必须转换为：
+
+move references/old_api_notes.md
+to .archive/<UTC_TIMESTAMP>/references/old_api_notes.md
+
+⸻
+
+6.2 Archive Manifest
+
+每次归档都生成 manifest。
+
+archive_id: archive-20260621-083012
+created_at: 2026-06-21T08:30:12Z
+skill_id: etch-skill
+triggered_by: grow-live-run
+source_run: grow-20260621-083012
+archived_files:
+  - original_path: references/old_api_notes.md
+    archive_path: .archive/2026-06-21T08-30-12Z/references/old_api_notes.md
+    reason: "被 endpoint_manifest.yaml 替代，且内容包含旧 API 端点"
+    replacement:
+      - endpoint_manifest.yaml
+      - api_docs/normalized/latest.yaml
+policy:
+  never_delete: true
+  can_restore: true
+
+⸻
+
+7. 动手前先打快照
+
+你这个要求也应该作为硬规则：
+
+每次正式维护之前，先把整个 skills 目录打成 tar.gz 快照，连 .archive/ 一起存进 .Grow_backups/，文件名是 UTC 时间戳。
+
+7.1 快照触发时机
+
+必须在这些动作前触发：
+
+grow --live
+stabilize --promote
+archive operation
+release packaging
+endpoint manifest live update
+tool registry live update
+
+7.2 快照命名
+
+.Grow_backups/<skill_id>/<UTC_TIMESTAMP>.tar.gz
+
+例子：
+
+.Grow_backups/etch-skill/2026-06-21T08-30-12Z.tar.gz
+
+7.3 Snapshot Manifest
+
+snapshot_id: snapshot-20260621-083012
+created_at: 2026-06-21T08:30:12Z
+skill_id: etch-skill
+path: .Grow_backups/etch-skill/2026-06-21T08-30-12Z.tar.gz
+included:
+  - skills/etch-skill/stable
+  - skills/etch-skill/previews
+  - skills/etch-skill/releases
+  - skills/etch-skill/.archive
+triggered_by: grow-live-run
+source_run: grow-20260621-083012
+restore_command: skill-growth restore --snapshot snapshot-20260621-083012
+
+⸻
+
+8. Grow Live Run 流程
+
+Dry-run 通过后，用户一键确认，才进入 live run。
+
+skill-growth grow --skill etch-skill --proposal latest --live
+
+执行流程：
+
+1. 读取 dry-run plan
+2. 检查 plan 是否仍然基于最新文件
+3. 创建 tar.gz 快照
+4. 应用 update_file 操作
+5. 执行 archive_file 操作
+6. 更新 archive manifest
+7. 生成 preview skill
+8. 自动 Quality Gate
+9. 输出 live-run report
+10. 启动 Rehearse
+
+关键点：
+
+live run 不是直接更新 stable。
+live run 先生成 preview。
+stable 只有在 Rehearse + Stabilize 后才更新。
+
+这可以避免“确认后直接污染稳定版”。
+
+⸻
+
+9. API 端点变化流程：第一版必须实现
+
+你特别强调：
+
+如果 skill 里有新增 API 端点等变化，一般通过 API 文档检查，需要从 API 端点基础测试到如何将新功能变化加入 skill 的流程。
+
+这个应该成为第一版核心能力之一。
+
+⸻
+
+9.1 API Endpoint Lifecycle
+
+建议把 endpoint 分成几个状态：
+
+discovered
+从 API 文档中发现，但还未验证。
+candidate
+已进入 endpoint_manifest，但未通过基础测试。
+verified
+基础测试通过，schema 和响应稳定。
+active
+可以被 tool wrapper 或 skill 正式使用。
+deprecated
+API 文档标记废弃，或者测试发现不可用。
+archived
+历史端点，保留记录，但不再推荐使用。
+
+⸻
+
+9.2 endpoint_manifest.yaml
+
+endpoints:
+  - id: run_history_v2
+    name: "Run History Query"
+    status: candidate
+    source: api_docs/raw/run_history_api.md
+    method: GET
+    path: /api/v2/run-history
+    description: "根据 lot_id / tool_id 查询 run history"
+    required_params:
+      - lot_id
+      - tool_id
+    optional_params:
+      - start_time
+      - end_time
+    auth:
+      type: bearer
+      required: true
+    risk_level: read_only
+    added_at: 2026-06-21T08:30:12Z
+    tests:
+      smoke_test: api_docs/endpoint_tests/run_history_v2_smoke.yaml
+      schema_test: api_docs/endpoint_tests/run_history_v2_schema.yaml
+    skill_usage:
+      allowed: false
+      reason: "尚未通过基础测试"
+
+测试通过后更新为：
+
+status: active
+skill_usage:
+  allowed: true
+  usage_hint: "当用户提供 lot_id 或需要查询历史 run 数据时，优先调用 run_history_v2。"
+
+⸻
+
+9.3 API 文档检查流程
+
+API docs input
+  ↓
+api-doc-normalizer
+  ↓
+endpoint diff
+  ↓
+新增 / 变化 / 废弃端点识别
+  ↓
+更新 endpoint_manifest candidate
+  ↓
+生成基础测试
+  ↓
+运行 endpoint tests
+  ↓
+通过后生成 tool wrapper / skill guidance proposal
+  ↓
+进入 Rehearse
+
+⸻
+
+9.4 基础测试类型
+
+第一版至少实现 5 类测试。
+
+1. existence test
+端点是否存在，是否返回预期状态码。
+2. auth test
+鉴权是否符合文档。
+3. schema test
+返回字段是否符合文档。
+4. minimal input test
+使用最小参数是否可正常返回。
+5. error handling test
+缺少必要参数时，错误响应是否可解析。
+
+如果是写操作 API，第一版建议只允许：
+
+dry-run
+sandbox
+mock
+
+不要直接开放生产写操作。
+
+⸻
+
+9.5 API 端点进入 Skill 的规则
+
+新 API 不能直接写进 SKILL.md。
+必须经过：
+
+API docs discovered
+  ↓
+endpoint_manifest candidate
+  ↓
+basic endpoint tests passed
+  ↓
+tool wrapper generated
+  ↓
+tool_registry updated
+  ↓
+quality gate passed
+  ↓
+preview skill tested
+  ↓
+stabilize
+
+这样避免 Skill 里出现“看起来有这个 endpoint，但实际不可用”的情况。
+
+⸻
+
+10. API 缺口需求文档：第一版暂不实现，但要预留
+
+你说：
+
+如果从 session log 发现一定需要 API 端点完善才能解决用户侧场景，那么 Observe 阶段就提出需求，作为 Growth Proposal 审查，并提供给 API 服务构建方的需求文档。
+
+这个第一版可以先不做自动生成完整 API PRD，但建议预留文件结构。
+
+api_docs/
+└── etch-skill/
+    └── api_requirements/
+        ├── requirement-0001.md
+        └── requirement-0002.md
+
+10.1 API Requirement Doc 模板
+
+# API Requirement: Run History Query by Lot
+## 来源
+- trace_id: trace_20260621_001
+- skill: etch-skill
+- session: session_001
+## 用户侧场景
+用户希望分析某个 etch profile abnormal，需要查询对应 lot 的历史 run 数据、tool/chamber 信息、recipe 变化和时间窗口。
+## 当前问题
+当前 skill 只能要求用户手动上传 Excel 或描述历史信息，无法主动查询 run history，因此分析结果较泛，无法形成稳定的 evidence-based hypothesis。
+## 需要的 API 能力
+### Endpoint 建议
+GET /api/v2/run-history
+### 输入参数
+- lot_id: required
+- tool_id: optional
+- chamber_id: optional
+- start_time: optional
+- end_time: optional
+### 返回字段建议
+- lot_id
+- tool_id
+- chamber_id
+- recipe_id
+- recipe_version
+- run_start_time
+- run_end_time
+- key_process_params
+- alarm_events
+- metrology_summary
+## Skill 使用方式
+当用户提供 lot_id 或请求分析某个 lot 的异常时，Agent 应优先调用该 endpoint 获取 run history，再结合 recipe_diff 和 defect summary 生成分析。
+## 验收测试
+1. 给定有效 lot_id，返回至少一条 run record。
+2. 缺少 lot_id 时返回结构化错误。
+3. 返回字段包含 recipe_id、tool_id、run_start_time。
+4. 响应可被 tool wrapper 转换为标准 JSON。
+
+这非常有价值，因为它把 Observe 的发现转化成 API 服务建设方能理解的需求。
+
+⸻
+
+11. Quality Gate：自动交叉审查
+
+你的要求是：
+
+批量 edit 后自动触发交叉一致性检查，不等用户手动触发。
+
+第一版应该把 Quality Gate 作为 Grow live run 和 Stabilize 的强制步骤。
+
+⸻
+
+11.1 Quality Gate 触发点
+
+1. Grow live run 后
+2. preview skill 生成后
+3. Rehearse 完成后
+4. Stabilize promote 前
+5. endpoint manifest 更新后
+6. tool registry 更新后
+
+⸻
+
+11.2 Quality Gate 检查项
+
+A. Skill 文件检查
+- SKILL.md frontmatter 是否存在
+- name / description 是否符合规范
+- 是否出现过多禁止式规则
+- 是否有正向替代路径
+B. 文件一致性检查
+- SKILL.md 引用的 reference 是否存在
+- workflow.md 是否和 SKILL.md 主流程冲突
+- agent 配置卡片是否引用过时文件
+- tool_registry 是否和 tools/ 实际文件一致
+C. API 检查
+- SKILL.md 是否引用未 active 的 endpoint
+- endpoint_manifest 是否包含 deprecated endpoint
+- 新 endpoint 是否有基础测试
+- API 文档变化是否同步到 manifest
+D. 工具检查
+- tool wrapper 是否存在
+- tool schema 是否完整
+- tool risk_level 是否声明
+- 写操作是否默认 dry-run 或需要确认
+E. 归档检查
+- 是否存在 delete 操作
+- delete 是否全部转换为 archive
+- archive manifest 是否生成
+F. 体验检查
+- 是否违背“不在中间停顿提问”
+- 是否支持一键确认
+- 是否支持 full-rescan
+
+⸻
+
+12. Rehearse：临时目录 + OpenCode server 实验
+
+Rehearse 阶段要做得很工程化。
+
+Growth Proposal confirmed
+  ↓
+preview skill package generated
+  ↓
+create experiments/rehearse-xxxx
+  ↓
+copy preview skill into temp .opencode/skills
+  ↓
+copy tools / references / agents
+  ↓
+set OPENCODE_CONFIG_DIR
+  ↓
+apply bwrap profile
+  ↓
+start opencode server
+  ↓
+open opencode web / embedded browser
+
+12.1 Rehearse Workspace
+
+experiments/rehearse-0001/
+├── workspace/
+│   ├── .opencode/
+│   │   ├── skills/
+│   │   │   └── etch-skill/
+│   │   ├── agents/
+│   │   ├── plugins/
+│   │   └── opencode.json
+│   ├── test_files/
+│   └── logs/
+│
+├── runtime.env
+├── rehearse-report.md
+└── director-notes.yaml
+
+⸻
+
+12.2 Director Notes
+
+preview_id: preview-0003
+rehearse_id: rehearse-0001
+skill_id: etch-skill
+feedback:
+  - dimension: interaction_flow
+    label: "better"
+    note: "这一版不会中途打断，体验更好"
+  - dimension: verbosity
+    label: "too_verbose"
+    note: "术语解释略长，可以压缩"
+  - dimension: tool_use
+    label: "correct"
+    note: "正确建议先检查 API manifest"
+decision_hint: "revise_minor"
+
+⸻
+
+13. Stabilize：Promote / Revise / Discard
+
+Rehearse 后进入 Stabilize。
+
+用户只需要选择：
+
+Promote to stable
+Revise preview
+Discard preview
+
+如果选择 Promote，流程如下：
+
+1. 再次打快照
+2. 跑最终 Quality Gate
+3. 将 preview 合并到 stable
+4. 旧 stable 进入 releases
+5. 过时文件进入 .archive
+6. 生成 CHANGELOG
+7. 生成 release package
+8. 更新 skill.yaml 版本
+
+⸻
+
+14. 命令设计
+
+第一版可以 CLI 先行。
+
+# Observe: 读取日志，生成 replay card
+skill-growth observe \
+  --skill etch-skill \
+  --session latest
+# Grow: 默认 dry-run，生成 proposal，但不改文件
+skill-growth grow \
+  --skill etch-skill \
+  --trace latest \
+  --dry-run
+# Grow live: 一键确认后执行，但先打快照
+skill-growth grow \
+  --skill etch-skill \
+  --proposal latest \
+  --live
+# API docs scan: 检查 API 文档变化
+skill-growth api-scan \
+  --skill etch-skill \
+  --docs api_docs/etch-skill/raw/
+# API endpoint test
+skill-growth api-test \
+  --skill etch-skill \
+  --endpoint run_history_v2
+# Rehearse: 启动 preview OpenCode server
+skill-growth rehearse \
+  --skill etch-skill \
+  --preview latest
+# Quality Gate
+skill-growth quality \
+  --skill etch-skill \
+  --preview latest
+# Stabilize
+skill-growth stabilize \
+  --skill etch-skill \
+  --preview latest \
+  --promote
+# Restore
+skill-growth restore \
+  --snapshot snapshot-20260621-083012
+
+⸻
+
+15. UI 结构
+
+第一版 Web UI 可以非常简单，四个 Tab。
+
+Observe Tab
+
+展示：
+
+最新 session logs
+Runtime Replay Card
+原始用户语句摘录
+hard signals
+soft signals
+growth candidates
+
+按钮：
+
+生成 Replay Card
+重新梳理
+进入 Grow
+
+⸻
+
+Grow Tab
+
+展示：
+
+Growth Proposal
+Dry-run Plan
+Patch Preview
+Archive Plan
+API Endpoint Report
+Quality Preview
+
+按钮：
+
+一键确认 live run
+重新 dry-run
+放弃
+
+⸻
+
+Rehearse Tab
+
+展示：
+
+preview skill 版本
+本版变化摘要
+启动 OpenCode Preview
+导演反馈按钮
+
+反馈按钮：
+
+更自然
+太啰嗦
+问太多
+问太少
+流程对
+工具用错
+结果太泛
+可以稳定化
+需要小改
+丢弃
+
+⸻
+
+Stabilize Tab
+
+展示：
+
+最终 Quality Gate
+Release Diff
+Archive Manifest
+Snapshot Manifest
+CHANGELOG
+Promote / Revise / Discard
+
+⸻
+
+16. 第一版最小实现优先级
+
+建议按这个顺序做。
+
+Phase 1：文件化闭环
+
+1. 定义 runtime_trace.json
+2. 定义 replay_card.md
+3. 定义 growth_proposal.md
+4. 定义 dry_run_plan.yaml
+5. 定义 archive_manifest.yaml
+6. 定义 snapshot_manifest.yaml
+
+先把数据结构跑通。
+
+⸻
+
+Phase 2：Observe + Grow dry-run
+
+1. 从 session log 提取原始用户语句
+2. 生成 Runtime Replay Card
+3. 生成 Growth Opportunities
+4. 生成 dry-run plan
+5. 输出 Growth Proposal
+
+此阶段不改文件。
+
+⸻
+
+Phase 3：Grow live + 快照归档
+
+1. live run 前 tar.gz 快照
+2. 应用文件修改到 preview
+3. delete 转 archive
+4. 生成 archive manifest
+5. 自动 Quality Gate
+
+⸻
+
+Phase 4：API Endpoint Flow
+
+1. API docs scan
+2. endpoint manifest candidate
+3. endpoint basic tests
+4. tool wrapper proposal
+5. skill usage proposal
+
+第一版可以先支持 read-only endpoint。
+
+⸻
+
+Phase 5：Rehearse OpenCode
+
+1. 创建临时目录
+2. 写入 preview skill
+3. 设置 opencode config
+4. bwrap 隔离
+5. 启动 opencode server
+6. 记录 director notes
+
+⸻
+
+Phase 6：Stabilize
+
+1. 最终 Quality Gate
+2. promote preview to stable
+3. 打 release package
+4. 生成 changelog
+5. 支持 rollback
+
+⸻
+
+17. 第一版应用最终结构总结
+
+Skill Growth Studio v0.1
+核心理念：
+- Observe 负责增殖：从 runtime 中发现生长机会。
+- Grow 负责凋亡：审查、克制、合并、归档。
+- Rehearse 负责排练：在隔离 OpenCode runtime 中体验 preview skill。
+- Stabilize 负责固化：快照、归档、打包、发布稳定版本。
+硬原则：
+- 不在中间停顿提问，先完成全量分析。
+- Growth Proposal 后一键确认。
+- Grow 默认 dry-run。
+- live run 前必须打 tar.gz 快照。
+- 永不删除，只归档。
+- 批量 edit 后自动 Quality Gate。
+- 新 API 端点必须从文档检查、基础测试、manifest、tool wrapper、preview skill 流程进入。
+- 人不是审批员，而是导演，通过 preview chat 体验和反馈。
+第一版核心产物：
+- Runtime Trace
+- Runtime Replay Card
+- Growth Opportunities
+- Growth Proposal
+- Dry-run Plan
+- Patch Diff
+- Archive Manifest
+- Snapshot Manifest
+- Endpoint Manifest
+- API Endpoint Test Report
+- Preview Skill
+- Director Notes
+- Quality Report
+- Release Package
+
+⸻
+
+我觉得这版设计已经从“Skill 优化工具”升级成了一个真正的 Skill 生命周期管理 runtime。
+
+它的关键不是自动改文件，而是建立一套纪律：
+
+观察时发散，生长时克制；动手前快照，废弃不删除；新能力先测试，稳定后沉淀；人负责体验，系统负责循环。
