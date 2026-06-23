@@ -19,7 +19,8 @@ export interface ChatCompletionResponse {
 export declare class LocalV1Client {
     private baseURL;
     private apiKey;
-    constructor(baseURL?: string, apiKey?: string);
+    private defaultModel;
+    constructor(baseURL?: string, apiKey?: string, defaultModel?: string);
     chatCompletion(opts: ChatCompletionOptions): Promise<ChatCompletionResponse>;
 }
 //# sourceMappingURL=client.d.ts.map

@@ -166,6 +166,7 @@ export declare const OpencodeRuntime: z.ZodObject<{
     port: z.ZodNumber;
     base_url: z.ZodString;
     open_url: z.ZodString;
+    open_url_with_auth: z.ZodOptional<z.ZodString>;
     proxy_url: z.ZodString;
     workspace_path: z.ZodString;
     opencode_config_dir: z.ZodString;
@@ -217,7 +218,7 @@ export declare const DirectorReview: z.ZodObject<{
         "stabilize-release": "stabilize-release";
     }>;
     skill_id: z.ZodString;
-    preview_id: z.ZodString;
+    preview_id: z.ZodOptional<z.ZodString>;
     content: z.ZodString;
     created_at: z.ZodString;
 }, z.core.$strip>;

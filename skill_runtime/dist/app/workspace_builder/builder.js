@@ -3,6 +3,7 @@ import path from "node:path";
 import { getStageContract } from "../orchestration/stageContracts.js";
 import { stageDir, stageWorkspaceDir, stageInputDir, stageOutputDir, stageWorkDir, skillStableDir, skillPreviewDir, toPosix, } from "../shared/utils/paths.js";
 import { buildOpencodeConfig } from "./opencodeConfig.js";
+import { archiveFiles } from "../snapshot_manager/archive.js";
 import { utcTimestamp } from "../shared/utils/time.js";
 async function copyDir(src, dest) {
     await fs.mkdir(dest, { recursive: true });
@@ -93,12 +94,51 @@ export async function buildStageWorkspace(opts) {
     // 9. Write stage-digest.md template
     const digestPath = path.join(baseDir, "stage-digest.md");
     await fs.writeFile(digestPath, `# Stage Digest\n\n## Stage\n${stage_id}\n## Attempt\n${attempt}\n## Current Goal\n${contract.agent_role}\n## Completed Outputs\n\n## Key Findings\n\n## Next Recommended Action\n\n`, "utf-8");
-    return workspaceDir;
+    return { workspaceDir, opencodeConfig: config };
 }
 export async function syncWorkToPreview(skillId, runId, stageId, attempt, previewId) {
     const workDir = stageWorkDir(runId, stageId, attempt);
     const previewDir = skillPreviewDir(skillId, previewId);
     await fs.mkdir(previewDir, { recursive: true });
+    if (!(await fileExists(workDir))) {
+        return;
+    }
+    // Archive files that exist in preview but were removed in work/
+    const workFiles = await listRelativeFiles(workDir);
+    const previewFiles = await listRelativeFiles(previewDir);
+    const removed = previewFiles.filter((f) => !workFiles.includes(f));
+    if (removed.length > 0) {
+        await archiveFiles(skillId, removed.map((f) => ({
+            originalPath: path.join("previews", previewId, f),
+            reason: "removed during stage work",
+        })), "sync-work-to-preview", runId);
+    }
     await copyDir(workDir, previewDir);
+}
+async function listRelativeFiles(dir) {
+    const files = [];
+    async function walk(current, prefix) {
+        const entries = await fs.readdir(current, { withFileTypes: true });
+        for (const entry of entries) {
+            const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+            if (entry.isDirectory()) {
+                await walk(path.join(current, entry.name), rel);
+            }
+            else {
+                files.push(rel);
+            }
+        }
+    }
+    await walk(dir, "");
+    return files;
+}
+async function fileExists(p) {
+    try {
+        await fs.access(p);
+        return true;
+    }
+    catch {
+        return false;
+    }
 }
 //# sourceMappingURL=builder.js.map

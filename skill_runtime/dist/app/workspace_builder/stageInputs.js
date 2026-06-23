@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { stageInputDir, apiDocsDir } from "../shared/utils/paths.js";
+import { stageInputDir, stageOutputDir, apiDocsDir } from "../shared/utils/paths.js";
 async function copyDir(src, dest) {
     await fs.mkdir(dest, { recursive: true });
     const entries = await fs.readdir(src, { withFileTypes: true });
@@ -42,9 +42,10 @@ export async function prepareStageInputs(opts) {
     }
 }
 export async function copyDirectorReview(run_id, fromStageId, fromAttempt, toStageId, toAttempt) {
-    const src = path.join(stageInputDir(run_id, fromStageId, fromAttempt), "director-review.md");
+    const src = path.join(stageOutputDir(run_id, fromStageId, fromAttempt), "director-review.md");
     const dest = path.join(stageInputDir(run_id, toStageId, toAttempt), "director-review.md");
     try {
+        await fs.mkdir(path.dirname(dest), { recursive: true });
         await fs.copyFile(src, dest);
     }
     catch {

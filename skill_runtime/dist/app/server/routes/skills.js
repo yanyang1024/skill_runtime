@@ -1,10 +1,12 @@
 import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
+import YAML from "yaml";
 import { skillRoot, toPosix, runsDir, skillStableDir, skillPreviewDir, skillReleaseDir } from "../../shared/utils/paths.js";
 import { loadRunState } from "../../orchestration/stateMachine.js";
 import { createStableSnapshot } from "../../snapshot_manager/snapshot.js";
 import { rollbackSkill } from "../../snapshot_manager/rollback.js";
+import { archiveFiles } from "../../snapshot_manager/archive.js";
 import { filenameTimestamp } from "../../shared/utils/time.js";
 const router = Router();
 async function buildTree(absPath, skillRootPath) {
@@ -102,16 +104,25 @@ router.post("/:skillId/promote", async (req, res) => {
         const snapshot = await createStableSnapshot(skillId, "promote", runId);
         // 2. move old stable to releases
         const ts = filenameTimestamp();
-        const releaseDir = skillReleaseDir(skillId, `v0.1-${ts}`);
+        let releaseVersion = `v0.1-${ts}`;
+        try {
+            const skillYaml = YAML.parse(await fs.readFile(path.join(skillStableDir(skillId), "skill.yaml"), "utf-8"));
+            releaseVersion = bumpVersion(String(skillYaml.version ?? "0.1.0"));
+        }
+        catch {
+            // no skill.yaml yet, fall back to timestamped version
+        }
+        const releaseDir = skillReleaseDir(skillId, releaseVersion);
         await copyDir(skillStableDir(skillId), releaseDir);
-        // 3. copy preview to stable
+        // 3. archive old stable instead of deleting, then recreate empty stable and copy preview
         const previewDir = skillPreviewDir(skillId, previewId);
-        await fs.rm(skillStableDir(skillId), { recursive: true, force: true });
+        await archiveFiles(skillId, [{ originalPath: "stable", reason: `promote old stable to release ${releaseVersion}` }], "promote", runId);
+        await fs.mkdir(skillStableDir(skillId), { recursive: true });
         await copyDir(previewDir, skillStableDir(skillId));
         // 4. write changelog
         const changelogPath = path.join(skillStableDir(skillId), "CHANGELOG.md");
-        await fs.writeFile(changelogPath, `# Changelog\n\n## v0.1-${ts}\n\n- Promoted from preview ${previewId}\n- Run: ${runId ?? "N/A"}\n- Snapshot: ${snapshot.snapshot_id}\n`, "utf-8");
-        res.json({ ok: true, release_version: `v0.1-${ts}`, snapshot_id: snapshot.snapshot_id });
+        await fs.writeFile(changelogPath, `# Changelog\n\n## ${releaseVersion}\n\n- Promoted from preview ${previewId}\n- Run: ${runId ?? "N/A"}\n- Snapshot: ${snapshot.snapshot_id}\n`, "utf-8");
+        res.json({ ok: true, release_version: releaseVersion, snapshot_id: snapshot.snapshot_id });
     }
     catch (err) {
         res.status(500).json({ error: String(err) });
@@ -127,5 +138,15 @@ router.post("/:skillId/rollback", async (req, res) => {
         res.status(500).json({ error: String(err) });
     }
 });
+function bumpVersion(current) {
+    const clean = current.replace(/^v/, "");
+    const parts = clean.split(".").map(Number);
+    if (parts.length < 3) {
+        while (parts.length < 3)
+            parts.push(0);
+    }
+    parts[2] = (parts[2] ?? 0) + 1;
+    return `v${parts.join(".")}`;
+}
 export default router;
 //# sourceMappingURL=skills.js.map

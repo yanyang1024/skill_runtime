@@ -1,6 +1,7 @@
 import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -44,13 +45,31 @@ async function isPortReachable(url) {
         return false;
     }
 }
-function startOpencodeServer() {
+async function startOpencodeServer() {
+    const configPath = path.join(os.tmpdir(), `opencode-test-config-${Date.now()}.json`);
+    await fs.writeFile(configPath, JSON.stringify({
+        $schema: "https://opencode.ai/config.json",
+        model: "local-v1/glm4:9b",
+        provider: {
+            "local-v1": {
+                npm: "@ai-sdk/openai-compatible",
+                options: {
+                    baseURL: "http://172.24.16.1:11434/v1",
+                    apiKey: "local",
+                },
+            },
+        },
+        server: {
+            port: 4096,
+            hostname: "127.0.0.1",
+        },
+    }, null, 2), "utf-8");
     return new Promise((resolve, reject) => {
         const proc = spawn("opencode", ["serve", "--port", "4096", "--hostname", "127.0.0.1"], {
             cwd: REPO_ROOT,
             env: {
                 ...process.env,
-                OPENCODE_CONFIG: "/home/yy/opencode_server_use/opencode.json",
+                OPENCODE_CONFIG: configPath,
                 OPENCODE_SERVER_PASSWORD: OPENCODE_PASSWORD,
                 OPENCODE_SERVER_USERNAME: OPENCODE_USERNAME,
             },
@@ -255,7 +274,7 @@ describe("opencode server", () => {
         }
         const resp = await postJson(`${OPENCODE_BASE_URL}/session/${sessionId}/prompt_async`, {
             parts: [{ type: "text", text: "用两个字回答：你好" }],
-            model: { providerID: "ollama", modelID: "glm4:9b" },
+            model: { providerID: "local-v1", modelID: "glm4:9b" },
         }, { username: OPENCODE_USERNAME, password: OPENCODE_PASSWORD });
         // prompt_async returns 200/202/204 with an empty body or task id
         assert.ok([200, 202, 204].includes(resp.status));

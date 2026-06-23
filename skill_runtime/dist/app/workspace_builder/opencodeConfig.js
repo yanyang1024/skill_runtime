@@ -2,6 +2,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
 import { REPO_ROOT } from "../shared/utils/paths.js";
+async function loadLocalV1Config() {
+    const configPath = path.join(REPO_ROOT, "configs", "model-providers", "local-v1.yaml");
+    try {
+        const raw = await fs.readFile(configPath, "utf-8");
+        return YAML.parse(raw);
+    }
+    catch {
+        return {};
+    }
+}
 async function loadCustomProviders() {
     const customPath = process.env.SKILL_GROWTH_PROVIDERS_CONFIG ??
         path.join(REPO_ROOT, "configs", "model-providers", "custom.yaml");
@@ -10,36 +20,44 @@ async function loadCustomProviders() {
         raw = await fs.readFile(customPath, "utf-8");
     }
     catch {
-        return {};
+        return { providers: {} };
     }
     let parsed;
     try {
         parsed = YAML.parse(raw);
     }
     catch {
-        return {};
+        return { providers: {} };
     }
-    return parsed.providers ?? parsed.provider ?? {};
+    return {
+        providers: parsed.providers ?? parsed.provider ?? {},
+        default_model: parsed.default_model,
+        small_model: parsed.small_model,
+    };
 }
 export async function buildOpencodeConfig(opts) {
     const customProviders = await loadCustomProviders();
+    const localV1 = await loadLocalV1Config();
+    const localV1BaseURL = process.env.SKILL_GROWTH_LOCAL_V1_URL ?? localV1.endpoint ?? "http://172.24.16.1:11434/v1";
+    const localV1ApiKey = localV1.api_key ?? "local";
+    const localV1Model = localV1.model ?? "glm4:9b";
     const defaultModel = process.env.SKILL_GROWTH_DEFAULT_MODEL ??
         customProviders.default_model ??
-        "local-v1/glm4:9b";
+        `local-v1/${localV1Model}`;
     const smallModel = process.env.SKILL_GROWTH_SMALL_MODEL ??
         customProviders.small_model ??
-        "local-v1/glm4:9b";
+        `local-v1/${localV1Model}`;
     const providers = {
         "local-v1": {
             npm: "@ai-sdk/openai-compatible",
             name: "Local OpenAI-Compatible",
             options: {
-                baseURL: "http://172.24.16.1:11434/v1",
-                apiKey: "local",
+                baseURL: localV1BaseURL,
+                apiKey: localV1ApiKey,
             },
             models: {
-                "glm4:9b": {
-                    name: "GLM4 9B",
+                [localV1Model]: {
+                    name: localV1Model,
                     tools: false,
                     capabilities: { input: ["text"], output: ["text"] },
                     limit: { context: 131072, output: 8192 },

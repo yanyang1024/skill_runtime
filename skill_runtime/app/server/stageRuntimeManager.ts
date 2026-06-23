@@ -13,14 +13,21 @@ import { buildBwrapCommand, shouldUseBwrap } from "../workspace_builder/bwrap.js
 
 export interface RunningStage extends OpencodeRuntime {
   process: ReturnType<typeof spawn>;
+  exit_code?: number | null;
+  exit_signal?: string | null;
+  active_session_id?: string;
+  abort_event_stream?: () => void;
 }
 
 const runtimes = new Map<string, RunningStage>();
 let nextPort = 9000;
 
-function allocatePort(): number {
-  const port = nextPort++;
-  return port;
+async function allocatePort(): Promise<number> {
+  while (true) {
+    const port = nextPort++;
+    const open = await isPortOpen(port);
+    if (!open) return port;
+  }
 }
 
 function generateServerId(runId: string, stageId: StageId, attempt: number): string {
@@ -46,6 +53,48 @@ async function isPortOpen(port: number, host = "127.0.0.1", timeout = 2000): Pro
   });
 }
 
+async function verifyProvider(
+  baseUrl: string,
+  defaultModel: string,
+  auth: string,
+): Promise<void> {
+  const providerId = defaultModel.split("/")[0];
+  if (!providerId) return;
+
+  const resp = await fetch(`${baseUrl}/provider`, {
+    headers: { authorization: `Basic ${auth}` },
+  });
+  if (!resp.ok) {
+    throw new Error(`provider list unavailable: ${resp.status}`);
+  }
+  const data = (await resp.json()) as
+    | { providers?: Array<{ id?: string }> }
+    | Array<{ id?: string }>;
+  const providers = Array.isArray(data) ? data : (data.providers ?? []);
+  if (!providers.some((p) => p.id === providerId)) {
+    throw new Error(`configured provider "${providerId}" not found in opencode runtime`);
+  }
+}
+
+async function verifyRuntimeConfig(
+  baseUrl: string,
+  expectedModel: string,
+  auth: string,
+): Promise<void> {
+  const resp = await fetch(`${baseUrl}/config`, {
+    headers: { authorization: `Basic ${auth}` },
+  });
+  if (!resp.ok) {
+    throw new Error(`config endpoint unavailable: ${resp.status}`);
+  }
+  const data = (await resp.json()) as { model?: string };
+  if (data.model && data.model !== expectedModel) {
+    throw new Error(
+      `runtime model mismatch: expected "${expectedModel}", got "${data.model}"`,
+    );
+  }
+}
+
 async function waitForHealth(
   port: number,
   proc: ReturnType<typeof spawn>,
@@ -53,6 +102,11 @@ async function waitForHealth(
 ): Promise<boolean> {
   const started = Date.now();
   let output = "";
+  let resolved = false;
+
+  const username = process.env.OPENCODE_SERVER_USERNAME ?? "opencode";
+  const password = process.env.OPENCODE_SERVER_PASSWORD ?? "skillgrowth";
+  const auth = Buffer.from(`${username}:${password}`).toString("base64");
 
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -61,15 +115,7 @@ async function waitForHealth(
     }, timeout);
 
     const onStdout = (chunk: Buffer) => {
-      const text = chunk.toString();
-      output += text;
-      if (text.includes("Web interface:") || text.includes("opencode server listening on")) {
-        // Give it a moment then resolve
-        setTimeout(() => {
-          cleanup();
-          resolve(true);
-        }, 500);
-      }
+      output += chunk.toString();
     };
 
     const onStderr = (chunk: Buffer) => {
@@ -92,15 +138,21 @@ async function waitForHealth(
     proc.stderr?.on("data", onStderr);
     proc.on("exit", onExit);
 
-    // Also poll health endpoint
+    // Poll TCP + real health endpoint to avoid resolving on a stray service
     const poll = setInterval(async () => {
+      if (resolved) return;
+      if (Date.now() - started > timeout) {
+        clearInterval(poll);
+        return;
+      }
       try {
-        if (Date.now() - started > timeout) {
-          clearInterval(poll);
-          return;
-        }
-        const open = await isPortOpen(port);
-        if (open) {
+        const open = await isPortOpen(port, "127.0.0.1", 500);
+        if (!open) return;
+        const resp = await fetch(`http://127.0.0.1:${port}/global/health`, {
+          headers: { authorization: `Basic ${auth}` },
+        });
+        if (resp.ok) {
+          resolved = true;
           clearInterval(poll);
           cleanup();
           resolve(true);
@@ -136,7 +188,7 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
       return existing;
     }
     // stale entry, stop it
-    stopStageRuntime(serverId);
+    await stopStageRuntime(serverId);
   }
 
   // Snapshot before start if required
@@ -149,7 +201,7 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
     }
   }
 
-  const port = allocatePort();
+  const port = await allocatePort();
   const corsOrigins = opts.corsOrigins ?? ["http://localhost:3000"];
 
   // Build workspace
@@ -180,7 +232,7 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
     throw new Error(`Run not found: ${opts.run_id}`);
   }
 
-  const workspaceDir = await buildStageWorkspace({
+  const { workspaceDir, opencodeConfig } = await buildStageWorkspace({
     runState,
     stageState,
     port,
@@ -234,6 +286,18 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
 
   await waitForHealth(port, proc);
 
+  const username = process.env.OPENCODE_SERVER_USERNAME ?? "opencode";
+  const password = process.env.OPENCODE_SERVER_PASSWORD ?? "skillgrowth";
+  const authToken = Buffer.from(`${username}:${password}`).toString("base64url");
+  const auth = Buffer.from(`${username}:${password}`).toString("base64");
+  const openUrl = `http://127.0.0.1:${port}`;
+
+  const defaultModel = String(opencodeConfig.model ?? "");
+  if (defaultModel) {
+    await verifyProvider(openUrl, defaultModel, auth);
+    await verifyRuntimeConfig(openUrl, defaultModel, auth);
+  }
+
   const runtime: RunningStage = {
     server_id: serverId,
     stage_id: opts.stage_id,
@@ -241,8 +305,9 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
     skill_id: opts.skill_id,
     runtime_mode: contract.runtime_mode,
     port,
-    base_url: `http://127.0.0.1:${port}`,
-    open_url: `http://127.0.0.1:${port}`,
+    base_url: openUrl,
+    open_url: openUrl,
+    open_url_with_auth: `${openUrl}?auth_token=${authToken}`,
     proxy_url: `/api/runs/${opts.run_id}/stage/${opts.stage_id}/view/`,
     workspace_path: workspaceDir,
     opencode_config_dir: path.join(workspaceDir, ".opencode"),
@@ -253,10 +318,12 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
 
   runtimes.set(serverId, runtime);
 
-  proc.on("exit", () => {
+  proc.on("exit", (code, signal) => {
     const rt = runtimes.get(serverId);
     if (rt) {
       rt.status = "stopped";
+      rt.exit_code = code;
+      rt.exit_signal = signal;
     }
   });
 
@@ -269,28 +336,62 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
   return runtime;
 }
 
-export function stopStageRuntime(serverId: string): boolean {
-  const runtime = runtimes.get(serverId);
-  if (!runtime) return false;
-  try {
-    runtime.process.kill();
-  } catch {
-    // ignore
-  }
-  runtime.status = "stopped";
-  runtimes.delete(serverId);
-  return true;
+export interface StopRuntimeResult {
+  stopped: boolean;
+  exit_code: number | null;
+  exit_signal: string | null;
 }
 
-export function stopAllRuntimes(): void {
-  for (const runtime of runtimes.values()) {
-    try {
-      runtime.process.kill();
-    } catch {
-      // ignore
-    }
+export async function stopStageRuntime(
+  serverId: string,
+  gracefulTimeout = 5000,
+): Promise<StopRuntimeResult> {
+  const runtime = runtimes.get(serverId);
+  if (!runtime) {
+    return { stopped: false, exit_code: null, exit_signal: null };
   }
-  runtimes.clear();
+
+  const proc = runtime.process;
+  if (proc.exitCode !== null || proc.signalCode !== null) {
+    runtime.status = "stopped";
+    runtimes.delete(serverId);
+    return {
+      stopped: true,
+      exit_code: proc.exitCode,
+      exit_signal: proc.signalCode,
+    };
+  }
+
+  const exited = new Promise<void>((resolve) => {
+    proc.once("exit", () => resolve());
+  });
+
+  proc.kill("SIGTERM");
+  const killTimer = setTimeout(() => {
+    proc.kill("SIGKILL");
+  }, gracefulTimeout);
+
+  await Promise.race([
+    exited,
+    new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout waiting for process exit")), gracefulTimeout + 2000),
+    ),
+  ]);
+  clearTimeout(killTimer);
+
+  const result: StopRuntimeResult = {
+    stopped: true,
+    exit_code: proc.exitCode ?? null,
+    exit_signal: proc.signalCode ?? null,
+  };
+  runtime.status = "stopped";
+  runtimes.delete(serverId);
+  return result;
+}
+
+export async function stopAllRuntimes(): Promise<void> {
+  const ids = Array.from(runtimes.keys());
+  await Promise.all(ids.map((id) => stopStageRuntime(id)));
 }
 
 export function listRuntimes(): OpencodeRuntime[] {

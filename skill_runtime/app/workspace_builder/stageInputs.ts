@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { StageId } from "../shared/schemas/index.js";
-import { stageInputDir, apiDocsDir } from "../shared/utils/paths.js";
+import { stageInputDir, stageOutputDir, apiDocsDir } from "../shared/utils/paths.js";
 
 async function copyDir(src: string, dest: string): Promise<void> {
   await fs.mkdir(dest, { recursive: true });
@@ -58,9 +58,10 @@ export async function copyDirectorReview(
   toStageId: StageId,
   toAttempt: number,
 ): Promise<void> {
-  const src = path.join(stageInputDir(run_id, fromStageId, fromAttempt), "director-review.md");
+  const src = path.join(stageOutputDir(run_id, fromStageId, fromAttempt), "director-review.md");
   const dest = path.join(stageInputDir(run_id, toStageId, toAttempt), "director-review.md");
   try {
+    await fs.mkdir(path.dirname(dest), { recursive: true });
     await fs.copyFile(src, dest);
   } catch {
     // ignore if not exists

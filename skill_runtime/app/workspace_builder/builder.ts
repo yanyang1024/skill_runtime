@@ -15,6 +15,7 @@ import {
   toPosix,
 } from "../shared/utils/paths.js";
 import { buildOpencodeConfig } from "./opencodeConfig.js";
+import { archiveFiles } from "../snapshot_manager/archive.js";
 import { utcTimestamp } from "../shared/utils/time.js";
 
 async function copyDir(src: string, dest: string): Promise<void> {
@@ -50,7 +51,12 @@ export interface BuildWorkspaceOptions {
   previousAttempt?: number;
 }
 
-export async function buildStageWorkspace(opts: BuildWorkspaceOptions): Promise<string> {
+export interface BuildWorkspaceResult {
+  workspaceDir: string;
+  opencodeConfig: Record<string, unknown>;
+}
+
+export async function buildStageWorkspace(opts: BuildWorkspaceOptions): Promise<BuildWorkspaceResult> {
   const { runState, stageState, port, corsOrigins, previousStageId, previousAttempt } = opts;
   const { run_id, skill_id, preview_id } = runState;
   const { stage_id, attempt } = stageState;
@@ -137,7 +143,7 @@ export async function buildStageWorkspace(opts: BuildWorkspaceOptions): Promise<
     "utf-8",
   );
 
-  return workspaceDir;
+  return { workspaceDir, opencodeConfig: config };
 }
 
 export async function syncWorkToPreview(
@@ -150,5 +156,52 @@ export async function syncWorkToPreview(
   const workDir = stageWorkDir(runId, stageId, attempt);
   const previewDir = skillPreviewDir(skillId, previewId);
   await fs.mkdir(previewDir, { recursive: true });
+
+  if (!(await fileExists(workDir))) {
+    return;
+  }
+
+  // Archive files that exist in preview but were removed in work/
+  const workFiles = await listRelativeFiles(workDir);
+  const previewFiles = await listRelativeFiles(previewDir);
+  const removed = previewFiles.filter((f) => !workFiles.includes(f));
+  if (removed.length > 0) {
+    await archiveFiles(
+      skillId,
+      removed.map((f) => ({
+        originalPath: path.join("previews", previewId, f),
+        reason: "removed during stage work",
+      })),
+      "sync-work-to-preview",
+      runId,
+    );
+  }
+
   await copyDir(workDir, previewDir);
+}
+
+async function listRelativeFiles(dir: string): Promise<string[]> {
+  const files: string[] = [];
+  async function walk(current: string, prefix: string) {
+    const entries = await fs.readdir(current, { withFileTypes: true });
+    for (const entry of entries) {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        await walk(path.join(current, entry.name), rel);
+      } else {
+        files.push(rel);
+      }
+    }
+  }
+  await walk(dir, "");
+  return files;
+}
+
+async function fileExists(p: string): Promise<boolean> {
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
+  }
 }

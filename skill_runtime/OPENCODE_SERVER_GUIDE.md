@@ -84,7 +84,7 @@
       "name": "DeepSeek API",
       "options": {
         "baseURL": "https://api.deepseek.com/v1",
-        "apiKey": "deepseek-api-key"
+        "apiKey": "ds-apikey"
       },
       "models": {
         "deepseek-v4-pro": {

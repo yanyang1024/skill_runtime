@@ -32,7 +32,7 @@
 | Schema / 类型 | Zod | 所有持久化结构先在 `app/shared/schemas/index.ts` 定义 schema |
 | Web 后端 | Express | 提供 REST API、SSE、静态 SPA、OpenCode Web UI 反向代理 |
 | Markdown 渲染 | `marked` | 前端渲染 `SKILL.md`、replay card、proposal 等 |
-| 子进程 | `cross-spawn` | 启动 `opencode web` / `opencode serve` |
+| 子进程 | `cross-spawn` | 启动 `opencode web` |
 | YAML/JSON | `yaml` | 解析/序列化配置文件和产物 |
 | 快照打包 | `tar` (npm) | 生成 `.Grow_backups/stable|preview/<skill>/<UTC>.tar.gz` |
 | 反向代理 | `http-proxy-middleware` / `fetch` | 用于阶段 Web UI 代理到同源路径 |

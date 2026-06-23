@@ -73,6 +73,7 @@ export const OpencodeRuntime = z.object({
     port: z.number().int(),
     base_url: z.string().url(),
     open_url: z.string().url(),
+    open_url_with_auth: z.string().url().optional(),
     proxy_url: z.string(),
     workspace_path: FilePath,
     opencode_config_dir: FilePath,
@@ -104,7 +105,7 @@ export const DirectorReview = z.object({
     run_id: z.string(),
     stage_id: StageId,
     skill_id: SkillId,
-    preview_id: z.string(),
+    preview_id: z.string().optional(),
     content: z.string(),
     created_at: UtcTimestamp,
 });

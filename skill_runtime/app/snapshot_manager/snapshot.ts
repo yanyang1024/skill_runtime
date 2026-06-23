@@ -93,6 +93,10 @@ export async function restoreSnapshot(manifest: SnapshotManifest): Promise<void>
   const dest = manifest.preview_id
     ? skillPreviewDir(manifest.skill_id, manifest.preview_id)
     : skillStableDir(manifest.skill_id);
+  // Callers must archive the current state before restoring. We clear the
+  // destination so that files removed since the snapshot was taken do not
+  // linger after restore.
+  await fs.rm(dest, { recursive: true, force: true });
   await fs.mkdir(dest, { recursive: true });
   await tar.extract({
     gzip: true,

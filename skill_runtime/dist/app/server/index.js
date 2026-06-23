@@ -31,11 +31,11 @@ app.use("/api/events", eventsRouter);
 app.get("/api/health", (_req, res) => {
     res.json({ ok: true, service: "skill-growth-studio" });
 });
-// Static SPA
-app.use(express.static(path.join(__dirname, "../../app/ui")));
+// Static SPA: serve from repo root app/ui (non-TS assets are not copied to dist)
+app.use(express.static(path.join(REPO_ROOT, "app/ui")));
 // SPA fallback
 app.get("*", (_req, res) => {
-    res.sendFile(path.join(__dirname, "../../app/ui/index.html"));
+    res.sendFile(path.join(REPO_ROOT, "app/ui/index.html"));
 });
 const server = app.listen(PORT, () => {
     const address = server.address();
@@ -43,12 +43,12 @@ const server = app.listen(PORT, () => {
     emitStatus(`监听端口 ${actualPort}`, "idle");
     console.log(`Skill Growth Studio server listening on http://localhost:${actualPort}`);
 });
-process.on("SIGTERM", () => {
-    stopAllRuntimes();
+process.on("SIGTERM", async () => {
+    await stopAllRuntimes();
     process.exit(0);
 });
-process.on("SIGINT", () => {
-    stopAllRuntimes();
+process.on("SIGINT", async () => {
+    await stopAllRuntimes();
     process.exit(0);
 });
 //# sourceMappingURL=index.js.map

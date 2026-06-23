@@ -1,5 +1,6 @@
 import {
   createRun,
+  listRuns,
   startStage,
   stopStage,
   commitStage,
@@ -104,7 +105,7 @@ async function startSelectedStage() {
       attempt: currentAttempt,
     });
     currentServerId = result.server_id;
-    currentOpenUrl = result.open_url;
+    currentOpenUrl = result.open_url_with_auth ?? result.open_url;
     btnOpenOpencode.disabled = false;
     btnStopStage.disabled = false;
     btnCommitStage.disabled = false;
@@ -160,7 +161,7 @@ async function retrySelectedStage() {
     const result = await retryStage(currentRunId, currentStageId);
     currentAttempt = result.attempt;
     currentServerId = result.server_id;
-    currentOpenUrl = result.open_url;
+    currentOpenUrl = result.open_url_with_auth ?? result.open_url;
     btnOpenOpencode.disabled = false;
     btnStopStage.disabled = false;
     btnCommitStage.disabled = false;
