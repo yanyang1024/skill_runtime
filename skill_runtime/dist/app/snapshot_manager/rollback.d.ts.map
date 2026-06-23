@@ -1,0 +1,1 @@
+{"version":3,"file":"rollback.d.ts","sourceRoot":"","sources":["../../../app/snapshot_manager/rollback.ts"],"names":[],"mappings":"AAIA,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,4BAA4B,CAAC;AAGnE,wBAAsB,oBAAoB,CACxC,OAAO,EAAE,MAAM,EACf,UAAU,EAAE,MAAM,GACjB,OAAO,CAAC,gBAAgB,GAAG,IAAI,CAAC,CA0ClC;AAED,wBAAsB,aAAa,CAAC,OAAO,EAAE,MAAM,EAAE,UAAU,EAAE,MAAM,GAAG,OAAO,CAAC,IAAI,CAAC,CAMtF"}

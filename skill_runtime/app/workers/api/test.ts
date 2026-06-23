@@ -29,7 +29,7 @@ export async function runApiTest(
   const relativePath = ep.path.replace(/^\//, "");
   const normalizedBase = baseURL.endsWith("/") ? baseURL : `${baseURL}/`;
   const url = new URL(relativePath, normalizedBase);
-  if (ep.required_params.includes("lot_id")) url.searchParams.set("lot_id", "LOT-001");
+  if (ep.required_params?.includes("lot_id")) url.searchParams.set("lot_id", "LOT-001");
   const res = await fetch(url.toString());
   results.push({
     test_id: `${endpointId}_existence`,

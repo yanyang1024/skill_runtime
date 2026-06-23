@@ -1,7 +1,7 @@
 {
   "name": "skill_runtime",
   "version": "1.0.0",
-  "description": "Skill Growth Studio v0.1 - 本地 Skill 生命周期管理应用",
+  "description": "Skill Growth Studio v0.2 - 基于多 OpenCode Web Runtime 的本地 Skill 生命周期导演台",
   "type": "module",
   "main": "dist/app/server/index.js",
   "scripts": {

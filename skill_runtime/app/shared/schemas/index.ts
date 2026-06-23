@@ -8,16 +8,287 @@ export const UtcTimestamp = z.string().datetime({ offset: true });
 export const FilePath = z.string().min(1);
 export const SkillId = z.string().regex(/^[a-z0-9-]+$/);
 
+export const StageId = z.enum([
+  "observe-log-review",
+  "observe-api-scan",
+  "grow-plan",
+  "grow-build",
+  "grow-quality-review",
+  "rehearse-preview",
+  "rehearse-iteration",
+  "stabilize-release",
+]);
+
+export type StageId = z.infer<typeof StageId>;
+
 export const RiskLevel = z.enum(["low", "medium", "high"]);
 
 // ---------------------------------------------------------------------------
-// Runtime Trace
+// Stage Runtime Contract
 // ---------------------------------------------------------------------------
 
-export const UserUtterance = z.object({
-  turn_id: z.string(),
-  text: z.string(),
+export const StageRuntimeContract = z.object({
+  stage_id: StageId,
+  runtime_mode: z.enum(["web", "serve"]),
+  agent_role: z.enum(["observe", "plan", "build", "review", "preview", "iteration", "release"]),
+  skill_mount: z.enum(["stable-readonly", "preview-readonly", "preview-writable", "none"]),
+  work_writable: z.boolean(),
+  requires_snapshot_before_start: z.boolean(),
+  requires_quality_after_complete: z.boolean(),
+  expected_outputs: z.array(z.string()),
+  human_role: z.enum(["watch", "experience", "write-review", "none"]),
 });
+
+export type StageRuntimeContract = z.infer<typeof StageRuntimeContract>;
+
+// ---------------------------------------------------------------------------
+// Run / Stage 状态
+// ---------------------------------------------------------------------------
+
+export const RunState = z.object({
+  run_id: z.string(),
+  skill_id: SkillId,
+  preview_id: z.string().optional(),
+  current_stage: StageId.optional(),
+  status: z.enum(["idle", "running", "waiting_director", "completed", "failed"]),
+  created_at: UtcTimestamp,
+  updated_at: UtcTimestamp,
+});
+
+export type RunState = z.infer<typeof RunState>;
+
+export const StageState = z.object({
+  stage_id: StageId,
+  run_id: z.string(),
+  status: z.enum(["pending", "running", "waiting_input", "completed", "failed"]),
+  attempt: z.number().int().min(1),
+  server_id: z.string().optional(),
+  workspace_path: FilePath,
+  outputs: z.array(z.string()),
+  digest_path: FilePath,
+  created_at: UtcTimestamp,
+  updated_at: UtcTimestamp,
+});
+
+export type StageState = z.infer<typeof StageState>;
+
+export const StageTransition = z.object({
+  from: StageId,
+  to: StageId,
+  reason: z.enum(["normal", "fix", "rescan", "retry", "manual"]),
+  carry_outputs: z.array(z.string()),
+  created_at: UtcTimestamp,
+});
+
+export type StageTransition = z.infer<typeof StageTransition>;
+
+// ---------------------------------------------------------------------------
+// OpenCode Runtime 进程信息
+// ---------------------------------------------------------------------------
+
+export const OpencodeRuntime = z.object({
+  server_id: z.string(),
+  stage_id: StageId,
+  run_id: z.string(),
+  skill_id: SkillId,
+  runtime_mode: z.enum(["web", "serve"]),
+  port: z.number().int(),
+  base_url: z.string().url(),
+  open_url: z.string().url(),
+  proxy_url: z.string(),
+  workspace_path: FilePath,
+  opencode_config_dir: FilePath,
+  process_pid: z.number().int().optional(),
+  status: z.enum(["starting", "running", "stopped", "error"]),
+});
+
+export type OpencodeRuntime = z.infer<typeof OpencodeRuntime>;
+
+// ---------------------------------------------------------------------------
+// Prompt Recommender
+// ---------------------------------------------------------------------------
+
+export const PromptRecommendRequest = z.object({
+  stage_id: StageId,
+  run_id: z.string(),
+  server_id: z.string(),
+  recent_output_summary: z.string().optional(),
+  director_review: z.string().optional(),
+  goal: z.string().optional(),
+});
+
+export type PromptRecommendRequest = z.infer<typeof PromptRecommendRequest>;
+
+export const PromptRecommendResponse = z.object({
+  primary: z.string(),
+  alternatives: z.array(z.string()),
+  rationale: z.string(),
+  risk_hint: z.string().optional(),
+});
+
+export type PromptRecommendResponse = z.infer<typeof PromptRecommendResponse>;
+
+// ---------------------------------------------------------------------------
+// Director Review
+// ---------------------------------------------------------------------------
+
+export const DirectorReview = z.object({
+  review_id: z.string(),
+  run_id: z.string(),
+  stage_id: StageId,
+  skill_id: SkillId,
+  preview_id: z.string(),
+  content: z.string(),
+  created_at: UtcTimestamp,
+});
+
+export type DirectorReview = z.infer<typeof DirectorReview>;
+
+// ---------------------------------------------------------------------------
+// 快照与归档
+// ---------------------------------------------------------------------------
+
+export const SnapshotManifest = z.object({
+  snapshot_id: z.string(),
+  created_at: UtcTimestamp,
+  skill_id: SkillId,
+  preview_id: z.string().optional(),
+  path: FilePath,
+  included: z.array(FilePath),
+  triggered_by: z.string(),
+  source_run: z.string().optional(),
+  restore_command: z.string(),
+});
+
+export type SnapshotManifest = z.infer<typeof SnapshotManifest>;
+
+export const ArchiveManifest = z.object({
+  archive_id: z.string(),
+  created_at: UtcTimestamp,
+  skill_id: SkillId,
+  triggered_by: z.string(),
+  source_run: z.string().optional(),
+  archived_files: z.array(
+    z.object({
+      original_path: FilePath,
+      archive_path: FilePath,
+      reason: z.string(),
+      replacement: z.array(FilePath).optional(),
+    }),
+  ),
+  policy: z.object({
+    never_delete: z.literal(true),
+    can_restore: z.boolean(),
+  }),
+});
+
+export type ArchiveManifest = z.infer<typeof ArchiveManifest>;
+
+// ---------------------------------------------------------------------------
+// 轻量 Runtime Trace（由脚本从 eval prompt / session log 提取）
+// ---------------------------------------------------------------------------
+
+export const RuntimeTrace = z.object({
+  trace_id: z.string(),
+  skill_id: SkillId,
+  skill_version: z.string(),
+  session_id: z.string(),
+  created_at: UtcTimestamp,
+  raw_user_utterances: z.array(
+    z.object({
+      turn_id: z.string(),
+      text: z.string(),
+    }),
+  ),
+  intent_summary: z.string(),
+  runtime_context: z.object({
+    skill_files: z.array(FilePath),
+    tools_available: z.array(z.string()),
+    api_docs_available: z.boolean(),
+  }),
+  hard_signals: z.object({
+    tool_failures: z.array(z.string()),
+    api_failures: z.array(z.string()),
+    schema_errors: z.array(z.string()),
+    quality_gate_failures: z.array(z.string()),
+  }),
+  soft_signals: z.object({
+    user_experience: z.array(z.string()),
+    director_notes: z.array(z.string()),
+  }),
+  growth_candidates: z.array(
+    z.object({
+      type: z.string(),
+      summary: z.string(),
+      evidence: z.array(z.string()).optional(),
+    }),
+  ),
+});
+
+export type RuntimeTrace = z.infer<typeof RuntimeTrace>;
+
+// ---------------------------------------------------------------------------
+// Endpoint Manifest（保留但放宽）
+// ---------------------------------------------------------------------------
+
+export const EndpointStatus = z.enum([
+  "discovered",
+  "candidate",
+  "verified",
+  "active",
+  "deprecated",
+  "archived",
+]);
+
+export const EndpointManifest = z.object({
+  skill_id: SkillId,
+  updated_at: UtcTimestamp,
+  endpoints: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      status: EndpointStatus,
+      source: FilePath,
+      method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
+      path: z.string(),
+      description: z.string(),
+      required_params: z.array(z.string()).optional(),
+      optional_params: z.array(z.string()).optional(),
+      auth: z
+        .object({
+          type: z.string(),
+          required: z.boolean(),
+        })
+        .optional(),
+      risk_level: z.enum(["read_only", "write", "admin"]).optional(),
+      added_at: UtcTimestamp.optional(),
+      tests: z
+        .record(
+          z.string(),
+          z.object({
+            path: FilePath,
+            status: z.enum(["pending", "passed", "failed"]).default("pending"),
+          }),
+        )
+        .optional(),
+      skill_usage: z
+        .object({
+          allowed: z.boolean(),
+          reason: z.string().optional(),
+          usage_hint: z.string().optional(),
+        })
+        .optional(),
+    }),
+  ),
+});
+
+export type EndpointManifest = z.infer<typeof EndpointManifest>;
+
+
+// ---------------------------------------------------------------------------
+// 向下兼容的 schema（v0.2 重构期间保留，供旧 workers / 旧测试编译通过）
+// 这些 schema 在新架构中不再作为核心依赖，后续将逐步移除或重写对应代码。
+// ---------------------------------------------------------------------------
 
 export const ToolCall = z.object({
   tool_name: z.string(),
@@ -30,46 +301,6 @@ export const ScriptCall = z.object({
   status: z.enum(["success", "failure", "pending"]),
   summary: z.string().optional(),
 });
-
-export const GrowthCandidate = z.object({
-  type: z.string(),
-  summary: z.string(),
-  evidence: z.array(z.string()).optional(),
-});
-
-export const RuntimeTrace = z.object({
-  trace_id: z.string(),
-  skill_id: SkillId,
-  skill_version: z.string(),
-  session_id: z.string(),
-  created_at: UtcTimestamp,
-  raw_user_utterances: z.array(UserUtterance),
-  intent_summary: z.string(),
-  runtime_context: z.object({
-    skill_files: z.array(FilePath),
-    tools_available: z.array(z.string()),
-    api_docs_available: z.boolean(),
-  }),
-  tool_calls: z.array(ToolCall),
-  script_calls: z.array(ScriptCall),
-  hard_signals: z.object({
-    tool_failures: z.array(z.string()),
-    api_failures: z.array(z.string()),
-    schema_errors: z.array(z.string()),
-    quality_gate_failures: z.array(z.string()),
-  }),
-  soft_signals: z.object({
-    user_experience: z.array(z.string()),
-    director_notes: z.array(z.string()),
-  }),
-  growth_candidates: z.array(GrowthCandidate),
-});
-
-export type RuntimeTrace = z.infer<typeof RuntimeTrace>;
-
-// ---------------------------------------------------------------------------
-// Runtime Replay Card（Markdown 包装对象，便于前后端传递）
-// ---------------------------------------------------------------------------
 
 export const RuntimeReplayCard = z.object({
   card_id: z.string(),
@@ -88,10 +319,6 @@ export const RuntimeReplayCard = z.object({
 });
 
 export type RuntimeReplayCard = z.infer<typeof RuntimeReplayCard>;
-
-// ---------------------------------------------------------------------------
-// Growth Opportunities
-// ---------------------------------------------------------------------------
 
 export const GrowthOpportunity = z.object({
   id: z.string(),
@@ -119,10 +346,6 @@ export const GrowthOpportunities = z.object({
 });
 
 export type GrowthOpportunities = z.infer<typeof GrowthOpportunities>;
-
-// ---------------------------------------------------------------------------
-// Dry-run Plan
-// ---------------------------------------------------------------------------
 
 export const PlannedOperation = z.discriminatedUnion("type", [
   z.object({
@@ -187,10 +410,6 @@ export const DryRunPlan = z.object({
 export type DryRunPlan = z.infer<typeof DryRunPlan>;
 export type PlannedOperation = z.infer<typeof PlannedOperation>;
 
-// ---------------------------------------------------------------------------
-// Growth Proposal（Markdown 包装对象）
-// ---------------------------------------------------------------------------
-
 export const GrowthProposal = z.object({
   proposal_id: z.string(),
   run_id: z.string(),
@@ -200,127 +419,6 @@ export const GrowthProposal = z.object({
 });
 
 export type GrowthProposal = z.infer<typeof GrowthProposal>;
-
-// ---------------------------------------------------------------------------
-// Archive Manifest
-// ---------------------------------------------------------------------------
-
-export const ArchiveManifest = z.object({
-  archive_id: z.string(),
-  created_at: UtcTimestamp,
-  skill_id: SkillId,
-  triggered_by: z.string(),
-  source_run: z.string(),
-  archived_files: z.array(
-    z.object({
-      original_path: FilePath,
-      archive_path: FilePath,
-      reason: z.string(),
-      replacement: z.array(FilePath).optional(),
-    }),
-  ),
-  policy: z.object({
-    never_delete: z.literal(true),
-    can_restore: z.boolean(),
-  }),
-});
-
-export type ArchiveManifest = z.infer<typeof ArchiveManifest>;
-
-// ---------------------------------------------------------------------------
-// Snapshot Manifest
-// ---------------------------------------------------------------------------
-
-export const SnapshotManifest = z.object({
-  snapshot_id: z.string(),
-  created_at: UtcTimestamp,
-  skill_id: SkillId,
-  path: FilePath,
-  included: z.array(FilePath),
-  triggered_by: z.string(),
-  source_run: z.string(),
-  restore_command: z.string(),
-});
-
-export type SnapshotManifest = z.infer<typeof SnapshotManifest>;
-
-// ---------------------------------------------------------------------------
-// Endpoint Manifest
-// ---------------------------------------------------------------------------
-
-export const EndpointStatus = z.enum([
-  "discovered",
-  "candidate",
-  "verified",
-  "active",
-  "deprecated",
-  "archived",
-]);
-
-export const EndpointManifest = z.object({
-  skill_id: SkillId,
-  updated_at: UtcTimestamp,
-  endpoints: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      status: EndpointStatus,
-      source: FilePath,
-      method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
-      path: z.string(),
-      description: z.string(),
-      required_params: z.array(z.string()),
-      optional_params: z.array(z.string()).optional(),
-      auth: z.object({
-        type: z.string(),
-        required: z.boolean(),
-      }),
-      risk_level: z.enum(["read_only", "write", "admin"]),
-      added_at: UtcTimestamp,
-      tests: z
-        .record(
-          z.string(),
-          z.object({
-            path: FilePath,
-            status: z.enum(["pending", "passed", "failed"]).default("pending"),
-          }),
-        )
-        .optional(),
-      skill_usage: z.object({
-        allowed: z.boolean(),
-        reason: z.string().optional(),
-        usage_hint: z.string().optional(),
-      }),
-    }),
-  ),
-});
-
-export type EndpointManifest = z.infer<typeof EndpointManifest>;
-
-// ---------------------------------------------------------------------------
-// Director Notes
-// ---------------------------------------------------------------------------
-
-export const DirectorFeedback = z.object({
-  dimension: z.string(),
-  label: z.string(),
-  note: z.string(),
-});
-
-export const DirectorNotes = z.object({
-  preview_id: z.string(),
-  rehearse_id: z.string(),
-  skill_id: SkillId,
-  created_at: UtcTimestamp,
-  feedback: z.array(DirectorFeedback),
-  decision_hint: z.enum(["promote", "revise_minor", "revise_major", "discard"]).optional(),
-});
-
-export type DirectorNotes = z.infer<typeof DirectorNotes>;
-
-// ---------------------------------------------------------------------------
-// Quality Report
-// ---------------------------------------------------------------------------
 
 export const QualityCheckResult = z.object({
   check_id: z.string(),

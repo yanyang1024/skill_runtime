@@ -2,38 +2,256 @@ import { z } from "zod";
 export declare const UtcTimestamp: z.ZodString;
 export declare const FilePath: z.ZodString;
 export declare const SkillId: z.ZodString;
+export declare const StageId: z.ZodEnum<{
+    "observe-log-review": "observe-log-review";
+    "observe-api-scan": "observe-api-scan";
+    "grow-plan": "grow-plan";
+    "grow-build": "grow-build";
+    "grow-quality-review": "grow-quality-review";
+    "rehearse-preview": "rehearse-preview";
+    "rehearse-iteration": "rehearse-iteration";
+    "stabilize-release": "stabilize-release";
+}>;
+export type StageId = z.infer<typeof StageId>;
 export declare const RiskLevel: z.ZodEnum<{
     low: "low";
     medium: "medium";
     high: "high";
 }>;
-export declare const UserUtterance: z.ZodObject<{
-    turn_id: z.ZodString;
-    text: z.ZodString;
-}, z.core.$strip>;
-export declare const ToolCall: z.ZodObject<{
-    tool_name: z.ZodString;
-    status: z.ZodEnum<{
-        success: "success";
-        failure: "failure";
-        pending: "pending";
+export declare const StageRuntimeContract: z.ZodObject<{
+    stage_id: z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
     }>;
-    summary: z.ZodOptional<z.ZodString>;
-}, z.core.$strip>;
-export declare const ScriptCall: z.ZodObject<{
-    script_name: z.ZodString;
-    status: z.ZodEnum<{
-        success: "success";
-        failure: "failure";
-        pending: "pending";
+    runtime_mode: z.ZodEnum<{
+        web: "web";
+        serve: "serve";
     }>;
-    summary: z.ZodOptional<z.ZodString>;
+    agent_role: z.ZodEnum<{
+        observe: "observe";
+        plan: "plan";
+        build: "build";
+        review: "review";
+        preview: "preview";
+        iteration: "iteration";
+        release: "release";
+    }>;
+    skill_mount: z.ZodEnum<{
+        "stable-readonly": "stable-readonly";
+        "preview-readonly": "preview-readonly";
+        "preview-writable": "preview-writable";
+        none: "none";
+    }>;
+    work_writable: z.ZodBoolean;
+    requires_snapshot_before_start: z.ZodBoolean;
+    requires_quality_after_complete: z.ZodBoolean;
+    expected_outputs: z.ZodArray<z.ZodString>;
+    human_role: z.ZodEnum<{
+        none: "none";
+        watch: "watch";
+        experience: "experience";
+        "write-review": "write-review";
+    }>;
 }, z.core.$strip>;
-export declare const GrowthCandidate: z.ZodObject<{
-    type: z.ZodString;
-    summary: z.ZodString;
-    evidence: z.ZodOptional<z.ZodArray<z.ZodString>>;
+export type StageRuntimeContract = z.infer<typeof StageRuntimeContract>;
+export declare const RunState: z.ZodObject<{
+    run_id: z.ZodString;
+    skill_id: z.ZodString;
+    preview_id: z.ZodOptional<z.ZodString>;
+    current_stage: z.ZodOptional<z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
+    }>>;
+    status: z.ZodEnum<{
+        idle: "idle";
+        running: "running";
+        waiting_director: "waiting_director";
+        completed: "completed";
+        failed: "failed";
+    }>;
+    created_at: z.ZodString;
+    updated_at: z.ZodString;
 }, z.core.$strip>;
+export type RunState = z.infer<typeof RunState>;
+export declare const StageState: z.ZodObject<{
+    stage_id: z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
+    }>;
+    run_id: z.ZodString;
+    status: z.ZodEnum<{
+        running: "running";
+        completed: "completed";
+        failed: "failed";
+        pending: "pending";
+        waiting_input: "waiting_input";
+    }>;
+    attempt: z.ZodNumber;
+    server_id: z.ZodOptional<z.ZodString>;
+    workspace_path: z.ZodString;
+    outputs: z.ZodArray<z.ZodString>;
+    digest_path: z.ZodString;
+    created_at: z.ZodString;
+    updated_at: z.ZodString;
+}, z.core.$strip>;
+export type StageState = z.infer<typeof StageState>;
+export declare const StageTransition: z.ZodObject<{
+    from: z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
+    }>;
+    to: z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
+    }>;
+    reason: z.ZodEnum<{
+        normal: "normal";
+        fix: "fix";
+        rescan: "rescan";
+        retry: "retry";
+        manual: "manual";
+    }>;
+    carry_outputs: z.ZodArray<z.ZodString>;
+    created_at: z.ZodString;
+}, z.core.$strip>;
+export type StageTransition = z.infer<typeof StageTransition>;
+export declare const OpencodeRuntime: z.ZodObject<{
+    server_id: z.ZodString;
+    stage_id: z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
+    }>;
+    run_id: z.ZodString;
+    skill_id: z.ZodString;
+    runtime_mode: z.ZodEnum<{
+        web: "web";
+        serve: "serve";
+    }>;
+    port: z.ZodNumber;
+    base_url: z.ZodString;
+    open_url: z.ZodString;
+    proxy_url: z.ZodString;
+    workspace_path: z.ZodString;
+    opencode_config_dir: z.ZodString;
+    process_pid: z.ZodOptional<z.ZodNumber>;
+    status: z.ZodEnum<{
+        error: "error";
+        running: "running";
+        starting: "starting";
+        stopped: "stopped";
+    }>;
+}, z.core.$strip>;
+export type OpencodeRuntime = z.infer<typeof OpencodeRuntime>;
+export declare const PromptRecommendRequest: z.ZodObject<{
+    stage_id: z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
+    }>;
+    run_id: z.ZodString;
+    server_id: z.ZodString;
+    recent_output_summary: z.ZodOptional<z.ZodString>;
+    director_review: z.ZodOptional<z.ZodString>;
+    goal: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export type PromptRecommendRequest = z.infer<typeof PromptRecommendRequest>;
+export declare const PromptRecommendResponse: z.ZodObject<{
+    primary: z.ZodString;
+    alternatives: z.ZodArray<z.ZodString>;
+    rationale: z.ZodString;
+    risk_hint: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export type PromptRecommendResponse = z.infer<typeof PromptRecommendResponse>;
+export declare const DirectorReview: z.ZodObject<{
+    review_id: z.ZodString;
+    run_id: z.ZodString;
+    stage_id: z.ZodEnum<{
+        "observe-log-review": "observe-log-review";
+        "observe-api-scan": "observe-api-scan";
+        "grow-plan": "grow-plan";
+        "grow-build": "grow-build";
+        "grow-quality-review": "grow-quality-review";
+        "rehearse-preview": "rehearse-preview";
+        "rehearse-iteration": "rehearse-iteration";
+        "stabilize-release": "stabilize-release";
+    }>;
+    skill_id: z.ZodString;
+    preview_id: z.ZodString;
+    content: z.ZodString;
+    created_at: z.ZodString;
+}, z.core.$strip>;
+export type DirectorReview = z.infer<typeof DirectorReview>;
+export declare const SnapshotManifest: z.ZodObject<{
+    snapshot_id: z.ZodString;
+    created_at: z.ZodString;
+    skill_id: z.ZodString;
+    preview_id: z.ZodOptional<z.ZodString>;
+    path: z.ZodString;
+    included: z.ZodArray<z.ZodString>;
+    triggered_by: z.ZodString;
+    source_run: z.ZodOptional<z.ZodString>;
+    restore_command: z.ZodString;
+}, z.core.$strip>;
+export type SnapshotManifest = z.infer<typeof SnapshotManifest>;
+export declare const ArchiveManifest: z.ZodObject<{
+    archive_id: z.ZodString;
+    created_at: z.ZodString;
+    skill_id: z.ZodString;
+    triggered_by: z.ZodString;
+    source_run: z.ZodOptional<z.ZodString>;
+    archived_files: z.ZodArray<z.ZodObject<{
+        original_path: z.ZodString;
+        archive_path: z.ZodString;
+        reason: z.ZodString;
+        replacement: z.ZodOptional<z.ZodArray<z.ZodString>>;
+    }, z.core.$strip>>;
+    policy: z.ZodObject<{
+        never_delete: z.ZodLiteral<true>;
+        can_restore: z.ZodBoolean;
+    }, z.core.$strip>;
+}, z.core.$strip>;
+export type ArchiveManifest = z.infer<typeof ArchiveManifest>;
 export declare const RuntimeTrace: z.ZodObject<{
     trace_id: z.ZodString;
     skill_id: z.ZodString;
@@ -50,24 +268,6 @@ export declare const RuntimeTrace: z.ZodObject<{
         tools_available: z.ZodArray<z.ZodString>;
         api_docs_available: z.ZodBoolean;
     }, z.core.$strip>;
-    tool_calls: z.ZodArray<z.ZodObject<{
-        tool_name: z.ZodString;
-        status: z.ZodEnum<{
-            success: "success";
-            failure: "failure";
-            pending: "pending";
-        }>;
-        summary: z.ZodOptional<z.ZodString>;
-    }, z.core.$strip>>;
-    script_calls: z.ZodArray<z.ZodObject<{
-        script_name: z.ZodString;
-        status: z.ZodEnum<{
-            success: "success";
-            failure: "failure";
-            pending: "pending";
-        }>;
-        summary: z.ZodOptional<z.ZodString>;
-    }, z.core.$strip>>;
     hard_signals: z.ZodObject<{
         tool_failures: z.ZodArray<z.ZodString>;
         api_failures: z.ZodArray<z.ZodString>;
@@ -85,6 +285,84 @@ export declare const RuntimeTrace: z.ZodObject<{
     }, z.core.$strip>>;
 }, z.core.$strip>;
 export type RuntimeTrace = z.infer<typeof RuntimeTrace>;
+export declare const EndpointStatus: z.ZodEnum<{
+    discovered: "discovered";
+    candidate: "candidate";
+    verified: "verified";
+    active: "active";
+    deprecated: "deprecated";
+    archived: "archived";
+}>;
+export declare const EndpointManifest: z.ZodObject<{
+    skill_id: z.ZodString;
+    updated_at: z.ZodString;
+    endpoints: z.ZodArray<z.ZodObject<{
+        id: z.ZodString;
+        name: z.ZodString;
+        status: z.ZodEnum<{
+            discovered: "discovered";
+            candidate: "candidate";
+            verified: "verified";
+            active: "active";
+            deprecated: "deprecated";
+            archived: "archived";
+        }>;
+        source: z.ZodString;
+        method: z.ZodEnum<{
+            GET: "GET";
+            POST: "POST";
+            PUT: "PUT";
+            PATCH: "PATCH";
+            DELETE: "DELETE";
+        }>;
+        path: z.ZodString;
+        description: z.ZodString;
+        required_params: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        optional_params: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        auth: z.ZodOptional<z.ZodObject<{
+            type: z.ZodString;
+            required: z.ZodBoolean;
+        }, z.core.$strip>>;
+        risk_level: z.ZodOptional<z.ZodEnum<{
+            read_only: "read_only";
+            write: "write";
+            admin: "admin";
+        }>>;
+        added_at: z.ZodOptional<z.ZodString>;
+        tests: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
+            path: z.ZodString;
+            status: z.ZodDefault<z.ZodEnum<{
+                failed: "failed";
+                pending: "pending";
+                passed: "passed";
+            }>>;
+        }, z.core.$strip>>>;
+        skill_usage: z.ZodOptional<z.ZodObject<{
+            allowed: z.ZodBoolean;
+            reason: z.ZodOptional<z.ZodString>;
+            usage_hint: z.ZodOptional<z.ZodString>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
+export type EndpointManifest = z.infer<typeof EndpointManifest>;
+export declare const ToolCall: z.ZodObject<{
+    tool_name: z.ZodString;
+    status: z.ZodEnum<{
+        success: "success";
+        pending: "pending";
+        failure: "failure";
+    }>;
+    summary: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export declare const ScriptCall: z.ZodObject<{
+    script_name: z.ZodString;
+    status: z.ZodEnum<{
+        success: "success";
+        pending: "pending";
+        failure: "failure";
+    }>;
+    summary: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
 export declare const RuntimeReplayCard: z.ZodObject<{
     card_id: z.ZodString;
     trace_id: z.ZodString;
@@ -104,13 +382,13 @@ export type RuntimeReplayCard = z.infer<typeof RuntimeReplayCard>;
 export declare const GrowthOpportunity: z.ZodObject<{
     id: z.ZodString;
     type: z.ZodEnum<{
+        experience: "experience";
         positive_guidance: "positive_guidance";
         quality_gate: "quality_gate";
         api_endpoint_flow: "api_endpoint_flow";
         tool_gap: "tool_gap";
         workflow: "workflow";
         archive: "archive";
-        experience: "experience";
     }>;
     summary: z.ZodString;
     evidence: z.ZodArray<z.ZodString>;
@@ -129,13 +407,13 @@ export declare const GrowthOpportunities: z.ZodObject<{
     opportunities: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
         type: z.ZodEnum<{
+            experience: "experience";
             positive_guidance: "positive_guidance";
             quality_gate: "quality_gate";
             api_endpoint_flow: "api_endpoint_flow";
             tool_gap: "tool_gap";
             workflow: "workflow";
             archive: "archive";
-            experience: "experience";
         }>;
         summary: z.ZodString;
         evidence: z.ZodArray<z.ZodString>;
@@ -291,124 +569,12 @@ export declare const GrowthProposal: z.ZodObject<{
     markdown: z.ZodString;
 }, z.core.$strip>;
 export type GrowthProposal = z.infer<typeof GrowthProposal>;
-export declare const ArchiveManifest: z.ZodObject<{
-    archive_id: z.ZodString;
-    created_at: z.ZodString;
-    skill_id: z.ZodString;
-    triggered_by: z.ZodString;
-    source_run: z.ZodString;
-    archived_files: z.ZodArray<z.ZodObject<{
-        original_path: z.ZodString;
-        archive_path: z.ZodString;
-        reason: z.ZodString;
-        replacement: z.ZodOptional<z.ZodArray<z.ZodString>>;
-    }, z.core.$strip>>;
-    policy: z.ZodObject<{
-        never_delete: z.ZodLiteral<true>;
-        can_restore: z.ZodBoolean;
-    }, z.core.$strip>;
-}, z.core.$strip>;
-export type ArchiveManifest = z.infer<typeof ArchiveManifest>;
-export declare const SnapshotManifest: z.ZodObject<{
-    snapshot_id: z.ZodString;
-    created_at: z.ZodString;
-    skill_id: z.ZodString;
-    path: z.ZodString;
-    included: z.ZodArray<z.ZodString>;
-    triggered_by: z.ZodString;
-    source_run: z.ZodString;
-    restore_command: z.ZodString;
-}, z.core.$strip>;
-export type SnapshotManifest = z.infer<typeof SnapshotManifest>;
-export declare const EndpointStatus: z.ZodEnum<{
-    discovered: "discovered";
-    candidate: "candidate";
-    verified: "verified";
-    active: "active";
-    deprecated: "deprecated";
-    archived: "archived";
-}>;
-export declare const EndpointManifest: z.ZodObject<{
-    skill_id: z.ZodString;
-    updated_at: z.ZodString;
-    endpoints: z.ZodArray<z.ZodObject<{
-        id: z.ZodString;
-        name: z.ZodString;
-        status: z.ZodEnum<{
-            discovered: "discovered";
-            candidate: "candidate";
-            verified: "verified";
-            active: "active";
-            deprecated: "deprecated";
-            archived: "archived";
-        }>;
-        source: z.ZodString;
-        method: z.ZodEnum<{
-            GET: "GET";
-            POST: "POST";
-            PUT: "PUT";
-            PATCH: "PATCH";
-            DELETE: "DELETE";
-        }>;
-        path: z.ZodString;
-        description: z.ZodString;
-        required_params: z.ZodArray<z.ZodString>;
-        optional_params: z.ZodOptional<z.ZodArray<z.ZodString>>;
-        auth: z.ZodObject<{
-            type: z.ZodString;
-            required: z.ZodBoolean;
-        }, z.core.$strip>;
-        risk_level: z.ZodEnum<{
-            read_only: "read_only";
-            write: "write";
-            admin: "admin";
-        }>;
-        added_at: z.ZodString;
-        tests: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodObject<{
-            path: z.ZodString;
-            status: z.ZodDefault<z.ZodEnum<{
-                pending: "pending";
-                passed: "passed";
-                failed: "failed";
-            }>>;
-        }, z.core.$strip>>>;
-        skill_usage: z.ZodObject<{
-            allowed: z.ZodBoolean;
-            reason: z.ZodOptional<z.ZodString>;
-            usage_hint: z.ZodOptional<z.ZodString>;
-        }, z.core.$strip>;
-    }, z.core.$strip>>;
-}, z.core.$strip>;
-export type EndpointManifest = z.infer<typeof EndpointManifest>;
-export declare const DirectorFeedback: z.ZodObject<{
-    dimension: z.ZodString;
-    label: z.ZodString;
-    note: z.ZodString;
-}, z.core.$strip>;
-export declare const DirectorNotes: z.ZodObject<{
-    preview_id: z.ZodString;
-    rehearse_id: z.ZodString;
-    skill_id: z.ZodString;
-    created_at: z.ZodString;
-    feedback: z.ZodArray<z.ZodObject<{
-        dimension: z.ZodString;
-        label: z.ZodString;
-        note: z.ZodString;
-    }, z.core.$strip>>;
-    decision_hint: z.ZodOptional<z.ZodEnum<{
-        promote: "promote";
-        revise_minor: "revise_minor";
-        revise_major: "revise_major";
-        discard: "discard";
-    }>>;
-}, z.core.$strip>;
-export type DirectorNotes = z.infer<typeof DirectorNotes>;
 export declare const QualityCheckResult: z.ZodObject<{
     check_id: z.ZodString;
     category: z.ZodEnum<{
+        experience: "experience";
         skill_files: "skill_files";
         archive: "archive";
-        experience: "experience";
         consistency: "consistency";
         api: "api";
     }>;
@@ -427,9 +593,9 @@ export declare const QualityReport: z.ZodObject<{
     results: z.ZodArray<z.ZodObject<{
         check_id: z.ZodString;
         category: z.ZodEnum<{
+            experience: "experience";
             skill_files: "skill_files";
             archive: "archive";
-            experience: "experience";
             consistency: "consistency";
             api: "api";
         }>;

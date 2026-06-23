@@ -1,0 +1,6 @@
+# 本地 OpenAI-compatible v1 endpoint 配置模板
+# 用于 Prompt Recommender 与 OpenCode stage runtime
+
+endpoint: http://172.24.16.1:11434/v1
+model: glm4:9b
+api_key: local

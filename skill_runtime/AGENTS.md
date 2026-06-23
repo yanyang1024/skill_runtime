@@ -1,275 +1,384 @@
 # AGENTS.md — Skill Growth Studio / skill_runtime
 
-> 本文件面向 AI 编程 Agent。阅读前默认你不知道该项目背景。所有结论均基于当前目录实际文件内容，不做过度推测。
+> 本文件面向 AI 编程 Agent。阅读前默认你不知道该项目背景。所有结论均基于当前目录实际文件内容。
 
 ---
 
 ## 1. 项目概述
 
-- **项目名称**：`skill_runtime`（开发代号为 Skill Growth Studio v0.1）。
-- **当前阶段**：设计文档已就绪，源码尚未开始编写，仅完成了依赖安装和最小化 Node.js 项目初始化。
-- **项目目标**：基于 OpenCode / OpenCode Web 运行时，构建一个完全本地化的 **Skill 生命周期管理应用**。核心围绕四个动词：
-  - **Observe（观察）**：从会话日志、工具日志、脚本日志、用户反馈中复盘运行轨迹，生成 Runtime Trace、Runtime Replay Card 与生长机会。
-  - **Grow（生长）**：克制地生成 Growth Proposal 与 dry-run 计划，默认只输出方案不改文件；一键确认后执行 live run，应用修改、归档旧文件、自动跑 Quality Gate。
-  - **Rehearse（排练）**：在隔离临时目录中启动 preview OpenCode server，让用户作为导演体验 preview skill 并记录反馈。
-  - **Stabilize（稳定化）**：快照、归档、打包、生成 changelog，将排练通过的 preview 提升为 stable。
-- **技术栈方向**：
-  - 运行时/隔离：OpenCode / OpenCode Web + `bwrap` + 临时目录 + 独立 `OPENCODE_CONFIG_DIR`。
-  - LLM：本地 SGLang 部署的 Qwen3.6-27B，通过 OpenAI v1 兼容 API 接入。
-  - 后端语言：Node.js（TypeScript / CommonJS 混合，视具体模块而定）。
-  - 关键依赖：`@opencode-ai/plugin`、`@opencode-ai/sdk`、`@different-ai/opencode-browser`、`effect`、`zod`、`cross-spawn`、`yaml`。
-  - 脚本/数据处理：Python 3.12（已创建 `py312_skill` 虚拟环境，目前仅含 `pip`，未安装任何包）。
-  - 存储：本地文件系统，使用 JSONL / YAML / Markdown。
-- **关键设计约束（第一版）**：
-  - 不在分析中间停顿提问，先完成全量分析再输出方案。
-  - Growth Proposal 输出后支持“一键确认”模式。
-  - Grow 默认 `--dry-run`，确认后才 `--live`。
-  - 每次正式维护前必须对整个 `skills/<skill>/` 目录打 `tar.gz` 快照，存放到 `.Grow_backups/<skill>/<UTC_TIMESTAMP>.tar.gz`。
-  - **永不删除，只归档**：所有“删除”操作必须转换为移动到 `.archive/<UTC_TIMESTAMP>/`。
-  - 批量编辑后自动触发 Quality Gate 交叉一致性检查。
-  - 新增 API 端点必须从 API 文档检查 → 基础测试 → `endpoint_manifest.yaml` candidate → tool wrapper → preview skill → stabilize 的完整流程。
+- **项目名称**：`skill_runtime`（Skill Growth Studio v0.2）。
+- **项目目标**：构建一个完全本地化的 **基于多 OpenCode Web Runtime 的 Skill 生命周期导演台**。核心哲学：
+  - **确定性层**（应用代码）：搭舞台。负责 workspace 构建、opencode.json/.opencode/ 生成、端口分配、server 生命周期、bwrap 隔离、快照/归档、日志收集、UI 展示。
+  - **灵活层**（OpenCode Web Runtime）：在舞台里工作。负责分析、判断、规划、修改、复查、API 理解、skill 迭代。
+  - **人类层**（导演）：观看、暂停、编辑推荐语句、在 OpenCode Web 中体验、写一段直观 director review。
+  - **Prompt Recommender**（本地 v1 LLM）：根据阶段上下文推荐下一句输入语句，不替代 OpenCode 工作。
+- **四个动词**：
+  - **Observe（观察）**：启动 Observe-Log Review / Observe-API Scan 两个 OpenCode Web Runtime，分别复盘会话日志与分析 API 文档变化。
+  - **Grow（生长）**：启动 Grow-Plan（只读规划）和 Grow-Build（动手修改 preview）两个 OpenCode Web Runtime；批量修改后启动 Quality Review。
+  - **Rehearse（排练）**：启动 Rehearse-Preview（导演体验）和 Rehearse-Iteration（基于 director review 迭代）两个 OpenCode Web Runtime，循环直到满意。
+  - **Stabilize（稳定化）**：启动 Stabilize-Release Review OpenCode Web Runtime 做发布前语义检查；确定性脚本执行 promote / rollback。
+- **当前完成度**：v0.2 已完成 Stage Runtime 基础设施、Prompt Recommender、多屏导演台 UI、八类 stage 的 workspace 与 contract、promote/rollback 路由；保留旧 workers 作为兼容性实现；测试 14 个用例全部通过。
 
 ---
 
-## 2. 目录结构现状
+## 2. 技术栈
 
-当前项目根目录如下（已排除 `node_modules` 与 `py312_skill`）：
+| 层级 | 选型 | 说明 |
+|---|---|---|
+| 运行时 | Node.js 20+ | `package.json` 中 `engines` 未指定，但依赖要求 Node 20+ |
+| 包管理器 | `pnpm` | 根目录存在 `pnpm-lock.yaml`，请使用 `pnpm install` |
+| 模块系统 | ESM | `package.json` 设置 `"type": "module"`；`tsconfig.json` 使用 `NodeNext` |
+| 语言 | TypeScript 5.8+ | 源码位于 `app/`，构建输出到 `dist/` |
+| Schema / 类型 | Zod | 所有持久化结构先在 `app/shared/schemas/index.ts` 定义 schema |
+| Web 后端 | Express | 提供 REST API、SSE、静态 SPA、OpenCode Web UI 反向代理 |
+| Markdown 渲染 | `marked` | 前端渲染 `SKILL.md`、replay card、proposal 等 |
+| 子进程 | `cross-spawn` | 启动 `opencode web` / `opencode serve` |
+| YAML/JSON | `yaml` | 解析/序列化配置文件和产物 |
+| 快照打包 | `tar` (npm) | 生成 `.Grow_backups/stable|preview/<skill>/<UTC>.tar.gz` |
+| 反向代理 | `http-proxy-middleware` / `fetch` | 用于阶段 Web UI 代理到同源路径 |
+| 测试 | Node 内置 `node:test` + `assert/strict` | 不引入额外重型测试框架 |
+| LLM / Runtime | 本地 OpenAI-compatible v1 + OpenCode Web | Prompt Recommender 与 OpenCode 均走 `http://172.24.16.1:11434/v1`，模型 `glm4:9b` |
+| Python 环境 | `py312_skill/` | 已创建 Python 3.12 虚拟环境，预留给日志解析/trace 规范化脚本 |
+
+---
+
+## 3. 目录结构
 
 ```
 skill_runtime/
-├── package.json              # Node 项目入口配置
-├── package-lock.json         # npm 依赖锁定
-├── py312_skill/              # Python 3.12 虚拟环境（目前只有 pip）
-├── ori_need.txt              # 原始需求：开源本地化、四个动词、设计原则
-├── plan.txt                  # 详细设计方案：架构、数据结构、命令、UI、实施优先级
-├── history.txt               # 与上述设计相关的对话/思考记录
-└── AGENTS.md                 # 本文件
-```
-
-**注意**：
-- `app/`、`skills/`、`traces/`、`growth_runs/`、`experiments/`、`api_docs/`、`.Grow_backups/`、`configs/` 等目录尚未创建，均只在 `plan.txt` 中定义。
-- `ori_need.txt`、`plan.txt`、`history.txt` 是中文设计文档，是当前理解项目意图的最权威来源。
-
-设计文档中建议的最终目录结构（节选）：
-
-```
-skill-growth-studio/
 ├── app/
-│   ├── server/               # 控制平面后端
-│   ├── ui/                   # 极简 Web UI / CLI
-│   ├── cli/                  # CLI 入口
-│   └── workers/              # Observe / Grow / Rehearse / Stabilize 任务
+│   ├── cli/                 # skill-growth CLI 入口
+│   │   └── index.ts         # 当前仅实现 server/help
+│   ├── server/              # Express 控制平面
+│   │   ├── index.ts         # 服务入口，挂载路由、静态资源、mock API
+│   │   ├── routes/
+│   │   │   ├── skills.ts    # /api/skills/*（tree、file、runs、promote、rollback）
+│   │   │   ├── runs.ts      # /api/runs/*（创建/列出 run）
+│   │   │   ├── stages.ts    # /api/runs/:run/stage/:stage/*（启动/停止/消息/推荐/产物/OpenCode UI）
+│   │   │   ├── artifacts.ts # /api/runs/:run/stage/:stage/artifact/*
+│   │   │   └── events.ts    # /api/events SSE 状态流
+│   │   └── stageRuntimeManager.ts # 多 stage opencode web runtime 管理
+│   ├── orchestration/       # 阶段状态机 + run 编排
+│   │   ├── stageContracts.ts    # StageRuntimeContract 定义
+│   │   ├── stateMachine.ts      # RunState / StageState 持久化
+│   │   ├── runLifecycle.ts      # run / attempt 生命周期
+│   │   └── stageTransitions.ts  # 推荐流转规则
+│   ├── workspace_builder/   # 构造每个 stage 的 OpenCode 项目 workspace
+│   │   ├── builder.ts       # workspace 目录结构与文件复制
+│   │   ├── opencodeConfig.ts    # opencode.json 生成
+│   │   ├── stageInputs.ts   # input/ 目录准备
+│   │   └── bwrap.ts         # bwrap 命令构建（可选启用）
+│   ├── api_test_runner/     # 确定性 API 测试执行体
+│   │   └── runner.ts        # 执行 OpenCode 生成的测试脚本，生成 machine-test-result.json
+│   ├── prompt_recommender/  # v1 LLM 推荐输入语句
+│   │   ├── client.ts        # 本地 v1 chat/completions 客户端
+│   │   ├── recommender.ts   # 基于 stage digest + prompt library 生成推荐
+│   │   └── promptLibrary/   # 各阶段常用语句库（与 prompt_library/ 同步）
+│   ├── snapshot_manager/    # 快照、归档、恢复
+│   │   ├── snapshot.ts      # stable / preview 快照
+│   │   ├── archive.ts       # 归档文件
+│   │   └── rollback.ts      # 从快照恢复
+│   ├── log_collector/       # 收集 session/tool/script log
+│   │   └── collector.ts
+│   ├── ui/                  # 多屏导演台 SPA
+│   │   ├── index.html
+│   │   ├── app.js
+│   │   ├── styles.css
+│   │   └── services/api.js  # 前端 API 封装
+│   ├── workers/             # 旧版四个阶段执行器（保留兼容）
+│   │   ├── observe/index.ts
+│   │   ├── grow/{dryRun.ts,live.ts}
+│   │   ├── quality/index.ts
+│   │   ├── api/{scan.ts,test.ts}
+│   │   └── stabilize/{promote.ts,rollback.ts}
+│   └── shared/              # 工具与 schema
+│       ├── schemas/index.ts # Zod schema + TypeScript 类型
+│       └── utils/           # paths、time、fs、snapshot(legacy)、archive(legacy)、growthRun
 ├── skills/<skill-id>/
-│   ├── stable/               # 当前稳定版 SKILL.md、references、tools、agents 等
-│   ├── previews/             # 候选 preview 版本
-│   ├── releases/             # 历史稳定发布版本
-│   └── .archive/             # 归档目录（只移不删）
-├── traces/<skill-id>/
-│   ├── raw_sessions/         # 原始会话日志
-│   ├── raw_tool_logs/        # 工具日志
-│   ├── raw_script_logs/      # 脚本日志
-│   ├── normalized/           # 标准化 Runtime Trace
-│   ├── replay_cards/         # Runtime Replay Card
-│   └── director_notes/       # 导演反馈
-├── growth_runs/<skill-id>/
-│   └── run-XXXX/             # 单次 Observe/Grow 完整产物
-├── experiments/<skill-id>/
-│   └── rehearse-XXXX/        # 隔离排练目录
-├── api_docs/<skill-id>/
-│   ├── raw/                  # 原始 API 文档
-│   ├── normalized/           # 规范化 API 文档
-│   ├── endpoint_tests/       # 端点基础测试
-│   └── api_requirements/     # API 缺口需求文档
-├── .Grow_backups/<skill-id>/ # tar.gz 快照
-└── configs/
-    ├── model-providers/
-    ├── bwrap-profiles/
-    ├── opencode-templates/
-    └── quality-gates/
+│   ├── stable/              # 只读稳定版
+│   ├── previews/<preview_id>/# 可写 preview
+│   ├── releases/            # Stabilize promote 后的旧 stable 归档
+│   └── .archive/            # 废弃文件归档目录（只移不删）
+├── runs/<run_id>/           # 一次完整生长 run
+│   ├── run-state.yaml
+│   ├── stage-digest.md
+│   ├── observe-log-review/
+│   ├── observe-api-scan/
+│   ├── grow-plan/
+│   ├── grow-build/attempts/
+│   ├── grow-quality-review/attempts/
+│   ├── rehearse-preview/
+│   ├── rehearse-iteration/attempts/
+│   └── stabilize-release/
+├── prompt_library/          # 8 个阶段常用语句库
+├── traces/<skill-id>/       # raw_sessions、replay cards、normalized trace
+├── growth_runs/<skill-id>/  # 旧版 Observe/Grow 产物（兼容）
+├── experiments/<skill-id>/  # Rehearse 临时工作目录（兼容）
+├── api_docs/<skill-id>/     # raw API 文档、normalized、endpoint_tests
+├── .Grow_backups/
+│   ├── stable/<skill_id>/<UTC>.tar.gz
+│   └── preview/<skill_id>/<preview_id>/<UTC>.tar.gz
+├── configs/
+│   ├── bwrap-profiles/stage.profile
+│   ├── model-providers/{sglang.yaml,local-v1.yaml}
+│   ├── opencode-templates/stage-opencode.json
+│   └── quality-gates/default.yaml
+├── tests/
+│   ├── schemas.test.ts      # Zod schema 校验（含 v0.2 新 schema）
+│   ├── integration.test.ts  # 旧版 observe → dry-run → live → promote → rollback
+│   └── v02-lifecycle.test.ts# v0.2 run / stage 状态机集成测试
+├── scripts/                 # 开发辅助脚本
+├── dist/                    # TypeScript 构建输出
+└── package.json / tsconfig.json / pnpm-lock.yaml
 ```
-
----
-
-## 3. 技术栈与依赖
-
-### 3.1 Node.js 依赖（`package.json`）
-
-```json
-{
-  "name": "skill_runtime",
-  "version": "1.0.0",
-  "type": "commonjs",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "@different-ai/opencode-browser": "^4.6.1",
-    "@opencode-ai/plugin": "^1.15.1"
-  }
-}
-```
-
-### 3.2 已安装的关键依赖说明
-
-- `@opencode-ai/plugin` (v1.15.1)：OpenCode 插件 SDK，TypeScript ESM 模块，依赖 `effect` 与 `zod`。
-- `@opencode-ai/sdk` (v1.15.1)：OpenCode 客户端/服务端 SDK，提供 `client`、`server`、`v2` 等子导出。
-- `@different-ai/opencode-browser` (v4.6.1)：OpenCode 浏览器自动化插件，含 CLI `opencode-browser`。
-- `effect` (v4.0.0-beta.65)：TypeScript 函数式标准库，用于错误处理、并发、可观测性。
-- `zod` (v4.1.8)：Schema 校验与类型推断。
-- `cross-spawn` (v7.0.6)：跨平台子进程 spawn。
-- `yaml` (v2.9.0)：YAML 解析/序列化。
-- `toml` (v4.1.1)：TOML 解析。
-- `playwright-core` (v1.61.0)：浏览器自动化核心（由 opencode-browser 间接引入）。
-- `uuid`、`msgpackr`、`fast-check` 等：辅助库。
-
-### 3.3 Python 环境
-
-- 虚拟环境路径：`py312_skill/`
-- Python 版本：3.12.13
-- 当前未安装任何第三方包，仅有 `pip 25.0.1`。
-- 计划用途：日志解析、trace 标准化、数据格式转换等数据处理脚本。
 
 ---
 
 ## 4. 构建与运行命令
 
-> 当前项目没有实际源码，因此以下命令基于 `package.json` 和 `plan.txt` 中的设计意图整理。
-
-### 4.1 Node.js 项目
+> 执行任何命令前请先运行 `pnpm install`。
 
 ```bash
-# 安装依赖（已执行过）
-npm install
+# 安装依赖
+pnpm install
 
-# 当前 test 脚本未实现
-npm test
-# 输出：Error: no test specified
-```
+# 开发模式启动 Web UI（Express + tsx watch）
+pnpm dev
+# 等价于：tsx watch app/server/index.ts
+# 默认监听 http://localhost:3000
 
-### 4.2 设计中计划提供的 CLI（尚未实现）
+# 构建 TypeScript 到 dist/
+pnpm build
+# 等价于：tsc
 
-```bash
-# Observe：读取日志生成 Runtime Replay Card
-skill-growth observe --skill <skill-id> --session latest
+# 生产启动（使用 dist/ 产物）
+pnpm start
+# 等价于：node dist/app/server/index.js
 
-# Grow dry-run：生成 Growth Proposal，不改文件
-skill-growth grow --skill <skill-id> --trace latest --dry-run
+# CLI（当前仅 server 子命令完整实现）
+pnpm cli server          # 启动 Web UI
+pnpm cli                 # 查看帮助
 
-# Grow live：一键确认后执行，先打快照
-skill-growth grow --skill <skill-id> --proposal latest --live
-
-# API 文档扫描
-skill-growth api-scan --skill <skill-id> --docs api_docs/<skill-id>/raw/
-
-# API 端点测试
-skill-growth api-test --skill <skill-id> --endpoint <endpoint-id>
-
-# Rehearse：启动 preview OpenCode server
-skill-growth rehearse --skill <skill-id> --preview latest
-
-# Quality Gate
-skill-growth quality --skill <skill-id> --preview latest
-
-# Stabilize
-skill-growth stabilize --skill <skill-id> --preview latest --promote
-
-# 回滚
-skill-growth restore --snapshot <snapshot-id>
-```
-
-### 4.3 Python 虚拟环境激活
-
-```bash
-source py312_skill/bin/activate
-python --version   # 3.12.13
+# 测试
+pnpm test
+# 等价于：tsx --test tests/**/*.test.ts
 ```
 
 ---
 
-## 5. 代码组织建议（基于设计文档）
+## 5. 代码组织与主要模块
 
-在后续实现时，建议按以下模块划分：
+### 5.1 控制平面 `app/server/`
 
-- `app/server/`：控制平面 API，编排 Observe / Grow / Rehearse / Stabilize 四个阶段。
-- `app/cli/`：命令行入口，封装 `skill-growth` 命令。
-- `app/workers/`：各阶段具体执行器：
-  - `observe/`：Runtime Trace Normalizer、Background Reviewer、Replay Card Builder、Growth Opportunity Miner。
-  - `grow/`：Growth Curator、Dry-run Planner、Archive Planner、Snapshot Manager、API Endpoint Curator、Quality Gate Runner。
-  - `rehearse/`：Preview Skill Builder、Temp Workspace Manager、OpenCode Server Launcher、Director Feedback Collector。
-  - `stabilize/`：Promote Manager、Release Packager、Changelog Generator、Archive Manager、Rollback Manager。
-- `configs/`：模型提供商配置、bwrap 隔离配置、OpenCode 模板、Quality Gate 规则。
+- `index.ts`：Express 应用根，挂载 API 路由、静态 SPA、mock 端点、SIGTERM/SIGINT 清理。
+- `routes/skills.ts`：Skill 文件树、内容读取、run 列表、promote/rollback。
+- `routes/runs.ts`：创建/列出 run。
+- `routes/stages.ts`：Stage 启动/停止/重跑/提交到 preview、消息发送、Prompt 推荐、director-review、API 测试执行、OpenCode Web UI 代理/打开。
+- `routes/artifacts.ts`：Stage 产物列表与内容读取。
+- `routes/events.ts`：SSE `/api/events` 全局状态流。
+- `stageRuntimeManager.ts`：按 `StageRuntimeContract` 分配端口、构造 workspace、spawn `opencode web`、分层 readiness 检测、bwrap 隔离、停止清理。
+
+### 5.2 编排层 `app/orchestration/`
+
+- `stageContracts.ts`：集中定义 8 个 stage 的 `StageRuntimeContract`（runtime_mode、skill_mount、work_writable、snapshot 要求、human_role 等）。
+- `stateMachine.ts`：`RunState` / `StageState` / `StageTransition` 的持久化与读取。
+- `runLifecycle.ts`：创建 run、计算 attempt、初始化 stage state、刷新产物列表。
+- `stageTransitions.ts`：推荐 stage 流转与 carry_outputs 规则。
+
+### 5.3 Workspace Builder `app/workspace_builder/`
+
+- `builder.ts`：构造 `runs/<run_id>/<stage>/workspace/`，包含 `opencode.json`、`.opencode/skills/<skill>/`、input/output/work 目录；提供 `syncWorkToPreview` 将 `work/` 产物写回 preview skill。
+- `opencodeConfig.ts`：生成 stage 级 `opencode.json`（local-v1/deepseek provider、permission、agent 权限覆盖）。
+- `stageInputs.ts`：复制 session_log、api_docs、previous_stage_output、director-review 到 input/。
+- `bwrap.ts`：构建可选的 bwrap 隔离命令。
+
+### 5.4 API Test Runner `app/api_test_runner/`
+
+- `runner.ts`：扫描 `output/api-tests/` 下的 `.py/.sh/.js` 脚本，在 stage workspace 中执行，收集 stdout/stderr/exit code，生成 `machine-test-result.json`。
+
+### 5.5 Prompt Recommender `app/prompt_recommender/`
+
+- `client.ts`：本地 v1 `chat/completions` 客户端。
+- `recommender.ts`：读取 `prompt_library/<stage>.md`、stage-digest.md、director-review.md，生成主推荐/备选/理由/风险。
+
+### 5.6 Snapshot Manager `app/snapshot_manager/`
+
+- `snapshot.ts`：`createStableSnapshot` / `createPreviewSnapshot`。
+- `archive.ts`：`archiveFiles`（只移不删）。
+- `rollback.ts`：根据 snapshot_id 查找 manifest 并恢复。
+
+### 5.7 前端 `app/ui/`
+
+- 无框架原生 ES Modules + 手写 CSS。
+- `app.js`：多屏导演台主逻辑：skill/run 选择、stage 导航、启动 stage、打开 OpenCode Web、提交到 Preview、Prompt Assistant、Artifacts 面板、SSE 监听。
+- `services/api.js`：前端 API 调用封装。
+
+### 5.8 Worker `app/workers/`（旧版兼容）
+
+| Worker | 文件 | 职责 |
+|---|---|---|
+| Observe | `observe/index.ts` | 从 `stable/evals/evals.json` 提取 Runtime Trace |
+| Grow dry-run | `grow/dryRun.ts` | 基于 Trace 生成 Dry-run Plan 与 Growth Proposal |
+| Grow live | `grow/live.ts` | 快照 → 复制 stable 到 preview → 应用 planned_operations → Quality Gate |
+| Quality Gate | `quality/index.ts` | frontmatter、references、正向引导、归档安全等基础检查 |
+| API scan | `api/scan.ts` | 解析 `api_docs/<skill>/raw/*.md` |
+| API test | `api/test.ts` | existence/schema 测试 |
+| Stabilize promote | `stabilize/promote.ts` | preview 提升为 stable |
+| Stabilize rollback | `stabilize/rollback.ts` | 从快照恢复 |
+
+### 5.9 共享工具 `app/shared/`
+
+- `schemas/index.ts`：Zod schema 与导出类型（RunState、StageState、OpencodeRuntime、StageRuntimeContract、PromptRecommendResponse、DirectorReview、StageTransition、RuntimeTrace、SnapshotManifest、ArchiveManifest、EndpointManifest 等）。
+- `utils/paths.ts`：所有 skill / run / stage 相关目录的绝对路径计算。
+- `utils/time.ts`：UTC 时间戳与文件名安全时间戳。
+- `utils/growthRun.ts`：创建 `growth_runs` 目录并写入 JSON/YAML/Markdown。
+- `utils/fs.ts`：目录复制/删除/读取辅助。
 
 ---
 
-## 6. 代码风格指南
+## 6. 数据结构与持久化格式
 
-- **语言**：设计文档与需求文档均为中文，因此注释、文档字符串、用户可见文案建议优先使用中文；代码标识符、API 路由、配置键仍使用英文。
-- **Node.js 模块**：`package.json` 当前 `"type": "commonjs"`。由于 `@opencode-ai/plugin` 和 `@opencode-ai/sdk` 均为 ESM，CLI/Worker 代码若直接引用它们需使用 `.mjs` 扩展名或动态 `import()`，或在顶层包改为 `"type": "module"` 后统一使用 ESM。
-- **Schema 优先**：所有持久化数据结构（Runtime Trace、Dry-run Plan、Archive/Snapshot Manifest、Endpoint Manifest）建议先用 `zod` 定义 schema，再生成 TypeScript 类型。
-- **错误处理**：推荐使用 `effect` 编写核心编排逻辑；简单脚本可用常规 `try/catch`。
+所有持久化结构在 `app/shared/schemas/index.ts` 中用 Zod 定义，并导出 TypeScript 类型。
+
+v0.2 新增核心结构：
+
+- `RunState`：`runs/<run_id>/run-state.yaml`
+- `StageState`：`runs/<run_id>/<stage>/stage-state.yaml`
+- `StageRuntimeContract`：`app/orchestration/stageContracts.ts`
+- `StageTransition`：`runs/<run_id>/transitions.yaml`
+- `OpencodeRuntime`：`runs/<run_id>/<stage>/server.json`
+- `DirectorReview`：`runs/<run_id>/<stage>/output/director-review.md`
+- `PromptRecommendResponse`：运行时内存结构
+- `SnapshotManifest`：`.Grow_backups/stable|preview/<skill>/<UTC>.manifest.yaml`
+- `ArchiveManifest`：`skills/<skill>/.archive/<UTC>/archive-manifest.yaml`
+
+阶段产物（Markdown，灵活非结构化）：
+
+- `output/replay-card.md`
+- `output/growth-opportunities.md`
+- `output/growth-plan.md`
+- `output/patch-notes.md`
+- `output/quality-review.md`
+- `output/director-review.md`
+- `output/iteration-plan.md`
+- `output/release-review.md`
+- `output/changelog-draft.md`
+- `output/machine-test-result.json`（observe-api-scan 的确定性测试报告）
+
+新增持久化结构时，必须先在 `app/shared/schemas/index.ts` 中定义 schema 并更新本文件。
+
+---
+
+## 7. 设计原则与代码约定
+
+### 7.1 硬原则（不可违背）
+
+- **确定性层搭舞台，OpenCode 灵活工作**：应用代码只负责环境、文件、隔离、快照、日志、端口、server 生命周期；分析/判断/规划/修改/复查交给 OpenCode runtime。
+- **Prompt Recommender 只推荐不修改**：它只生成下一句输入语句，真正修改 skill 的是 OpenCode runtime 里的 agent。
+- **Stage Runtime Contract 集中描述**：每个 stage 的规则（runtime_mode、skill_mount、work_writable、是否需要 snapshot、human_role）写在 `stageContracts.ts`，不散落在代码中。
+- **写 preview 前先 snapshot**：`grow-build`、`rehearse-iteration` 启动前自动 `createPreviewSnapshot`；promote 前自动 `createStableSnapshot`。
+- **stable 默认只读**：任何普通 stage 不能直接修改 stable；只有 Stabilize 后的确定性 promote 操作才修改 stable。
+- **rehearse-preview 不改 preview skill**：preview skill 只读挂载，work/ 仅用于临时体验文件。
+- **永不删除，只归档**：所有“删除”必须转换为 `archiveFiles` 移动到 `.archive/<UTC>/`。
+- **新 API 端点先测试再入 skill**：endpoint 状态 `candidate → verified → active`；未 active 不得被 SKILL.md 引用。
+- **写操作 API 端点仅允许 dry-run / sandbox / mock**：第一版不直接调用生产写接口。
+
+### 7.2 OpenCode 配置约定
+
+- 每个 stage workspace 是独立 OpenCode 项目根：根目录有 `opencode.json`，`.opencode/` 下存放 `skills/<skill>/`、`agents/`、`commands/`、`plugins/`、`tools/`。
+- 启动命令使用 `opencode web`（v0.2-MVP 统一用 web 模式），cwd 指向 workspace。
+- provider 默认使用 `local-v1`（OpenAI-compatible），baseURL `http://172.24.16.1:11434/v1`，包含 `glm4:9b` / `qwen3.5:9b`；若设置 `DEEPSEEK_API_KEY`，则同时注入 `deepseek` provider（`deepseek-v4-pro`）。
+- 可通过 `SKILL_GROWTH_DEFAULT_MODEL` / `SKILL_GROWTH_SMALL_MODEL` 覆盖默认模型，例如 `deepseek/deepseek-v4-pro`。
+- 自定义 provider 可放在 `configs/model-providers/custom.yaml`（或通过 `SKILL_GROWTH_PROVIDERS_CONFIG` 指向其他文件），启动时会合并到 opencode.json；详见 `README.md` 与 `.env.example`。
+- 全局 `permission.edit` 默认 `ask`；`build` / `iteration` agent 覆盖为 `allow`；`rm` / `git push` 默认 `deny`。
+- 环境变量：`OPENCODE_CONFIG` 指向 `opencode.json`，`OPENCODE_CONFIG_DIR` 指向 `.opencode/`，`OPENCODE_CONFIG_CONTENT` 仅用于少量 runtime override。
+
+### 7.3 代码风格
+
+- **语言**：注释、文档字符串、用户可见文案优先使用中文；代码标识符、API 路由、配置键使用英文。
+- **模块**：使用 ESM；源码文件使用 `.ts`，前端使用 `.js`。
 - **文件命名**：
-  - 配置/数据文件使用 kebab-case：`dry-run-plan.yaml`、`endpoint-manifest.yaml`。
-  - 源码文件使用 camelCase 或 PascalCase：`runtimeTrace.ts`、`qualityGateRunner.ts`。
-- **路径约定**：所有 skill 相关路径使用相对项目根的 POSIX 路径；快照/归档时间戳使用 UTC ISO-8601（文件名中可用 `2026-06-21T08-30-12Z` 格式替换 `:`）。
-- **不可变数据**：Runtime Trace、Replay Card、Growth Proposal 等分析产物一旦生成就不要再修改，后续迭代新建 run。
+  - 配置/数据文件：kebab-case（`dry-run-plan.yaml`、`stage-digest.md`）。
+  - 源码文件：camelCase 或 PascalCase（`stageRuntimeManager.ts`、`opencodeConfig.ts`）。
+- **路径约定**：所有 skill 相关路径使用相对项目根的 POSIX 路径；时间戳使用 UTC ISO-8601，文件名中 `:` 替换为 `-`。
+- **类型安全**：优先使用 Zod 解析外部输入，再生成 TypeScript 类型。
+- **错误处理**：Worker 中对外部文件/网络操作使用 `try/catch`；核心编排可逐步引入 `effect`。
 
 ---
 
-## 7. 测试策略
+## 8. 测试策略
 
-- **当前状态**：`npm test` 尚未配置，无任何测试文件。
-- **单元测试**：建议为核心模块（trace normalizer、dry-run planner、quality gate checks、archive planner）添加测试。
-- **集成测试**：
-  - 使用临时目录 + 独立 `OPENCODE_CONFIG_DIR` 启动 OpenCode 实例，验证 Rehearse 流程。
-  - 使用只读 API endpoint 验证 API 文档扫描 → 基础测试 → manifest 更新流程。
-- **Quality Gate 作为测试**：批量编辑后必须自动运行的检查项包括：
-  - Skill 文件检查：SKILL.md frontmatter、禁止式规则、正向替代路径。
-  - 文件一致性：引用文件存在性、agent 配置是否过时、tool registry 与实际工具一致性。
-  - API 检查：未 active endpoint 引用、新端点是否有基础测试、manifest 与 API 文档对齐。
-  - 归档检查：是否存在 delete 操作、archive manifest 是否生成。
-  - 体验检查：是否违背“不在中间停顿提问”、是否支持一键确认。
-- **端到端测试**：建议通过 `skill-growth grow --dry-run` 生成完整 plan 并校验输出文件，而不实际改动 stable 目录。
+| 层级 | 方式 | 覆盖点 |
+|---|---|---|
+| 单元测试 | Node test runner | schema 校验（`tests/schemas.test.ts`） |
+| 旧版集成测试 | 临时目录 + reference_skill | `observe → grow --dry-run → grow --live → quality → promote → rollback` 全流程（`tests/integration.test.ts`） |
+| v0.2 集成测试 | 临时目录 + reference_skill | run / stage 状态机、workspace 构造（`tests/v02-lifecycle.test.ts`） |
+| 隔离测试 | 独立 workspace + `opencode web` | Stage runtime 启动/停止/OpenCode UI 打开（需本地 `opencode` CLI 与 glm4:9b 服务） |
+| 回归测试 | snapshot restore | rollback 后目录与快照一致 |
+| UI 测试 | 手动 + 内置接口 | Stage Navigator、Prompt Assistant、Artifacts 面板 |
+| 端口/功能测试 | Node test runner + 真实网络/子进程 | 模型端点、OpenCode server 端点、应用 API、commit、API test runner（`tests/port-function.test.ts`） |
 
----
+### 8.1 当前测试状态
 
-## 8. 安全与运维注意事项
-
-- **永不删除，只归档**：任何 Grow / Stabilize 操作不得直接 `rm` 文件，必须移动到 `.archive/<UTC_TIMESTAMP>/` 并生成 archive manifest。
-- **快照优先**：`grow --live`、`stabilize --promote`、archive operation、release packaging 等写操作前，必须先将整个 `skills/<skill>/` 目录打包为 `.Grow_backups/<skill>/<UTC_TIMESTAMP>.tar.gz`。
-- **生产写操作限制**：第一版对写操作 API 端点只允许 dry-run / sandbox / mock，禁止直接调用生产写接口。
-- **隔离**：Rehearse 与 Quality Gate runtime 必须通过 `bwrap` + 临时目录 + 独立 `OPENCODE_CONFIG_DIR` 与 stable runtime 隔离。
-- **模型调用**：仅使用本地 SGLang 提供的 OpenAI v1 兼容 API，不调用外部在线服务。
-- **敏感信息**：session log 与 API 响应中可能包含业务数据，存储在本地文件系统，不上传云端。
-- **回滚**：所有快照都应能通过 `skill-growth restore --snapshot <snapshot-id>` 恢复。
+- `pnpm build` 通过 TypeScript 严格检查。
+- `pnpm test` 27 个用例全部通过（旧版 5 + schema 7 + v0.2 2 + port-function 13）。
+- `tests/port-function.test.ts` 已验证 glm4:9b、qwen3.5:9b、deepseek-v4-pro（若可达）、OpenCode serve 健康/会话/异步 prompt、以及应用 API 的 run/recommend/commit/run-api-tests。
+- 实际启动 `opencode web` 的端到端 Stage runtime 测试需要本地已安装 `opencode` CLI 并配置好模型服务，暂未纳入自动化。
 
 ---
 
-## 9. 设计文档索引
+## 9. 配置说明
 
-- `ori_need.txt`：用户原始需求，包含四个动词定义、工作模式、API 端点流程等。
-- `plan.txt`：详细设计方案，包含：
-  - 四个动词的生命周期含义
-  - 总体架构（控制平面 + 多个 OpenCode runtime）
-  - 推荐目录结构
-  - Runtime Trace / Replay Card / Dry-run Plan / Growth Proposal 等数据格式
-  - API Endpoint Lifecycle 与基础测试类型
-  - Quality Gate 检查项
-  - Rehearse / Stabilize 流程
-  - CLI 命令设计
-  - UI 结构
-  - 第一版最小实现优先级（Phase 1-6）
-- `history.txt`：更早一轮的设计思考，包含对 OpenCode 配置隔离、多 runtime 等内容的讨论。
+- `configs/model-providers/local-v1.yaml`：本地 OpenAI-compatible v1 endpoint 配置，用于 Prompt Recommender 与 OpenCode stage runtime。
+- `configs/model-providers/sglang.yaml`：保留的旧版 SGLang 配置模板。
+- `configs/opencode-templates/stage-opencode.json`：生成 stage workspace `opencode.json` 的模板（含 permission / agent 权限）。
+- `configs/quality-gates/default.yaml`：Quality Gate 检查清单（参考）。
+- `configs/bwrap-profiles/stage.profile`：通用 bwrap 隔离配置，默认不启用，通过 `STAGE_USE_BWRAP=1` 开启。
 
 ---
 
-## 10. 给 Agent 的最低行动清单
+## 10. 安全与运维注意事项
 
-当你开始为本项目添加代码时，请按以下顺序：
+- **不要直接 `rm` 任何 skill 文件**：统一使用 `archiveFiles`。
+- **写操作前必须快照**：preview 写前 `createPreviewSnapshot`；stable 写前 `createStableSnapshot`。
+- **Stage 隔离**：每个 stage 有独立 workspace、独立端口、独立 `.opencode/`；可选 bwrap 双层隔离；停止后清理子进程。
+- **权限双层控制**：OpenCode `permission` 机制 + bwrap 只读绑定；不要只靠 prompt 约束行为。
+- **敏感信息**：session log 与 API 响应仅存储本地，不上传云端。
+- **回滚**：任意 `.Grow_backups/stable|preview/<skill>/<UTC>.tar.gz` 都可通过 `/api/skills/:id/rollback` 恢复。
 
-1. 通读 `ori_need.txt` 与 `plan.txt`，确认当前要实现的 Phase（建议从 Phase 1：数据结构定义开始）。
-2. 明确本次改动是否涉及写文件：若涉及，先实现快照 + 归档机制；若不涉及，dry-run 优先。
-3. 新增持久化数据结构时，先用 `zod` 定义 schema 并同步更新到 `AGENTS.md` 的“数据结构”小节。
-4. 批量 edit 后，自动触发 Quality Gate；不要把手动触发留给用户。
-5. 不在分析中间停顿提问；先生成全量分析或 Growth Proposal，再请求一键确认。
-6. 不要直接删除任何已有文件；所有删除都转为 archive。
-7. 修改 `AGENTS.md` 中与本项目架构/约定相关的内容时，确保与 `plan.txt` 保持一致。
+---
+
+## 11. 已知限制与后续方向
+
+1. **旧 workers 兼容**：`app/workers/` 下为 v0.1 实现，后续将逐步迁移到 OpenCode runtime 模式，或移除。
+2. **bwrap 隔离**：配置文件已存在但默认不启用；后续可通过 `STAGE_USE_BWRAP=1` 强制启用并验证。
+3. **CLI 命令不完整**：`cli/index.ts` 仅实现 `server` 与帮助，其他命令提示开发中。
+4. **真实 session log 解析**：`traces/raw_sessions/` 的解析当前用 eval prompt 模拟，未接入真实 OpenCode session log。
+5. **API scan/test**：OpenCode + deterministic test runner 骨架已实现，可通过 `/api/runs/:run/stage/:stage/run-api-tests` 触发；复杂场景仍需更多测试脚本模板。
+6. **前端无框架**：当前为原生 JS，适合 v0.2；后续可按需迁移到 React/Vue。
+7. **Python 环境未启用**：`py312_skill` 未安装任何包，预留给日志解析脚本。
+8. **OpenCode serve 降级**：v0.2-MVP 统一用 `opencode web`；后续可把 quality-review / stabilize-release 等无需人观看的阶段降级为 `opencode serve`。
+
+---
+
+## 12. 关键文件速查
+
+| 文件 | 作用 |
+|---|---|
+| `README.md` | 用户部署、使用、配置文档 |
+| `.env.example` | 环境变量示例 |
+| `package.json` | 依赖、脚本、ESM 入口 |
+| `tsconfig.json` | TypeScript 严格配置，输出到 `dist/` |
+| `app/shared/schemas/index.ts` | 所有 Zod schema 与类型 |
+| `app/server/index.ts` | Express 服务入口 |
+| `app/server/stageRuntimeManager.ts` | OpenCode stage runtime 生命周期管理 |
+| `app/orchestration/stageContracts.ts` | 八阶段 StageRuntimeContract |
+| `app/workspace_builder/builder.ts` | stage workspace 构造 |
+| `app/api_test_runner/runner.ts` | 确定性 API 测试执行 |
+| `app/prompt_recommender/recommender.ts` | Prompt Recommender |
+| `app/snapshot_manager/snapshot.ts` | stable / preview 快照 |
+| `prompt_library/*.md` | 各阶段常用语句库 |
+| `tests/schemas.test.ts` | schema 校验 |
+| `tests/v02-lifecycle.test.ts` | v0.2 run/stage 集成测试 |
+| `tests/port-function.test.ts` | 模型/OpenCode/应用端口与功能测试 |
+| `reference_skill/tech-doc-didactic-rewriter/` | 测试用 skill 基线 |

@@ -36,14 +36,6 @@ export async function runObserve(skillId: string): Promise<{ runId: string; trac
       tools_available: [],
       api_docs_available: false,
     },
-    tool_calls: [],
-    script_calls: [
-      {
-        script_name: "normalize_trace.py",
-        status: "success",
-        summary: "从 evals.json 提取原始用户语句并构造 Runtime Trace",
-      },
-    ],
     hard_signals: {
       tool_failures: [],
       api_failures: [],

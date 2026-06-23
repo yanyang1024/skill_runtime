@@ -3,41 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skill Growth Studio</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <title>Skill Growth Studio v0.2</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="app">
-    <header class="topbar">
-      <div class="logo">🌱 Skill Growth Studio</div>
+  <header class="top-bar">
+    <div class="brand">Skill Growth Studio <span class="version">v0.2</span></div>
+    <div class="controls">
       <select id="skill-selector">
         <option value="tech-doc-didactic-rewriter">tech-doc-didactic-rewriter</option>
       </select>
-      <div id="global-status" class="status idle">就绪</div>
-    </header>
-    <div class="layout">
-      <nav class="sidebar">
-        <section>
-          <h3>生命周期</h3>
-          <ul>
-            <li data-tab="skill" class="active">Skill 预览</li>
-            <li data-tab="observe">Observe</li>
-            <li data-tab="grow">Grow</li>
-            <li data-tab="rehearse">Rehearse</li>
-            <li data-tab="api">API Docs</li>
-            <li data-tab="stabilize">Stabilize</li>
-          </ul>
-        </section>
-        <section>
-          <h3>文件</h3>
-          <div id="file-tree">加载中…</div>
-        </section>
-      </nav>
-      <main class="workspace" id="workspace">
-        <!-- dynamic panels -->
-      </main>
+      <button id="btn-create-run">创建 Run</button>
+      <span id="current-run" class="run-label">未选择 run</span>
     </div>
-  </div>
-  <script type="module" src="/app.js"></script>
+    <div id="global-status" class="status idle">就绪</div>
+  </header>
+
+  <main class="director-console">
+    <aside class="stage-navigator">
+      <h3>阶段导航</h3>
+      <ul id="stage-list">
+        <li data-stage="observe-log-review">Observe Log Review</li>
+        <li data-stage="observe-api-scan">Observe API Scan</li>
+        <li data-stage="grow-plan">Grow Plan</li>
+        <li data-stage="grow-build">Grow Build</li>
+        <li data-stage="grow-quality-review">Quality Review</li>
+        <li data-stage="rehearse-preview">Rehearse Preview</li>
+        <li data-stage="rehearse-iteration">Rehearse Iteration</li>
+        <li data-stage="stabilize-release">Stabilize Release</li>
+      </ul>
+    </aside>
+
+    <section class="main-panel">
+      <div class="runtime-header">
+        <h2 id="current-stage-title">请选择阶段</h2>
+        <div class="runtime-actions">
+          <button id="btn-start-stage" disabled>启动 Stage</button>
+          <button id="btn-open-opencode" disabled>打开 OpenCode Web</button>
+          <button id="btn-stop-stage" disabled>停止 Stage</button>
+          <button id="btn-commit-stage" disabled>提交到 Preview</button>
+          <button id="btn-retry-stage" disabled>重跑 Stage</button>
+        </div>
+      </div>
+      <div id="opencode-iframe-container" class="iframe-container hidden">
+        <iframe id="opencode-iframe" src="" frameborder="0"></iframe>
+      </div>
+      <div id="stage-info" class="stage-info">
+        <p>选择左侧阶段并点击“启动 Stage”，将在独立 workspace 中启动 OpenCode Web Runtime。</p>
+      </div>
+    </section>
+
+    <aside class="prompt-assistant">
+      <h3>Prompt Assistant</h3>
+      <div id="recommendation-loading" class="hidden">推荐中…</div>
+      <div id="recommendation-content" class="hidden">
+        <div class="recommendation-section">
+          <label>主推荐</label>
+          <textarea id="primary-prompt" rows="6"></textarea>
+        </div>
+        <div class="recommendation-section">
+          <label>备选</label>
+          <ul id="alternative-prompts"></ul>
+        </div>
+        <div class="recommendation-section">
+          <label>推荐理由</label>
+          <p id="recommendation-rationale"></p>
+        </div>
+        <div class="recommendation-section">
+          <label>风险提示</label>
+          <p id="recommendation-risk"></p>
+        </div>
+        <button id="btn-send-prompt" disabled>发送到 OpenCode</button>
+      </div>
+    </aside>
+  </main>
+
+  <section class="artifact-panel">
+    <h3>Artifacts</h3>
+    <div id="artifact-list" class="artifact-list"></div>
+    <div id="artifact-viewer" class="artifact-viewer"></div>
+  </section>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>

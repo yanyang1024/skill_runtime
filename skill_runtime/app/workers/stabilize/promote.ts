@@ -3,7 +3,7 @@ import path from "node:path";
 import YAML from "yaml";
 import { skillRoot, skillStableDir, skillPreviewDir, skillReleaseDir } from "../../shared/utils/paths.js";
 import { copyDir, removeDir, readDirNames } from "../../shared/utils/fs.js";
-import { createSkillSnapshot } from "../../shared/utils/snapshot.js";
+import { createStableSnapshot } from "../../snapshot_manager/snapshot.js";
 import { utcTimestamp, filenameTimestamp } from "../../shared/utils/time.js";
 
 export interface PromoteResult {
@@ -19,7 +19,7 @@ export async function runStabilizePromote(
   const root = skillRoot(skillId);
 
   // 1. snapshot before promote
-  const snapshot = await createSkillSnapshot(skillId, "stabilize-promote", "stabilize-promote");
+  const snapshot = await createStableSnapshot(skillId, "stabilize-promote", "stabilize-promote");
 
   // 2. determine target preview
   const previews = await readDirNames(path.join(root, "previews"));

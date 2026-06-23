@@ -1,0 +1,53 @@
+# 自定义模型 Provider 配置模板
+# Skill Growth Studio 启动 stage runtime 时，会自动把本文件中的 provider 合并到 opencode.json。
+# 合并规则：
+#   1. 默认注入 local-v1 provider（glm4:9b / qwen3.5:9b）。
+#   2. 若设置了 DEEPSEEK_API_KEY，再注入 deepseek provider。
+#   3. 最后把本文件中的 provider / providers 合并进去（同名 provider 会覆盖默认配置）。
+#
+# 使用方式：
+#   - 直接修改本文件，然后启动应用。
+#   - 或者通过环境变量 SKILL_GROWTH_PROVIDERS_CONFIG 指向另一个 YAML/JSON 文件。
+#   - 通过 SKILL_GROWTH_DEFAULT_MODEL 指定默认模型，例如 "vllm/qwen:max"。
+
+# 示例 1：vLLM 部署的 Qwen 模型（OpenAI v1 兼容接口）
+provider:
+  vllm:
+    npm: "@ai-sdk/openai-compatible"
+    name: "vLLM Local"
+    options:
+      baseURL: "http://localhost:8000/v1"
+      apiKey: "local"          # vLLM 通常无需鉴权，可随便填
+    models:
+      "qwen:max":
+        name: "Qwen Max"
+        tools: true
+        capabilities:
+          input: ["text"]
+          output: ["text"]
+        limit:
+          context: 32768
+          output: 8192
+
+# 示例 2：OpenAI 官方 API（去掉注释即可使用）
+# provider:
+#   openai:
+#     npm: "@ai-sdk/openai-compatible"
+#     name: "OpenAI"
+#     options:
+#       baseURL: "https://api.openai.com/v1"
+#       apiKey: "${OPENAI_API_KEY}"   # 建议通过环境变量注入，不要硬编码
+#     models:
+#       "gpt-4o":
+#         name: "GPT-4o"
+#         tools: true
+#         capabilities:
+#           input: ["text"]
+#           output: ["text"]
+#         limit:
+#           context: 128000
+#           output: 16384
+
+# 如需覆盖默认模型，可取消下面注释：
+# default_model: "vllm/qwen:max"
+# small_model: "vllm/qwen:max"

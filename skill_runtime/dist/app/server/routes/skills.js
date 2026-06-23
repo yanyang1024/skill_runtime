@@ -1,14 +1,11 @@
 import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { skillRoot, growthRunsDir, backupsDir, toPosix } from "../../shared/utils/paths.js";
-import { runObserve } from "../../workers/observe/index.js";
-import { runGrowDryRun } from "../../workers/grow/dryRun.js";
-import { runGrowLive } from "../../workers/grow/live.js";
-import { runApiScan } from "../../workers/api/scan.js";
-import { runApiTest } from "../../workers/api/test.js";
-import { runStabilizePromote } from "../../workers/stabilize/promote.js";
-import { runRollback } from "../../workers/stabilize/rollback.js";
+import { skillRoot, toPosix, runsDir, skillStableDir, skillPreviewDir, skillReleaseDir } from "../../shared/utils/paths.js";
+import { loadRunState } from "../../orchestration/stateMachine.js";
+import { createStableSnapshot } from "../../snapshot_manager/snapshot.js";
+import { rollbackSkill } from "../../snapshot_manager/rollback.js";
+import { filenameTimestamp } from "../../shared/utils/time.js";
 const router = Router();
 async function buildTree(absPath, skillRootPath) {
     const entries = await fs.readdir(absPath, { withFileTypes: true });
@@ -65,151 +62,65 @@ router.get("/:skillId/file/*", async (req, res) => {
         res.status(404).json({ error: String(err) });
     }
 });
-router.post("/:skillId/observe", async (req, res) => {
+router.get("/:skillId/runs", async (req, res) => {
     try {
-        const result = await runObserve(req.params.skillId);
-        res.json({ ok: true, runId: result.runId, trace: result.trace });
+        const entries = await fs.readdir(runsDir(), { withFileTypes: true });
+        const runs = [];
+        for (const entry of entries) {
+            if (!entry.isDirectory())
+                continue;
+            const state = await loadRunState(entry.name);
+            if (state && state.skill_id === req.params.skillId) {
+                runs.push(state);
+            }
+        }
+        res.json(runs);
     }
     catch (err) {
         res.status(500).json({ error: String(err) });
     }
 });
-async function readLatestTrace(skillId) {
-    const runsDir = growthRunsDir(skillId);
-    const runs = await fs.readdir(runsDir);
-    const traceFiles = [];
-    for (const run of runs) {
-        const p = path.join(runsDir, run, "runtime-trace.json");
-        try {
-            const stat = await fs.stat(p);
-            traceFiles.push({ run, mtime: stat.mtimeMs });
+async function copyDir(src, dest) {
+    await fs.mkdir(dest, { recursive: true });
+    const entries = await fs.readdir(src, { withFileTypes: true });
+    for (const entry of entries) {
+        const s = path.join(src, entry.name);
+        const d = path.join(dest, entry.name);
+        if (entry.isDirectory()) {
+            await copyDir(s, d);
         }
-        catch {
-            // ignore
+        else {
+            await fs.copyFile(s, d);
         }
     }
-    traceFiles.sort((a, b) => b.mtime - a.mtime);
-    if (traceFiles.length === 0)
-        return null;
-    const latest = traceFiles[0];
-    const raw = await fs.readFile(path.join(runsDir, latest.run, "runtime-trace.json"), "utf-8");
-    return JSON.parse(raw);
 }
-router.post("/:skillId/grow/dry-run", async (req, res) => {
+router.post("/:skillId/promote", async (req, res) => {
+    const { previewId, runId } = req.body;
+    const skillId = req.params.skillId;
     try {
-        const trace = await readLatestTrace(req.params.skillId);
-        if (!trace) {
-            res.status(400).json({ error: "no trace found, run observe first" });
-            return;
-        }
-        const result = await runGrowDryRun(req.params.skillId, trace);
-        res.json({ ok: true, runId: result.runId, plan: result.plan, proposal: result.proposal });
-    }
-    catch (err) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-async function readLatestDryRunPlan(skillId) {
-    const runsDir = growthRunsDir(skillId);
-    const runs = await fs.readdir(runsDir);
-    const planFiles = [];
-    for (const run of runs) {
-        const p = path.join(runsDir, run, "dry-run-plan.yaml");
-        try {
-            const stat = await fs.stat(p);
-            planFiles.push({ run, mtime: stat.mtimeMs });
-        }
-        catch {
-            // ignore
-        }
-    }
-    planFiles.sort((a, b) => b.mtime - a.mtime);
-    if (planFiles.length === 0)
-        return null;
-    const latest = planFiles[0];
-    const YAML = await import("yaml");
-    const raw = await fs.readFile(path.join(runsDir, latest.run, "dry-run-plan.yaml"), "utf-8");
-    return YAML.parse(raw);
-}
-router.post("/:skillId/grow/live", async (req, res) => {
-    try {
-        const plan = await readLatestDryRunPlan(req.params.skillId);
-        if (!plan) {
-            res.status(400).json({ error: "no dry-run plan found, run grow dry-run first" });
-            return;
-        }
-        const result = await runGrowLive(req.params.skillId, plan);
-        res.json({
-            ok: true,
-            preview_id: result.previewId,
-            snapshot_id: result.snapshot.snapshot_id,
-            archive_id: result.archive?.archive_id ?? null,
-            quality_passed: result.qualityReport.overall_passed,
-        });
-    }
-    catch (err) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-router.post("/:skillId/api-scan", async (req, res) => {
-    try {
-        const manifest = await runApiScan(req.params.skillId);
-        res.json({ ok: true, endpoints: manifest.endpoints });
-    }
-    catch (err) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-router.post("/:skillId/api-test/:endpointId", async (req, res) => {
-    try {
-        const results = await runApiTest(req.params.skillId, req.params.endpointId);
-        res.json({ ok: true, results });
-    }
-    catch (err) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-router.get("/:skillId/snapshots", async (req, res) => {
-    try {
-        const files = await fs.readdir(backupsDir(req.params.skillId));
-        const snapshots = files
-            .filter((f) => f.endsWith(".tar.gz"))
-            .map((f) => ({
-            filename: f,
-            snapshot_id: `snapshot-${f.replace(/\.tar\.gz$/, "")}`,
-        }));
-        res.json(snapshots);
-    }
-    catch (err) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-router.get("/:skillId/endpoints", async (req, res) => {
-    try {
-        const manifestPath = path.join(skillRoot(req.params.skillId), "stable", "endpoint_manifest.yaml");
-        const raw = await fs.readFile(manifestPath, "utf-8");
-        const YAML = await import("yaml");
-        const manifest = YAML.parse(raw);
-        res.json(manifest);
-    }
-    catch (err) {
-        res.status(500).json({ error: String(err) });
-    }
-});
-router.post("/:skillId/stabilize/promote", async (req, res) => {
-    try {
-        const { previewId } = req.body;
-        const result = await runStabilizePromote(req.params.skillId, previewId);
-        res.json({ ok: true, ...result });
+        // 1. snapshot stable
+        const snapshot = await createStableSnapshot(skillId, "promote", runId);
+        // 2. move old stable to releases
+        const ts = filenameTimestamp();
+        const releaseDir = skillReleaseDir(skillId, `v0.1-${ts}`);
+        await copyDir(skillStableDir(skillId), releaseDir);
+        // 3. copy preview to stable
+        const previewDir = skillPreviewDir(skillId, previewId);
+        await fs.rm(skillStableDir(skillId), { recursive: true, force: true });
+        await copyDir(previewDir, skillStableDir(skillId));
+        // 4. write changelog
+        const changelogPath = path.join(skillStableDir(skillId), "CHANGELOG.md");
+        await fs.writeFile(changelogPath, `# Changelog\n\n## v0.1-${ts}\n\n- Promoted from preview ${previewId}\n- Run: ${runId ?? "N/A"}\n- Snapshot: ${snapshot.snapshot_id}\n`, "utf-8");
+        res.json({ ok: true, release_version: `v0.1-${ts}`, snapshot_id: snapshot.snapshot_id });
     }
     catch (err) {
         res.status(500).json({ error: String(err) });
     }
 });
 router.post("/:skillId/rollback", async (req, res) => {
+    const { snapshotId } = req.body;
     try {
-        const { snapshotId } = req.body;
-        await runRollback(req.params.skillId, snapshotId);
+        await rollbackSkill(req.params.skillId, snapshotId);
         res.json({ ok: true });
     }
     catch (err) {

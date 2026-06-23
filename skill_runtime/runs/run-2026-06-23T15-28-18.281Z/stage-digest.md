@@ -1,0 +1,18 @@
+# Stage Digest
+
+## Run
+run-2026-06-23T15-28-18.281Z
+
+## Skill
+v02-test-skill-1782228498275
+
+## Preview
+N/A
+
+## Current Stage
+N/A
+
+## Key Findings
+
+## Next Recommended Action
+

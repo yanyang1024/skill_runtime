@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { skillRoot, skillStableDir, skillPreviewDir } from "../../shared/utils/paths.js";
-import { createSkillSnapshot } from "../../shared/utils/snapshot.js";
-import { archiveFiles } from "../../shared/utils/archive.js";
+import { createStableSnapshot } from "../../snapshot_manager/snapshot.js";
+import { archiveFiles } from "../../snapshot_manager/archive.js";
 import { runQualityGate } from "../quality/index.js";
 import { filenameTimestamp } from "../../shared/utils/time.js";
 import { writeJson, writeYaml, writeMarkdown } from "../../shared/utils/growthRun.js";
@@ -21,8 +21,7 @@ export async function runGrowLive(skillId: string, plan: DryRunPlan): Promise<Li
   }
 
   // 1. snapshot
-  const snapshot = await createSkillSnapshot(skillId, "grow-live-run", plan.run_id);
-  await writeYaml(snapshot.path.replace(/\.tar\.gz$/, ".manifest.yaml"), snapshot);
+  const snapshot = await createStableSnapshot(skillId, "grow-live-run", plan.run_id);
 
   // 2. prepare preview
   const previewId = `preview-${filenameTimestamp()}`;
@@ -69,7 +68,7 @@ export async function runGrowLive(skillId: string, plan: DryRunPlan): Promise<Li
   // 4. archive (move from preview dir)
   let archive: ArchiveManifest | null = null;
   if (archiveOps.length > 0) {
-    archive = await archiveFiles(
+    const archiveResult = await archiveFiles(
       skillId,
       archiveOps.map((o) => ({
         originalPath: path.relative(skillRoot(skillId), o.originalPath),
@@ -78,14 +77,15 @@ export async function runGrowLive(skillId: string, plan: DryRunPlan): Promise<Li
       "grow-live-run",
       plan.run_id,
     );
+    archive = archiveResult;
     const archiveManifestPath = path.join(
       skillRoot(skillId),
       ".archive",
-      archive.created_at.replace(/:/g, "-"),
+      archiveResult.created_at.replace(/:/g, "-"),
       "archive-manifest.yaml",
     );
     await fs.mkdir(path.dirname(archiveManifestPath), { recursive: true });
-    await writeYaml(archiveManifestPath, archive);
+    await writeYaml(archiveManifestPath, archiveResult);
   }
 
   // 5. quality gate

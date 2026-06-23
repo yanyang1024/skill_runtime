@@ -7,6 +7,12 @@ import {
   SnapshotManifest,
   EndpointManifest,
   QualityReport,
+  RunState,
+  StageState,
+  OpencodeRuntime,
+  PromptRecommendResponse,
+  DirectorReview,
+  StageTransition,
 } from "../app/shared/schemas/index.js";
 
 describe("schemas", () => {
@@ -147,3 +153,78 @@ describe("schemas", () => {
     assert.doesNotThrow(() => QualityReport.parse(report));
   });
 });
+
+
+  it("validates new v0.2 schemas", () => {
+    assert.doesNotThrow(() =>
+      RunState.parse({
+        run_id: "run-20260623-001",
+        skill_id: "etch-skill",
+        status: "running",
+        created_at: "2026-06-23T08:30:12Z",
+        updated_at: "2026-06-23T08:30:12Z",
+      }),
+    );
+
+    assert.doesNotThrow(() =>
+      StageState.parse({
+        stage_id: "grow-build",
+        run_id: "run-20260623-001",
+        status: "running",
+        attempt: 1,
+        workspace_path: "runs/run-20260623-001/grow-build/workspace",
+        outputs: ["patch-notes.md"],
+        digest_path: "runs/run-20260623-001/grow-build/stage-digest.md",
+        created_at: "2026-06-23T08:30:12Z",
+        updated_at: "2026-06-23T08:30:12Z",
+      }),
+    );
+
+    assert.doesNotThrow(() =>
+      OpencodeRuntime.parse({
+        server_id: "run-20260623-001-grow-build-1",
+        stage_id: "grow-build",
+        run_id: "run-20260623-001",
+        skill_id: "etch-skill",
+        runtime_mode: "web",
+        port: 9001,
+        base_url: "http://127.0.0.1:9001",
+        open_url: "http://127.0.0.1:9001",
+        proxy_url: "/api/runs/run-20260623-001/stage/grow-build/view/",
+        workspace_path: "runs/run-20260623-001/grow-build/workspace",
+        opencode_config_dir: "runs/run-20260623-001/grow-build/workspace/.opencode",
+        status: "running",
+      }),
+    );
+
+    assert.doesNotThrow(() =>
+      PromptRecommendResponse.parse({
+        primary: "请基于 growth-plan.md 执行 preview skill 更新。",
+        alternatives: ["备选 1", "备选 2"],
+        rationale: "当前阶段需要执行修改。",
+        risk_hint: "请确认只修改 preview。",
+      }),
+    );
+
+    assert.doesNotThrow(() =>
+      DirectorReview.parse({
+        review_id: "dr-1",
+        run_id: "run-20260623-001",
+        stage_id: "rehearse-preview",
+        skill_id: "etch-skill",
+        preview_id: "preview-001",
+        content: "这一版基本完成任务，但绘图流程还有问题。",
+        created_at: "2026-06-23T08:30:12Z",
+      }),
+    );
+
+    assert.doesNotThrow(() =>
+      StageTransition.parse({
+        from: "grow-quality-review",
+        to: "grow-build",
+        reason: "fix",
+        carry_outputs: ["quality-review.md"],
+        created_at: "2026-06-23T08:30:12Z",
+      }),
+    );
+  });

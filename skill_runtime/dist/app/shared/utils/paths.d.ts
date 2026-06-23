@@ -5,9 +5,18 @@ export declare function skillPreviewDir(skillId: string, previewId: string): str
 export declare function skillReleaseDir(skillId: string, version: string): string;
 export declare function skillArchiveDir(skillId: string, timestamp: string): string;
 export declare function backupsDir(skillId: string): string;
+export declare function stableBackupDir(skillId: string): string;
+export declare function previewBackupDir(skillId: string, previewId: string): string;
 export declare function tracesDir(skillId: string): string;
 export declare function growthRunsDir(skillId: string): string;
 export declare function experimentsDir(skillId: string): string;
 export declare function apiDocsDir(skillId: string): string;
+export declare function runsDir(): string;
+export declare function runDir(runId: string): string;
+export declare function stageDir(runId: string, stageId: string, attempt?: number): string;
+export declare function stageWorkspaceDir(runId: string, stageId: string, attempt?: number): string;
+export declare function stageOutputDir(runId: string, stageId: string, attempt?: number): string;
+export declare function stageInputDir(runId: string, stageId: string, attempt?: number): string;
+export declare function stageWorkDir(runId: string, stageId: string, attempt?: number): string;
 export declare function toPosix(relativeOrAbsolute: string): string;
 //# sourceMappingURL=paths.d.ts.map

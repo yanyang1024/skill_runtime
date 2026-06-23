@@ -16,7 +16,7 @@ export async function runApiTest(skillId, endpointId, baseURL = process.env.SKIL
     const relativePath = ep.path.replace(/^\//, "");
     const normalizedBase = baseURL.endsWith("/") ? baseURL : `${baseURL}/`;
     const url = new URL(relativePath, normalizedBase);
-    if (ep.required_params.includes("lot_id"))
+    if (ep.required_params?.includes("lot_id"))
         url.searchParams.set("lot_id", "LOT-001");
     const res = await fetch(url.toString());
     results.push({

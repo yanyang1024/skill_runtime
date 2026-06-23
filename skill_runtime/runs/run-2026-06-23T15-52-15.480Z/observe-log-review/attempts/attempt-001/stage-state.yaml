@@ -1,0 +1,9 @@
+stage_id: observe-log-review
+run_id: run-2026-06-23T15-52-15.480Z
+status: pending
+attempt: 1
+workspace_path: /home/yy/skill_runtime/runs/run-2026-06-23T15-52-15.480Z/observe-log-review/attempts/attempt-001/workspace
+outputs: []
+digest_path: /home/yy/skill_runtime/runs/run-2026-06-23T15-52-15.480Z/observe-log-review/attempts/attempt-001/stage-digest.md
+created_at: 2026-06-23T15:52:15.482Z
+updated_at: 2026-06-23T15:52:15.482Z

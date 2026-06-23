@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-06-23T15:40:31.268Z",
+  "stage_id": "observe-api-scan",
+  "run_id": "run-2026-06-23T15-40-31.262Z",
+  "attempt": 1,
+  "summary": {
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "error": 0,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "name": "test_sample.sh",
+      "path": "/home/yy/skill_runtime/runs/run-2026-06-23T15-40-31.262Z/observe-api-scan/attempts/attempt-001/output/api-tests/test_sample.sh",
+      "status": "failed",
+      "stdout": "",
+      "stderr": "",
+      "exit_code": "ENOENT",
+      "duration_ms": 2,
+      "error": "spawn bash ENOENT"
+    }
+  ]
+}
