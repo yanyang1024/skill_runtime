@@ -2,10 +2,12 @@ import { spawn } from "cross-spawn";
 import type { StageId, OpencodeRuntime } from "../shared/schemas/index.js";
 export interface RunningStage extends OpencodeRuntime {
     process: ReturnType<typeof spawn>;
+    attempt: number;
     exit_code?: number | null;
     exit_signal?: string | null;
     active_session_id?: string;
     abort_event_stream?: () => void;
+    unwatch_output?: () => void;
 }
 export interface StartStageRuntimeOptions {
     run_id: string;
@@ -15,7 +17,6 @@ export interface StartStageRuntimeOptions {
     attempt?: number;
     previous_stage_id?: StageId;
     previous_attempt?: number;
-    corsOrigins?: string[];
     sessionLogPath?: string;
     apiDocsAvailable?: boolean;
 }

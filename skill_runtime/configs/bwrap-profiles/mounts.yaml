@@ -1,0 +1,40 @@
+# 按域预配置的 bwrap 挂载
+# source / target 支持模板：
+#   {{REPO_ROOT}}           -> 项目根目录
+#   {{WORKSPACE_DIR}}       -> 当前 stage workspace
+#   {{NODE_MODULES_DIR}}    -> node_modules 目录
+#   {{SKILL_ID}}            -> skill 标识符
+#   {{PREVIEW_ID}}          -> preview 标识符（可能为空，此时整条挂载会被跳过）
+#   {{RUN_ID}}              -> run 标识符
+#   {{STAGE_ID}}            -> stage 标识符
+#   {{ATTEMPT}}             -> attempt 序号
+
+read_only:
+  - source: "{{REPO_ROOT}}"
+    target: "{{REPO_ROOT}}"
+  - source: "{{NODE_MODULES_DIR}}"
+    target: "{{NODE_MODULES_DIR}}"
+  - source: "{{REPO_ROOT}}/skills/{{SKILL_ID}}/stable"
+    target: "{{REPO_ROOT}}/skills/{{SKILL_ID}}/stable"
+  - source: "{{REPO_ROOT}}/configs/model-providers"
+    target: "{{REPO_ROOT}}/configs/model-providers"
+  - source: "{{REPO_ROOT}}/prompt_library"
+    target: "{{REPO_ROOT}}/prompt_library"
+  - source: "{{REPO_ROOT}}/api_docs/{{SKILL_ID}}"
+    target: "{{REPO_ROOT}}/api_docs/{{SKILL_ID}}"
+
+bind:
+  - source: "{{WORKSPACE_DIR}}"
+    target: "{{WORKSPACE_DIR}}"
+  - source: "{{REPO_ROOT}}/runs/{{RUN_ID}}/{{STAGE_ID}}/attempts/attempt-{{ATTEMPT_PAD}}/output"
+    target: "{{REPO_ROOT}}/runs/{{RUN_ID}}/{{STAGE_ID}}/attempts/attempt-{{ATTEMPT_PAD}}/output"
+  - source: "{{REPO_ROOT}}/runs/{{RUN_ID}}/{{STAGE_ID}}/attempts/attempt-{{ATTEMPT_PAD}}/workspace/work"
+    target: "{{REPO_ROOT}}/runs/{{RUN_ID}}/{{STAGE_ID}}/attempts/attempt-{{ATTEMPT_PAD}}/workspace/work"
+
+# preview 目录的挂载模式由 buildBwrapCommand 根据 skill_mount 动态决定：
+#   - preview-writable -> --bind
+#   - preview-readonly -> --ro-bind
+#   - 其他 / PREVIEW_ID 为空 -> 跳过
+preview_mount:
+  source: "{{REPO_ROOT}}/skills/{{SKILL_ID}}/previews/{{PREVIEW_ID}}"
+  target: "{{REPO_ROOT}}/skills/{{SKILL_ID}}/previews/{{PREVIEW_ID}}"

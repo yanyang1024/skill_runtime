@@ -24,7 +24,7 @@ async function copySkillSnapshot(skillId, sourceVersion, destDir) {
     await copyDir(srcDir, destDir);
 }
 export async function buildStageWorkspace(opts) {
-    const { runState, stageState, port, corsOrigins, previousStageId, previousAttempt } = opts;
+    const { runState, stageState, port, previousStageId, previousAttempt } = opts;
     const { run_id, skill_id, preview_id } = runState;
     const { stage_id, attempt } = stageState;
     const contract = getStageContract(stage_id);
@@ -36,7 +36,7 @@ export async function buildStageWorkspace(opts) {
     await fs.mkdir(inputDir, { recursive: true });
     await fs.mkdir(outputDir, { recursive: true });
     // 1. opencode.json at workspace root
-    const config = await buildOpencodeConfig({ port, corsOrigins, skillId: skill_id, stageId: stage_id });
+    const config = await buildOpencodeConfig({ port, skillId: skill_id, stageId: stage_id });
     await fs.writeFile(path.join(workspaceDir, "opencode.json"), JSON.stringify(config, null, 2), "utf-8");
     // 2. .opencode/ extensions
     const opencodeDir = path.join(workspaceDir, ".opencode");
@@ -83,6 +83,7 @@ export async function buildStageWorkspace(opts) {
         run_id,
         skill_id,
         runtime_mode: contract.runtime_mode,
+        serve_mode: "per-stage",
         port,
         base_url: `http://127.0.0.1:${port}`,
         open_url: `http://127.0.0.1:${port}`,

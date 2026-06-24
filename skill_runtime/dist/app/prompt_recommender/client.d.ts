@@ -20,7 +20,8 @@ export declare class LocalV1Client {
     private baseURL;
     private apiKey;
     private defaultModel;
-    constructor(baseURL?: string, apiKey?: string, defaultModel?: string);
+    constructor(baseURL: string, apiKey: string, defaultModel: string);
     chatCompletion(opts: ChatCompletionOptions): Promise<ChatCompletionResponse>;
 }
+export declare function createLocalV1Client(): Promise<LocalV1Client>;
 //# sourceMappingURL=client.d.ts.map

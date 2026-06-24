@@ -2,16 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
 import { REPO_ROOT } from "../shared/utils/paths.js";
-async function loadLocalV1Config() {
-    const configPath = path.join(REPO_ROOT, "configs", "model-providers", "local-v1.yaml");
-    try {
-        const raw = await fs.readFile(configPath, "utf-8");
-        return YAML.parse(raw);
-    }
-    catch {
-        return {};
-    }
-}
+import { loadLocalV1Config } from "../shared/utils/localV1Config.js";
 async function loadCustomProviders() {
     const customPath = process.env.SKILL_GROWTH_PROVIDERS_CONFIG ??
         path.join(REPO_ROOT, "configs", "model-providers", "custom.yaml");
@@ -38,9 +29,9 @@ async function loadCustomProviders() {
 export async function buildOpencodeConfig(opts) {
     const customProviders = await loadCustomProviders();
     const localV1 = await loadLocalV1Config();
-    const localV1BaseURL = process.env.SKILL_GROWTH_LOCAL_V1_URL ?? localV1.endpoint ?? "http://172.24.16.1:11434/v1";
-    const localV1ApiKey = localV1.api_key ?? "local";
-    const localV1Model = localV1.model ?? "glm4:9b";
+    const localV1BaseURL = process.env.SKILL_GROWTH_LOCAL_V1_URL ?? localV1.endpoint;
+    const localV1ApiKey = localV1.api_key;
+    const localV1Model = localV1.model;
     const defaultModel = process.env.SKILL_GROWTH_DEFAULT_MODEL ??
         customProviders.default_model ??
         `local-v1/${localV1Model}`;
@@ -62,15 +53,9 @@ export async function buildOpencodeConfig(opts) {
                     capabilities: { input: ["text"], output: ["text"] },
                     limit: { context: 131072, output: 8192 },
                 },
-                "qwen3.5:9b": {
-                    name: "Qwen 3.5 9B",
-                    tools: false,
-                    capabilities: { input: ["text"], output: ["text"] },
-                    limit: { context: 262144, output: 8192 },
-                },
             },
         },
-        ...customProviders,
+        ...customProviders.providers,
     };
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
     if (deepseekApiKey) {
@@ -99,7 +84,6 @@ export async function buildOpencodeConfig(opts) {
             port: opts.port,
             hostname: "127.0.0.1",
             mdns: false,
-            cors: opts.corsOrigins,
         },
         permission: {
             edit: "ask",
@@ -138,9 +122,6 @@ export async function buildOpencodeConfig(opts) {
             },
         },
         provider: providers,
-        // stage-level metadata for OpenCode context
-        _skill_growth_stage: opts.stageId,
-        _skill_growth_skill: opts.skillId,
     };
 }
 //# sourceMappingURL=opencodeConfig.js.map

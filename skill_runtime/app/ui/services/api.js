@@ -28,6 +28,10 @@ export async function listRuns() {
   return apiGet("/api/runs");
 }
 
+export async function listSkills() {
+  return apiGet("/api/skills");
+}
+
 export async function startStage(runId, stageId, opts = {}) {
   return apiPost(`/api/runs/${runId}/stage/${stageId}/start`, opts);
 }
@@ -52,8 +56,9 @@ export async function openStage(runId, stageId, attempt = 1) {
   return apiGet(`/api/runs/${runId}/stage/${stageId}/open?attempt=${attempt}`);
 }
 
-export async function recommendPrompt(runId, stageId, serverId, opts = {}) {
+export async function recommendPrompt(runId, stageId, attempt, serverId, opts = {}) {
   return apiPost(`/api/runs/${runId}/stage/${stageId}/recommend-prompt`, {
+    attempt,
     server_id: serverId,
     ...opts,
   });

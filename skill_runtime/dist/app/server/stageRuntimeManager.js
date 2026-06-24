@@ -5,8 +5,15 @@ import { getStageContract } from "../orchestration/stageContracts.js";
 import { createStableSnapshot, createPreviewSnapshot, } from "../snapshot_manager/snapshot.js";
 import { buildStageWorkspace } from "../workspace_builder/builder.js";
 import { buildBwrapCommand, shouldUseBwrap } from "../workspace_builder/bwrap.js";
+import { createOpencodeSessionClient } from "../opencode_client/index.js";
+import { abortEventStream, removeSSEEmitter, } from "../opencode_client/sse.js";
+import { watchStageOutput, unwatchStageOutput, } from "./artifactWatcher.js";
+import { emitArtifactChanged } from "./routes/events.js";
 const runtimes = new Map();
-let nextPort = 9000;
+let nextPort = 9500;
+function generateServerId(runId, stageId, attempt) {
+    return `${runId}-${stageId}-${attempt}`;
+}
 async function allocatePort() {
     while (true) {
         const port = nextPort++;
@@ -14,9 +21,6 @@ async function allocatePort() {
         if (!open)
             return port;
     }
-}
-function generateServerId(runId, stageId, attempt) {
-    return `${runId}-${stageId}-${attempt}`;
 }
 async function isPortOpen(port, host = "127.0.0.1", timeout = 2000) {
     return new Promise((resolve) => {
@@ -36,58 +40,32 @@ async function isPortOpen(port, host = "127.0.0.1", timeout = 2000) {
         socket.connect(port, host);
     });
 }
-async function verifyProvider(baseUrl, defaultModel, auth) {
-    const providerId = defaultModel.split("/")[0];
-    if (!providerId)
-        return;
-    const resp = await fetch(`${baseUrl}/provider`, {
-        headers: { authorization: `Basic ${auth}` },
-    });
-    if (!resp.ok) {
-        throw new Error(`provider list unavailable: ${resp.status}`);
-    }
-    const data = (await resp.json());
-    const providers = Array.isArray(data) ? data : (data.providers ?? []);
-    if (!providers.some((p) => p.id === providerId)) {
-        throw new Error(`configured provider "${providerId}" not found in opencode runtime`);
-    }
-}
-async function verifyRuntimeConfig(baseUrl, expectedModel, auth) {
-    const resp = await fetch(`${baseUrl}/config`, {
-        headers: { authorization: `Basic ${auth}` },
-    });
-    if (!resp.ok) {
-        throw new Error(`config endpoint unavailable: ${resp.status}`);
-    }
-    const data = (await resp.json());
-    if (data.model && data.model !== expectedModel) {
-        throw new Error(`runtime model mismatch: expected "${expectedModel}", got "${data.model}"`);
-    }
+function getAuth() {
+    const username = process.env.OPENCODE_SERVER_USERNAME ?? "opencode";
+    const password = process.env.OPENCODE_SERVER_PASSWORD ?? "skillgrowth";
+    return Buffer.from(`${username}:${password}`).toString("base64");
 }
 async function waitForHealth(port, proc, timeout = 30000) {
     const started = Date.now();
     let output = "";
     let resolved = false;
-    const username = process.env.OPENCODE_SERVER_USERNAME ?? "opencode";
-    const password = process.env.OPENCODE_SERVER_PASSWORD ?? "skillgrowth";
-    const auth = Buffer.from(`${username}:${password}`).toString("base64");
+    const auth = getAuth();
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
             cleanup();
-            reject(new Error(`Timeout waiting for opencode web on port ${port}`));
+            reject(new Error(`Timeout waiting for opencode serve on port ${port}`));
         }, timeout);
         const onStdout = (chunk) => {
             output += chunk.toString();
         };
-        const onStderr = (chunk) => {
-            output += chunk.toString();
-        };
+        const onStderr = onStdout;
         const onExit = (code) => {
             cleanup();
-            reject(new Error(`opencode web exited with ${code}\n${output}`));
+            reject(new Error(`opencode serve exited with ${code}\n${output}`));
         };
         const cleanup = () => {
             clearTimeout(timer);
+            clearInterval(poll);
             proc.stdout?.off("data", onStdout);
             proc.stderr?.off("data", onStderr);
             proc.off("exit", onExit);
@@ -95,7 +73,6 @@ async function waitForHealth(port, proc, timeout = 30000) {
         proc.stdout?.on("data", onStdout);
         proc.stderr?.on("data", onStderr);
         proc.on("exit", onExit);
-        // Poll TCP + real health endpoint to avoid resolving on a stray service
         const poll = setInterval(async () => {
             if (resolved)
                 return;
@@ -107,15 +84,25 @@ async function waitForHealth(port, proc, timeout = 30000) {
                 const open = await isPortOpen(port, "127.0.0.1", 500);
                 if (!open)
                     return;
-                const resp = await fetch(`http://127.0.0.1:${port}/global/health`, {
+                const healthResp = await fetch(`http://127.0.0.1:${port}/global/health`, {
                     headers: { authorization: `Basic ${auth}` },
                 });
-                if (resp.ok) {
-                    resolved = true;
-                    clearInterval(poll);
-                    cleanup();
-                    resolve(true);
-                }
+                if (!healthResp.ok)
+                    return;
+                const providerResp = await fetch(`http://127.0.0.1:${port}/provider`, {
+                    headers: { authorization: `Basic ${auth}` },
+                });
+                if (!providerResp.ok)
+                    return;
+                const configResp = await fetch(`http://127.0.0.1:${port}/config`, {
+                    headers: { authorization: `Basic ${auth}` },
+                });
+                if (!configResp.ok)
+                    return;
+                resolved = true;
+                clearInterval(poll);
+                cleanup();
+                resolve();
             }
             catch {
                 // ignore
@@ -132,10 +119,8 @@ export async function startStageRuntime(opts) {
         if (existing.status === "running") {
             return existing;
         }
-        // stale entry, stop it
         await stopStageRuntime(serverId);
     }
-    // Snapshot before start if required
     if (contract.requires_snapshot_before_start) {
         if (opts.stage_id === "grow-build" || opts.stage_id === "rehearse-iteration") {
             if (!opts.preview_id) {
@@ -144,12 +129,8 @@ export async function startStageRuntime(opts) {
             await createPreviewSnapshot(opts.skill_id, opts.preview_id, `${opts.stage_id}-start`, opts.run_id);
         }
     }
-    const port = await allocatePort();
-    const corsOrigins = opts.corsOrigins ?? ["http://localhost:3000"];
-    // Build workspace
     const { loadStageState, updateStageState } = await import("../orchestration/stateMachine.js");
     const { initStage } = await import("../orchestration/runLifecycle.js");
-    // Initialize stage state if not exists
     let stageState = await loadStageState(opts.run_id, opts.stage_id, attempt);
     if (!stageState) {
         const { stageState: created } = await initStage({
@@ -168,15 +149,14 @@ export async function startStageRuntime(opts) {
     if (!runState) {
         throw new Error(`Run not found: ${opts.run_id}`);
     }
+    const port = await allocatePort();
     const { workspaceDir, opencodeConfig } = await buildStageWorkspace({
         runState,
         stageState,
         port,
-        corsOrigins,
         previousStageId: opts.previous_stage_id,
         previousAttempt: opts.previous_attempt,
     });
-    // Prepare inputs
     const { prepareStageInputs } = await import("../workspace_builder/stageInputs.js");
     await prepareStageInputs({
         run_id: opts.run_id,
@@ -186,26 +166,18 @@ export async function startStageRuntime(opts) {
         sessionLogPath: opts.sessionLogPath,
         apiDocsAvailable: opts.apiDocsAvailable,
     });
-    // Build command
+    // 启动 headless opencode serve，绑定到当前 stage workspace
     const cmd = shouldUseBwrap()
-        ? buildBwrapCommand(workspaceDir, [
-            "opencode",
-            contract.runtime_mode,
-            "--port",
-            String(port),
-            "--hostname",
-            "127.0.0.1",
-            ...corsOrigins.flatMap((o) => ["--cors", o]),
-        ])
-        : [
-            "opencode",
-            contract.runtime_mode,
-            "--port",
-            String(port),
-            "--hostname",
-            "127.0.0.1",
-            ...corsOrigins.flatMap((o) => ["--cors", o]),
-        ];
+        ? await buildBwrapCommand({
+            workspacePath: workspaceDir,
+            skillId: opts.skill_id,
+            previewId: opts.preview_id,
+            runId: opts.run_id,
+            stageId: opts.stage_id,
+            attempt,
+            skillMount: contract.skill_mount,
+        }, ["opencode", "serve", "--hostname", "127.0.0.1", "--port", String(port)])
+        : ["opencode", "serve", "--hostname", "127.0.0.1", "--port", String(port)];
     const proc = spawn(cmd[0], cmd.slice(1), {
         cwd: workspaceDir,
         env: {
@@ -220,13 +192,7 @@ export async function startStageRuntime(opts) {
     const username = process.env.OPENCODE_SERVER_USERNAME ?? "opencode";
     const password = process.env.OPENCODE_SERVER_PASSWORD ?? "skillgrowth";
     const authToken = Buffer.from(`${username}:${password}`).toString("base64url");
-    const auth = Buffer.from(`${username}:${password}`).toString("base64");
     const openUrl = `http://127.0.0.1:${port}`;
-    const defaultModel = String(opencodeConfig.model ?? "");
-    if (defaultModel) {
-        await verifyProvider(openUrl, defaultModel, auth);
-        await verifyRuntimeConfig(openUrl, defaultModel, auth);
-    }
     const runtime = {
         server_id: serverId,
         stage_id: opts.stage_id,
@@ -237,14 +203,22 @@ export async function startStageRuntime(opts) {
         base_url: openUrl,
         open_url: openUrl,
         open_url_with_auth: `${openUrl}?auth_token=${authToken}`,
-        proxy_url: `/api/runs/${opts.run_id}/stage/${opts.stage_id}/view/`,
+        proxy_url: "",
         workspace_path: workspaceDir,
         opencode_config_dir: path.join(workspaceDir, ".opencode"),
         process_pid: proc.pid,
         status: "running",
+        attempt,
         process: proc,
     };
     runtimes.set(serverId, runtime);
+    // 启动 artifact watcher，output 目录文件变化时推送到全局 /api/events
+    void watchStageOutput(opts.run_id, opts.stage_id, attempt, emitArtifactChanged).then((unwatch) => {
+        const rt = runtimes.get(serverId);
+        if (rt) {
+            rt.unwatch_output = unwatch;
+        }
+    });
     proc.on("exit", (code, signal) => {
         const rt = runtimes.get(serverId);
         if (rt) {
@@ -253,7 +227,6 @@ export async function startStageRuntime(opts) {
             rt.exit_signal = signal;
         }
     });
-    // Update stage state with server info
     await updateStageState(opts.run_id, opts.stage_id, attempt, {
         server_id: serverId,
         status: "running",
@@ -265,6 +238,33 @@ export async function stopStageRuntime(serverId, gracefulTimeout = 5000) {
     if (!runtime) {
         return { stopped: false, exit_code: null, exit_signal: null };
     }
+    // 1. 取消当前 stage 的 SSE 读取器
+    runtime.abort_event_stream?.();
+    // 2. abort / delete 该 stage 的活跃 session
+    if (runtime.active_session_id && runtime.base_url) {
+        const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
+        try {
+            await client.abortSession(runtime.workspace_path, runtime.active_session_id);
+        }
+        catch {
+            // ignore
+        }
+        try {
+            await client.deleteSession(runtime.workspace_path, runtime.active_session_id);
+        }
+        catch {
+            // ignore
+        }
+        if (runtime.run_id && runtime.stage_id && runtime.attempt) {
+            abortEventStream(runtime.run_id, runtime.stage_id, runtime.attempt, runtime.active_session_id);
+            removeSSEEmitter(runtime.run_id, runtime.stage_id, runtime.attempt, runtime.active_session_id);
+        }
+        runtime.active_session_id = undefined;
+        runtime.abort_event_stream = undefined;
+    }
+    // 停止 artifact watcher
+    runtime.unwatch_output?.();
+    unwatchStageOutput(runtime.run_id, runtime.stage_id, runtime.attempt);
     const proc = runtime.process;
     if (proc.exitCode !== null || proc.signalCode !== null) {
         runtime.status = "stopped";

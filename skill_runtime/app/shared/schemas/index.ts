@@ -29,7 +29,7 @@ export const RiskLevel = z.enum(["low", "medium", "high"]);
 
 export const StageRuntimeContract = z.object({
   stage_id: StageId,
-  runtime_mode: z.enum(["web", "serve"]),
+  runtime_mode: z.literal("serve"),
   agent_role: z.enum(["observe", "plan", "build", "review", "preview", "iteration", "release"]),
   skill_mount: z.enum(["stable-readonly", "preview-readonly", "preview-writable", "none"]),
   work_writable: z.boolean(),
@@ -91,7 +91,7 @@ export const OpencodeRuntime = z.object({
   stage_id: StageId,
   run_id: z.string(),
   skill_id: SkillId,
-  runtime_mode: z.enum(["web", "serve"]),
+  runtime_mode: z.literal("serve"),
   port: z.number().int(),
   base_url: z.string().url(),
   open_url: z.string().url(),
@@ -113,6 +113,7 @@ export const PromptRecommendRequest = z.object({
   stage_id: StageId,
   run_id: z.string(),
   server_id: z.string(),
+  attempt: z.number().int().positive().optional(),
   recent_output_summary: z.string().optional(),
   director_review: z.string().optional(),
   goal: z.string().optional(),

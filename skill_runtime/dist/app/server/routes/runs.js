@@ -3,15 +3,20 @@ import fs from "node:fs/promises";
 import { createRun } from "../../orchestration/runLifecycle.js";
 import { loadRunState } from "../../orchestration/stateMachine.js";
 import { runsDir } from "../../shared/utils/paths.js";
+import { assertSafeIdentifier, PathSecurityError } from "../../shared/utils/security.js";
 const router = Router();
 router.post("/", async (req, res) => {
     const { skillId, previewId } = req.body;
     try {
+        assertSafeIdentifier(skillId, "skill");
+        if (previewId !== undefined)
+            assertSafeIdentifier(previewId, "preview");
         const run = await createRun({ skill_id: skillId, preview_id: previewId });
         res.json({ run_id: run.run_id, skill_id: run.skill_id, preview_id: run.preview_id });
     }
     catch (err) {
-        res.status(500).json({ error: String(err) });
+        const status = err instanceof PathSecurityError ? 400 : 500;
+        res.status(status).json({ error: String(err) });
     }
 });
 router.get("/:runId", async (req, res) => {

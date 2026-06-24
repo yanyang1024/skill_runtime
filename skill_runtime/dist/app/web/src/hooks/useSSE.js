@@ -1,0 +1,210 @@
+import { useEffect, useRef, useCallback } from "react";
+import * as chatApi from "../services/chatApi";
+export function useSSE(runId, stageId, attempt, sessionId, actions) {
+    const { setMessages, setPendingPermissions, setPendingQuestions, setStreaming, setError } = actions;
+    const eventSourceRef = useRef(null);
+    const rafRef = useRef(null);
+    const pendingDeltasRef = useRef([]);
+    const partTypesRef = useRef(new Map());
+    const flushPendingDeltas = useCallback(() => {
+        if (pendingDeltasRef.current.length === 0)
+            return;
+        const deltas = pendingDeltasRef.current.splice(0, pendingDeltasRef.current.length);
+        setMessages((prev) => {
+            const next = [...prev];
+            for (const event of deltas) {
+                applyEvent(next, event, partTypesRef.current, setPendingPermissions, setPendingQuestions);
+            }
+            return next;
+        });
+    }, [setMessages, setPendingPermissions, setPendingQuestions]);
+    const scheduleFlush = useCallback(() => {
+        if (rafRef.current !== null)
+            return;
+        rafRef.current = requestAnimationFrame(() => {
+            rafRef.current = null;
+            flushPendingDeltas();
+        });
+    }, [flushPendingDeltas]);
+    useEffect(() => {
+        if (!runId || !stageId || !sessionId)
+            return;
+        setStreaming(true);
+        setError(undefined);
+        partTypesRef.current.clear();
+        pendingDeltasRef.current = [];
+        const es = chatApi.createEventSource(runId, stageId, attempt, sessionId);
+        eventSourceRef.current = es;
+        es.onmessage = (e) => {
+            const event = chatApi.parseSSEEvent(e.data);
+            if (!event)
+                return;
+            if (event.type === "text_delta" || event.type === "reasoning_delta" || event.type === "tool_delta") {
+                pendingDeltasRef.current.push(event);
+                scheduleFlush();
+            }
+            else {
+                // 非 delta 事件立即应用
+                flushPendingDeltas();
+                setMessages((prev) => {
+                    const next = [...prev];
+                    applyEvent(next, event, partTypesRef.current, setPendingPermissions, setPendingQuestions);
+                    return next;
+                });
+                if (event.type === "session.idle" || event.type === "message_end") {
+                    setStreaming(false);
+                }
+            }
+        };
+        es.onerror = () => {
+            setError("SSE 连接错误");
+            setStreaming(false);
+        };
+        return () => {
+            es.close();
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+            flushPendingDeltas();
+        };
+    }, [runId, stageId, attempt, sessionId, setStreaming, setError, setMessages, setPendingPermissions, setPendingQuestions, scheduleFlush, flushPendingDeltas]);
+    const close = useCallback(() => {
+        eventSourceRef.current?.close();
+        if (rafRef.current !== null) {
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = null;
+        }
+        flushPendingDeltas();
+    }, [flushPendingDeltas]);
+    return { close };
+}
+function applyEvent(messages, event, partTypes, setPendingPermissions, setPendingQuestions) {
+    switch (event.type) {
+        case "message_start": {
+            messages.push({
+                id: event.message_id,
+                role: event.role,
+                parts: [],
+                status: "streaming",
+                createdAt: Date.now(),
+            });
+            break;
+        }
+        case "part_start": {
+            partTypes.set(event.part_id, event.part_type);
+            const msg = findMessage(messages, event.message_id);
+            if (msg) {
+                msg.parts.push(createEmptyPart(event.part_id, event.part_type));
+            }
+            break;
+        }
+        case "text_delta":
+        case "reasoning_delta":
+        case "tool_delta": {
+            const msg = findMessage(messages, event.message_id);
+            if (!msg)
+                return;
+            const part = findPart(msg.parts, event.part_id);
+            if (part && (part.type === "text" || part.type === "reasoning" || part.type === "tool")) {
+                part.content += event.content;
+                part.status = "streaming";
+            }
+            break;
+        }
+        case "tool_start": {
+            partTypes.set(event.part_id, "tool");
+            const msg = findMessage(messages, event.message_id);
+            if (msg) {
+                const existing = findPart(msg.parts, event.part_id);
+                if (existing && existing.type === "tool") {
+                    existing.toolName = event.tool_name;
+                    existing.input = event.input;
+                }
+                else {
+                    msg.parts.push({
+                        type: "tool",
+                        id: event.part_id,
+                        toolName: event.tool_name,
+                        input: event.input,
+                        content: "",
+                        status: "streaming",
+                    });
+                }
+            }
+            break;
+        }
+        case "tool_end": {
+            const msg = findMessage(messages, event.message_id);
+            if (!msg)
+                return;
+            const part = findPart(msg.parts, event.part_id);
+            if (part && part.type === "tool") {
+                part.output = event.output;
+                part.status = event.status;
+            }
+            break;
+        }
+        case "permission_request": {
+            setPendingPermissions((prev) => [
+                ...prev,
+                {
+                    requestId: event.request_id,
+                    title: event.title,
+                    detail: event.detail,
+                    options: event.options,
+                    messageId: event.message_id,
+                },
+            ]);
+            break;
+        }
+        case "question": {
+            setPendingQuestions((prev) => [
+                ...prev,
+                {
+                    questionId: event.question_id,
+                    content: event.content,
+                    kind: event.kind,
+                    options: event.options,
+                    messageId: event.message_id,
+                },
+            ]);
+            break;
+        }
+        case "message_end": {
+            const msg = findMessage(messages, event.message_id);
+            if (msg)
+                msg.status = "done";
+            break;
+        }
+        case "error": {
+            messages.push({
+                id: `error-${Date.now()}`,
+                role: "assistant",
+                parts: [{ type: "error", id: `error-part-${Date.now()}`, content: event.message }],
+                status: "error",
+                createdAt: Date.now(),
+            });
+            break;
+        }
+    }
+}
+function findMessage(messages, id) {
+    return messages.find((m) => m.id === id);
+}
+function findPart(parts, id) {
+    return parts.find((p) => p.id === id);
+}
+function createEmptyPart(id, partType) {
+    switch (partType) {
+        case "text":
+            return { type: "text", id, content: "", status: "streaming" };
+        case "reasoning":
+            return { type: "reasoning", id, content: "", status: "streaming" };
+        case "tool":
+            return { type: "tool", id, toolName: "", content: "", status: "streaming" };
+        case "error":
+            return { type: "error", id, content: "" };
+    }
+}
+//# sourceMappingURL=useSSE.js.map

@@ -1,8 +1,14 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
 import { skillRoot, toPosix, runsDir, skillStableDir, skillPreviewDir, skillReleaseDir } from "../../shared/utils/paths.js";
+import {
+  safeResolve,
+  assertSafeIdentifier,
+  PathSecurityError,
+} from "../../shared/utils/security.js";
+import { validateSkillParams, getSafeParams } from "../middleware/validateParams.js";
 import { loadRunState } from "../../orchestration/stateMachine.js";
 import { createStableSnapshot } from "../../snapshot_manager/snapshot.js";
 import { rollbackSkill } from "../../snapshot_manager/rollback.js";
@@ -10,6 +16,9 @@ import { archiveFiles } from "../../snapshot_manager/archive.js";
 import { filenameTimestamp, utcTimestamp } from "../../shared/utils/time.js";
 
 const router: Router = Router();
+
+router.use("/:skillId/*", validateSkillParams());
+router.use("/:skillId", validateSkillParams());
 
 interface TreeNode {
   name: string;
@@ -43,7 +52,7 @@ async function buildTree(absPath: string, skillRootPath: string): Promise<TreeNo
 }
 
 router.get("/:skillId/tree", async (req, res) => {
-  const skillId = req.params.skillId;
+  const { skillId } = getSafeParams<{ skillId: string }>(req);
   const root = skillRoot(skillId);
   try {
     const tree = await buildTree(root, root);
@@ -54,31 +63,30 @@ router.get("/:skillId/tree", async (req, res) => {
 });
 
 router.get("/:skillId/file/*", async (req, res) => {
-  const skillId = req.params.skillId;
-  const filePath = ((req.params as unknown as Record<string, string[]>)[0] ?? []).join("/");
+  const { skillId } = getSafeParams<{ skillId: string }>(req);
+  const raw = (req.params as unknown as Record<string, string | string[]>)[0];
+  const rawFilePath = Array.isArray(raw) ? raw.join("/") : (raw ?? "");
   const root = skillRoot(skillId);
-  const absPath = path.join(root, filePath);
-  if (!absPath.startsWith(root)) {
-    res.status(403).json({ error: "forbidden" });
-    return;
-  }
   try {
+    const absPath = await safeResolve(root, rawFilePath);
     const content = await fs.readFile(absPath, "utf-8");
     const ext = path.extname(absPath).slice(1);
-    res.json({ path: filePath, content, ext });
+    res.json({ path: rawFilePath, content, ext });
   } catch (err) {
-    res.status(404).json({ error: String(err) });
+    const status = err instanceof PathSecurityError ? 403 : 500;
+    res.status(status).json({ error: String(err) });
   }
 });
 
 router.get("/:skillId/runs", async (req, res) => {
+  const { skillId } = getSafeParams<{ skillId: string }>(req);
   try {
     const entries = await fs.readdir(runsDir(), { withFileTypes: true });
     const runs = [];
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
       const state = await loadRunState(entry.name);
-      if (state && state.skill_id === req.params.skillId) {
+      if (state && state.skill_id === skillId) {
         runs.push(state);
       }
     }
@@ -104,8 +112,13 @@ async function copyDir(src: string, dest: string): Promise<void> {
 
 router.post("/:skillId/promote", async (req, res) => {
   const { previewId, runId } = req.body;
-  const skillId = req.params.skillId;
+  const { skillId } = getSafeParams<{ skillId: string }>(req);
   try {
+    if (typeof previewId !== "string" || previewId.length === 0) {
+      res.status(400).json({ error: "missing previewId" });
+      return;
+    }
+    assertSafeIdentifier(previewId, "preview");
     // 1. snapshot stable
     const snapshot = await createStableSnapshot(skillId, "promote", runId);
     // 2. move old stable to releases
@@ -146,8 +159,9 @@ router.post("/:skillId/promote", async (req, res) => {
 
 router.post("/:skillId/rollback", async (req, res) => {
   const { snapshotId } = req.body;
+  const { skillId } = getSafeParams<{ skillId: string }>(req);
   try {
-    await rollbackSkill(req.params.skillId, snapshotId);
+    await rollbackSkill(skillId, snapshotId);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: String(err) });

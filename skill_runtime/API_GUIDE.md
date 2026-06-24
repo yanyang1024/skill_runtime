@@ -245,4 +245,67 @@ if __name__ == "__main__":
 
     print("\n=== 多轮对话 ===")
     print(multi_turn())
+
+---
+
+# 附录：Skill Growth Studio v0.3 Chat API
+
+## 设计原则
+
+- 前端只调用 Skill Growth 自有 API，不直接调用 OpenCode。
+- 每个请求都会由 Backend 注入 `x-opencode-directory` header，确保 OpenCode 在正确的 stage workspace 上下文中执行。
+- SSE 流由 Backend 归一化为 `ChatSSEEvent` 协议后再推送给前端。
+
+## Stage Runtime
+
+| Method | Path | 说明 |
+|---|---|---|
+| POST | `/api/runs/:runId/stage/:stageId/start` | 启动 stage 的 headless `opencode serve` |
+| POST | `/api/runs/:runId/stage/:stageId/stop` | 停止 stage runtime，abort/delete 活跃 session |
+| POST | `/api/runs/:runId/stage/:stageId/retry` | 用下一个 attempt 重新启动 stage |
+| POST | `/api/runs/:runId/stage/:stageId/commit` | 将 `workspace/work/` 同步回 preview skill |
+| GET  | `/api/runs/:runId/stage/:stageId/state?attempt=` | 读取 stage state |
+
+## Chat Session
+
+所有路径前缀：`/api/runs/:runId/stage/:stageId/chat`
+
+| Method | Path | 说明 |
+|---|---|---|
+| POST | `/session` | 创建 OpenCode session，返回 `{ id }` |
+| GET  | `/session/:sessionId` | 获取 session 状态 |
+| DELETE | `/session/:sessionId` | 删除 session |
+| POST | `/session/:sessionId/abort` | abort session（必须带 workspace header） |
+| POST | `/session/:sessionId/message` | 发送 prompt（异步，立即返回 `{ session_id }`） |
+| GET  | `/session/:sessionId/message?limit=` | 拉取历史消息 |
+| POST | `/session/:sessionId/question/:questionId` | 回复 question |
+| POST | `/session/:sessionId/permission/:permissionId` | 允许/拒绝权限请求 |
+| GET  | `/events?session_id=` | SSE 流，返回归一化 `ChatSSEEvent` |
+
+## ChatSSEEvent 协议
+
+```ts
+type ChatSSEEvent =
+  | { type: "message_start"; message_id: string; role: "assistant" | "user" | "system" }
+  | { type: "part_start"; message_id: string; part_id: string; part_type: "text" | "reasoning" | "tool" | "error" }
+  | { type: "text_delta"; message_id: string; part_id: string; content: string }
+  | { type: "reasoning_delta"; message_id: string; part_id: string; content: string }
+  | { type: "tool_start"; message_id: string; part_id: string; tool_name: string; input?: unknown }
+  | { type: "tool_delta"; message_id: string; part_id: string; content: string }
+  | { type: "tool_end"; message_id: string; part_id: string; output?: unknown; status: "success" | "error" }
+  | { type: "permission_request"; message_id: string; request_id: string; title: string; detail?: string; options: Array<{ id: string; label: string }> }
+  | { type: "question"; message_id: string; question_id: string; content: string; kind?: "choice" | "multiple" | "text" | "confirm"; options?: Array<{ id: string; label: string }> }
+  | { type: "message_end"; message_id: string }
+  | { type: "run_status"; status: "running" | "waiting_input" | "completed" | "failed" | "aborted" }
+  | { type: "error"; message: string; detail?: unknown };
 ```
+
+## 全局 SSE 事件
+
+通过 `/api/events` 订阅：
+
+| event | 说明 |
+|---|---|
+| `status` | 全局状态文本，如 runtime 启动/停止 |
+| `artifact_changed` | `{ run_id, stage_id, attempt, name? }`，表示某 stage output 目录发生变化 |
+

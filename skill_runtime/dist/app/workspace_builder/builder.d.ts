@@ -3,7 +3,6 @@ export interface BuildWorkspaceOptions {
     runState: RunState;
     stageState: StageState;
     port: number;
-    corsOrigins: string[];
     previousStageId?: StageId;
     previousAttempt?: number;
 }

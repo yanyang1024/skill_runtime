@@ -30,8 +30,6 @@ describe("schemas", () => {
         tools_available: [],
         api_docs_available: false,
       },
-      tool_calls: [],
-      script_calls: [],
       hard_signals: {
         tool_failures: [],
         api_failures: [],
@@ -152,8 +150,25 @@ describe("schemas", () => {
     };
     assert.doesNotThrow(() => QualityReport.parse(report));
   });
-});
 
+  it("rejects opencode runtime_mode other than serve", () => {
+    assert.throws(() =>
+      OpencodeRuntime.parse({
+        server_id: "run-20260623-001-grow-build-1",
+        stage_id: "grow-build",
+        run_id: "run-20260623-001",
+        skill_id: "etch-skill",
+        runtime_mode: "web",
+        port: 9001,
+        base_url: "http://127.0.0.1:9001",
+        open_url: "http://127.0.0.1:9001",
+        proxy_url: "/api/runs/run-20260623-001/stage/grow-build/view/",
+        workspace_path: "runs/run-20260623-001/grow-build/workspace",
+        opencode_config_dir: "runs/run-20260623-001/grow-build/workspace/.opencode",
+        status: "running",
+      }),
+    );
+  });
 
   it("validates new v0.2 schemas", () => {
     assert.doesNotThrow(() =>
@@ -186,7 +201,7 @@ describe("schemas", () => {
         stage_id: "grow-build",
         run_id: "run-20260623-001",
         skill_id: "etch-skill",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         port: 9001,
         base_url: "http://127.0.0.1:9001",
         open_url: "http://127.0.0.1:9001",
@@ -228,3 +243,4 @@ describe("schemas", () => {
       }),
     );
   });
+});

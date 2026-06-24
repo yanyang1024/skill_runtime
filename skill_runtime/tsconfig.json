@@ -19,5 +19,5 @@
     "noUncheckedIndexedAccess": true
   },
   "include": ["app/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist", "py312_skill"]
+  "exclude": ["node_modules", "dist", "py312_skill", "app/web"]
 }

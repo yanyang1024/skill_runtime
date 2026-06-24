@@ -1,8 +1,9 @@
+import { loadLocalV1Config } from "../shared/utils/localV1Config.js";
 export class LocalV1Client {
     baseURL;
     apiKey;
     defaultModel;
-    constructor(baseURL = process.env.SKILL_GROWTH_RECOMMENDER_URL ?? "http://172.24.16.1:11434/v1", apiKey = process.env.SKILL_GROWTH_RECOMMENDER_API_KEY ?? "local", defaultModel = process.env.SKILL_GROWTH_RECOMMENDER_MODEL ?? "glm4:9b") {
+    constructor(baseURL, apiKey, defaultModel) {
         this.baseURL = baseURL.replace(/\/$/, "");
         this.apiKey = apiKey;
         this.defaultModel = defaultModel;
@@ -28,5 +29,15 @@ export class LocalV1Client {
         }
         return (await resp.json());
     }
+}
+export async function createLocalV1Client() {
+    const envURL = process.env.SKILL_GROWTH_RECOMMENDER_URL;
+    const envKey = process.env.SKILL_GROWTH_RECOMMENDER_API_KEY;
+    const envModel = process.env.SKILL_GROWTH_RECOMMENDER_MODEL;
+    if (envURL && envKey && envModel) {
+        return new LocalV1Client(envURL, envKey, envModel);
+    }
+    const cfg = await loadLocalV1Config();
+    return new LocalV1Client(envURL ?? cfg.endpoint, envKey ?? cfg.api_key, envModel ?? cfg.model);
 }
 //# sourceMappingURL=client.js.map

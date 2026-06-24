@@ -29,10 +29,7 @@ export declare const StageRuntimeContract: z.ZodObject<{
         "rehearse-iteration": "rehearse-iteration";
         "stabilize-release": "stabilize-release";
     }>;
-    runtime_mode: z.ZodEnum<{
-        web: "web";
-        serve: "serve";
-    }>;
+    runtime_mode: z.ZodLiteral<"serve">;
     agent_role: z.ZodEnum<{
         observe: "observe";
         plan: "plan";
@@ -159,10 +156,7 @@ export declare const OpencodeRuntime: z.ZodObject<{
     }>;
     run_id: z.ZodString;
     skill_id: z.ZodString;
-    runtime_mode: z.ZodEnum<{
-        web: "web";
-        serve: "serve";
-    }>;
+    runtime_mode: z.ZodLiteral<"serve">;
     port: z.ZodNumber;
     base_url: z.ZodString;
     open_url: z.ZodString;
@@ -192,6 +186,7 @@ export declare const PromptRecommendRequest: z.ZodObject<{
     }>;
     run_id: z.ZodString;
     server_id: z.ZodString;
+    attempt: z.ZodOptional<z.ZodNumber>;
     recent_output_summary: z.ZodOptional<z.ZodString>;
     director_review: z.ZodOptional<z.ZodString>;
     goal: z.ZodOptional<z.ZodString>;

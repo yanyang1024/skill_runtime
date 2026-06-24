@@ -1,7 +1,6 @@
 import type { StageId } from "../shared/schemas/index.js";
 export interface OpencodeConfigOptions {
     port: number;
-    corsOrigins: string[];
     skillId: string;
     stageId: StageId;
 }

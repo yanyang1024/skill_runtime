@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { LocalV1Client } from "./client.js";
-import { REPO_ROOT } from "../shared/utils/paths.js";
+import { createLocalV1Client } from "./client.js";
+import { REPO_ROOT, runDir, stageDir, stageInputDir, stageOutputDir, } from "../shared/utils/paths.js";
 const SYSTEM_PROMPT = `你是 Skill Growth Studio 的阶段输入语句推荐器。
 你的任务不是直接修改 skill，而是根据当前阶段、已有产物、常用语句库和用户目标，生成一条适合发送给当前 OpenCode server 的自然语言指令。
 要求：
@@ -21,13 +21,14 @@ const SYSTEM_PROMPT = `你是 Skill Growth Studio 的阶段输入语句推荐器
 }`;
 export async function recommendPrompt(req) {
     const stageId = req.stage_id;
+    const attempt = req.attempt ?? 1;
     const promptLibraryPath = path.join(REPO_ROOT, "prompt_library", `${stageId}.md`);
-    const runDigestPath = path.join(REPO_ROOT, "runs", req.run_id, "stage-digest.md");
-    const stageDigestPath = path.join(REPO_ROOT, "runs", req.run_id, stageId, "stage-digest.md");
+    const runDigestPath = path.join(runDir(req.run_id), "stage-digest.md");
+    const stageDigestPath = path.join(stageDir(req.run_id, stageId, attempt), "stage-digest.md");
     const directorReviewPaths = [
-        path.join(REPO_ROOT, "runs", req.run_id, stageId, "output", "director-review.md"),
-        path.join(REPO_ROOT, "runs", req.run_id, stageId, "input", "director-review.md"),
-        path.join(REPO_ROOT, "runs", req.run_id, stageId, "input", "previous_stage_output", "director-review.md"),
+        path.join(stageOutputDir(req.run_id, stageId, attempt), "director-review.md"),
+        path.join(stageInputDir(req.run_id, stageId, attempt), "director-review.md"),
+        path.join(stageInputDir(req.run_id, stageId, attempt), "previous_stage_output", "director-review.md"),
     ];
     const parts = [];
     try {
@@ -64,7 +65,7 @@ export async function recommendPrompt(req) {
         parts.push(`# 当前目标\n${req.goal}`);
     }
     const userPrompt = parts.join("\n\n---\n\n");
-    const client = new LocalV1Client();
+    const client = await createLocalV1Client();
     const resp = await client.chatCompletion({
         messages: [
             { role: "system", content: SYSTEM_PROMPT },

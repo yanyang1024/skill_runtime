@@ -3,10 +3,10 @@ import path from "node:path";
 import YAML from "yaml";
 import type { StageId } from "../shared/schemas/index.js";
 import { REPO_ROOT } from "../shared/utils/paths.js";
+import { loadLocalV1Config } from "../shared/utils/localV1Config.js";
 
 export interface OpencodeConfigOptions {
   port: number;
-  corsOrigins: string[];
   skillId: string;
   stageId: StageId;
 }
@@ -22,22 +22,6 @@ interface CustomProvidersResult {
   providers: Record<string, unknown>;
   default_model?: string;
   small_model?: string;
-}
-
-interface LocalV1Config {
-  endpoint?: string;
-  model?: string;
-  api_key?: string;
-}
-
-async function loadLocalV1Config(): Promise<LocalV1Config> {
-  const configPath = path.join(REPO_ROOT, "configs", "model-providers", "local-v1.yaml");
-  try {
-    const raw = await fs.readFile(configPath, "utf-8");
-    return YAML.parse(raw) as LocalV1Config;
-  } catch {
-    return {};
-  }
 }
 
 async function loadCustomProviders(): Promise<CustomProvidersResult> {
@@ -71,10 +55,9 @@ export async function buildOpencodeConfig(
 ): Promise<Record<string, unknown>> {
   const customProviders = await loadCustomProviders();
   const localV1 = await loadLocalV1Config();
-  const localV1BaseURL =
-    process.env.SKILL_GROWTH_LOCAL_V1_URL ?? localV1.endpoint ?? "http://172.24.16.1:11434/v1";
-  const localV1ApiKey = localV1.api_key ?? "local";
-  const localV1Model = localV1.model ?? "glm4:9b";
+  const localV1BaseURL = process.env.SKILL_GROWTH_LOCAL_V1_URL ?? localV1.endpoint;
+  const localV1ApiKey = localV1.api_key;
+  const localV1Model = localV1.model;
 
   const defaultModel =
     process.env.SKILL_GROWTH_DEFAULT_MODEL ??
@@ -100,15 +83,9 @@ export async function buildOpencodeConfig(
           capabilities: { input: ["text"], output: ["text"] },
           limit: { context: 131072, output: 8192 },
         },
-        "qwen3.5:9b": {
-          name: "Qwen 3.5 9B",
-          tools: false,
-          capabilities: { input: ["text"], output: ["text"] },
-          limit: { context: 262144, output: 8192 },
-        },
       },
     },
-    ...customProviders,
+    ...customProviders.providers,
   };
 
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
@@ -139,7 +116,6 @@ export async function buildOpencodeConfig(
       port: opts.port,
       hostname: "127.0.0.1",
       mdns: false,
-      cors: opts.corsOrigins,
     },
     permission: {
       edit: "ask",
@@ -178,8 +154,5 @@ export async function buildOpencodeConfig(
       },
     },
     provider: providers,
-    // stage-level metadata for OpenCode context
-    _skill_growth_stage: opts.stageId,
-    _skill_growth_skill: opts.skillId,
   };
 }

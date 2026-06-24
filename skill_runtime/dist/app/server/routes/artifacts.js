@@ -1,39 +1,36 @@
 import { Router } from "express";
 import fs from "node:fs/promises";
-import path from "node:path";
 import { stageOutputDir } from "../../shared/utils/paths.js";
+import { safeResolve, PathSecurityError } from "../../shared/utils/security.js";
+import { validateArtifactParams, validateRunStageParams, getSafeParams, } from "../middleware/validateParams.js";
 const router = Router();
+router.use("/:runId/stage/:stageId/*", validateRunStageParams());
 router.get("/:runId/stage/:stageId/artifacts", async (req, res) => {
-    const { runId, stageId } = req.params;
-    const { attempt = 1 } = req.query;
+    const { runId, stageId, attempt } = getSafeParams(req);
     try {
-        const outDir = stageOutputDir(runId, stageId, Number(attempt));
+        const outDir = stageOutputDir(runId, stageId, attempt);
         const entries = await fs.readdir(outDir, { withFileTypes: true });
         const files = entries
             .filter((e) => e.isFile())
-            .map((e) => ({ name: e.name, path: path.join(outDir, e.name) }));
+            .map((e) => ({ name: e.name }));
         res.json(files);
     }
     catch (err) {
         res.status(500).json({ error: String(err) });
     }
 });
-router.get("/:runId/stage/:stageId/artifact/:name", async (req, res) => {
-    const { runId, stageId, name } = req.params;
-    const { attempt = 1 } = req.query;
+router.get("/:runId/stage/:stageId/artifact/:name", validateArtifactParams(), async (req, res) => {
+    const { runId, stageId, attempt, name } = getSafeParams(req);
     try {
-        const outDir = stageOutputDir(runId, stageId, Number(attempt));
-        const filePath = path.join(outDir, name);
-        if (!filePath.startsWith(outDir)) {
-            res.status(403).json({ error: "forbidden" });
-            return;
-        }
+        const outDir = stageOutputDir(runId, stageId, attempt);
+        const filePath = await safeResolve(outDir, name);
         const content = await fs.readFile(filePath, "utf-8");
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
         res.send(content);
     }
     catch (err) {
-        res.status(404).json({ error: String(err) });
+        const status = err instanceof PathSecurityError ? 403 : 500;
+        res.status(status).json({ error: String(err) });
     }
 });
 export default router;

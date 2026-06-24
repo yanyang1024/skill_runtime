@@ -1,12 +1,13 @@
 {
   "name": "skill_runtime",
   "version": "1.0.0",
-  "description": "Skill Growth Studio v0.2 - 基于多 OpenCode Web Runtime 的本地 Skill 生命周期导演台",
+  "description": "Skill Growth Studio v0.3 - 基于 headless OpenCode serve + 自建 ChatPage 的本地 Skill 生命周期导演台",
   "type": "module",
   "main": "dist/app/server/index.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch app/server/index.ts",
+    "build": "tsc && pnpm build:web",
+    "build:web": "vite build --config app/web/vite.config.ts",
+    "dev": "concurrently \"tsx watch app/server/index.ts\" \"vite --config app/web/vite.config.ts\"",
     "start": "node dist/app/server/index.js",
     "cli": "tsx app/cli/index.ts",
     "test": "tsx --test tests/**/*.test.ts"
@@ -23,6 +24,11 @@
     "express": "^4.21.2",
     "http-proxy-middleware": "^3.0.3",
     "marked": "^15.0.7",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
     "tar": "^7.4.3",
     "yaml": "^2.9.0",
     "zod": "^4.1.8"
@@ -31,7 +37,12 @@
     "@types/cross-spawn": "^6.0.6",
     "@types/express": "^5.0.0",
     "@types/node": "^22.15.12",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.1.2",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
   }
 }

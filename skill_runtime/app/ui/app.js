@@ -1,6 +1,7 @@
 import {
   createRun,
   listRuns,
+  listSkills,
   startStage,
   stopStage,
   commitStage,
@@ -181,7 +182,7 @@ async function loadRecommendation() {
   recommendationLoading.classList.remove("hidden");
   recommendationContent.classList.add("hidden");
   try {
-    const rec = await recommendPrompt(currentRunId, currentStageId, currentServerId ?? `${currentRunId}-${currentStageId}-${currentAttempt}`);
+    const rec = await recommendPrompt(currentRunId, currentStageId, currentAttempt, currentServerId ?? `${currentRunId}-${currentStageId}-${currentAttempt}`);
     primaryPrompt.value = rec.primary;
     alternativePrompts.innerHTML = (rec.alternatives ?? []).map((alt) => `<li>${escapeHtml(alt)}</li>`).join("");
     recommendationRationale.textContent = rec.rationale;
@@ -259,6 +260,22 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;");
 }
 
+async function populateSkills() {
+  try {
+    const skills = await listSkills();
+    skillSelector.innerHTML = "";
+    for (const skill of skills) {
+      const opt = document.createElement("option");
+      opt.value = skill;
+      opt.textContent = skill;
+      skillSelector.appendChild(opt);
+    }
+    currentSkill = skillSelector.value;
+  } catch (err) {
+    console.error("populate skills failed", err);
+  }
+}
+
 skillSelector.addEventListener("change", () => {
   currentSkill = skillSelector.value;
 });
@@ -283,5 +300,6 @@ evtSource.addEventListener("status", (e) => {
 });
 evtSource.onerror = () => setStatus("事件流断开", "error");
 
+populateSkills();
 refreshRuns();
 selectStage("observe-log-review");

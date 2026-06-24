@@ -1,0 +1,1 @@
+{"version":3,"file":"sse.js","sourceRoot":"","sources":["../../../../app/shared/utils/sse.ts"],"names":[],"mappings":"AAEA,MAAM,UAAU,iBAAiB,CAAC,IAAY;IAC5C,IAAI,CAAC;QACH,OAAO,IAAI,CAAC,KAAK,CAAC,IAAI,CAAiB,CAAC;IAC1C,CAAC;IAAC,MAAM,CAAC;QACP,OAAO,IAAI,CAAC;IACd,CAAC;AACH,CAAC"}

@@ -1,7 +1,7 @@
 export const STAGE_CONTRACTS = {
     "observe-log-review": {
         stage_id: "observe-log-review",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "observe",
         skill_mount: "stable-readonly",
         work_writable: false,
@@ -16,7 +16,7 @@ export const STAGE_CONTRACTS = {
     },
     "observe-api-scan": {
         stage_id: "observe-api-scan",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "observe",
         skill_mount: "stable-readonly",
         work_writable: true,
@@ -33,7 +33,7 @@ export const STAGE_CONTRACTS = {
     },
     "grow-plan": {
         stage_id: "grow-plan",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "plan",
         skill_mount: "stable-readonly",
         work_writable: false,
@@ -49,7 +49,7 @@ export const STAGE_CONTRACTS = {
     },
     "grow-build": {
         stage_id: "grow-build",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "build",
         skill_mount: "preview-writable",
         work_writable: true,
@@ -64,7 +64,7 @@ export const STAGE_CONTRACTS = {
     },
     "grow-quality-review": {
         stage_id: "grow-quality-review",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "review",
         skill_mount: "preview-readonly",
         work_writable: false,
@@ -80,7 +80,7 @@ export const STAGE_CONTRACTS = {
     },
     "rehearse-preview": {
         stage_id: "rehearse-preview",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "preview",
         skill_mount: "preview-readonly",
         work_writable: true,
@@ -91,7 +91,7 @@ export const STAGE_CONTRACTS = {
     },
     "rehearse-iteration": {
         stage_id: "rehearse-iteration",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "iteration",
         skill_mount: "preview-writable",
         work_writable: true,
@@ -106,7 +106,7 @@ export const STAGE_CONTRACTS = {
     },
     "stabilize-release": {
         stage_id: "stabilize-release",
-        runtime_mode: "web",
+        runtime_mode: "serve",
         agent_role: "release",
         skill_mount: "preview-readonly",
         work_writable: false,
