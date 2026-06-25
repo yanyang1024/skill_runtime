@@ -97,10 +97,11 @@ async function runScript(scriptPath: string, cwd: string): Promise<ApiTestResult
     };
   } catch (err: any) {
     const duration_ms = Date.now() - start;
+    const isInfraError = err.code === "ENOENT" || err.code === "EACCES" || err.code === "ENOTDIR";
     return {
       name,
       path: scriptPath,
-      status: err.killed ? "error" : "failed",
+      status: isInfraError || err.killed ? "error" : "failed",
       stdout: err.stdout?.toString() ?? "",
       stderr: err.stderr?.toString() ?? "",
       exit_code: err.code ?? undefined,

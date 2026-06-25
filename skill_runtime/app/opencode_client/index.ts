@@ -75,8 +75,13 @@ function headers(
 async function ensureWorkspaceReadable(workspacePath: string): Promise<void> {
   try {
     await fs.access(path.join(workspacePath, "opencode.json"));
-  } catch {
-    // 目录可能尚未创建或 opencode.json 不存在；这里不阻塞，实际错误会在请求时暴露。
+  } catch (err) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code === "ENOENT") {
+      console.error(`[opencode_client] workspace not ready — opencode.json missing at ${workspacePath}`);
+    } else {
+      console.error(`[opencode_client] workspace access error:`, nodeErr.message);
+    }
   }
 }
 

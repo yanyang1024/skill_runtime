@@ -8,6 +8,8 @@ export interface RunningStage extends OpencodeRuntime {
     active_session_id?: string;
     abort_event_stream?: () => void;
     unwatch_output?: () => void;
+    healthy: boolean;
+    error?: string;
 }
 export interface StartStageRuntimeOptions {
     run_id: string;

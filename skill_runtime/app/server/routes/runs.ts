@@ -9,8 +9,12 @@ import { assertSafeIdentifier, PathSecurityError } from "../../shared/utils/secu
 const router: Router = Router();
 
 router.post("/", async (req, res) => {
-  const { skillId, previewId } = req.body;
   try {
+    if (!req.body || typeof req.body !== "object") {
+      res.status(400).json({ error: "missing request body" });
+      return;
+    }
+    const { skillId, previewId } = req.body;
     assertSafeIdentifier(skillId, "skill");
     if (previewId !== undefined) assertSafeIdentifier(previewId, "preview");
     const run = await createRun({ skill_id: skillId, preview_id: previewId });
@@ -23,6 +27,7 @@ router.post("/", async (req, res) => {
 
 router.get("/:runId", async (req, res) => {
   try {
+    assertSafeIdentifier(req.params.runId, "run");
     const run = await loadRunState(req.params.runId);
     if (!run) {
       res.status(404).json({ error: "run not found" });
@@ -46,6 +51,8 @@ router.get("/", async (_req, res) => {
     }
     res.json(runs);
   } catch (err) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code === "ENOENT") return res.json([]);
     res.status(500).json({ error: String(err) });
   }
 });

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import type { ChatMessage, PendingPermission, PendingQuestion } from "../types/chat";
 import * as chatApi from "../services/chatApi";
 import { useSSE } from "./useSSE";
+import { getRuntimeStatus } from "../services/api";
 
 export interface UseChatSessionResult {
   messages: ChatMessage[];
@@ -61,12 +62,23 @@ export function useChatSession(
       try {
         let sid = sessionId;
         if (!sid) {
+          // 门控：检查 runtime 是否就绪
+          const runtimeStatus = await getRuntimeStatus(runId, stageId, attempt);
+          if (!runtimeStatus.registered || runtimeStatus.status !== "running" || !runtimeStatus.healthy) {
+            setError(
+              runtimeStatus.error
+                ? `Stage runtime 未就绪: ${runtimeStatus.error}`
+                : `Stage runtime 未就绪 (status: ${runtimeStatus.status})`,
+            );
+            return;
+          }
+
           const session = await chatApi.createSession(runId, stageId, attempt, `${stageId} session`);
           sid = session.id;
           setSessionId(sid);
         }
 
-        // 先加入用户消息
+        // 先加入用户消息（乐观更新）
         const userMessage: ChatMessage = {
           id: `user-${Date.now()}`,
           role: "user",
@@ -75,8 +87,14 @@ export function useChatSession(
         };
         setMessages((prev) => [...prev, userMessage]);
 
-        await chatApi.sendMessage(runId, stageId, attempt, sid, [{ type: "text", text }]);
-        setStreaming(true);
+        try {
+          await chatApi.sendMessage(runId, stageId, attempt, sid!, [{ type: "text", text }]);
+          setStreaming(true);
+        } catch (sendErr) {
+          // 回滚乐观更新的用户消息
+          setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+          throw sendErr;
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
         setStreaming(false);
@@ -104,10 +122,15 @@ export function useChatSession(
       }
 
       await new Promise((r) => setTimeout(r, 500));
-      await chatApi.deleteSession(runId, stageId, attempt, sessionId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // abort 失败不阻塞清理
     } finally {
+      // 无论 abort 是否成功，都尝试 delete session
+      try {
+        await chatApi.deleteSession(runId, stageId, attempt, sessionId);
+      } catch {
+        // ignore — session 可能已经不存在
+      }
       abortingRef.current = false;
       setPendingPermissions([]);
       setPendingQuestions([]);

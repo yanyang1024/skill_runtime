@@ -95,6 +95,7 @@ export declare const StageState: z.ZodObject<{
     }>;
     run_id: z.ZodString;
     status: z.ZodEnum<{
+        error: "error";
         running: "running";
         completed: "completed";
         failed: "failed";

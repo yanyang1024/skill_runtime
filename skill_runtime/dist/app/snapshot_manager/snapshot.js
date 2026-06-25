@@ -9,12 +9,22 @@ export async function createStableSnapshot(skillId, trigger, sourceRun) {
     const ts = filenameTimestamp();
     const backupRoot = stableBackupDir(skillId);
     await fs.mkdir(backupRoot, { recursive: true });
+    // 预检查：确保源目录存在且非空（至少包含 SKILL.md）
+    try {
+        await fs.access(path.join(root, "SKILL.md"));
+    }
+    catch {
+        throw new Error(`Stable snapshot aborted: source directory ${root} has no SKILL.md`);
+    }
+    const tmpArchive = path.join(backupRoot, `.tmp-${ts}.tar.gz`);
     const archivePath = path.join(backupRoot, `${ts}.tar.gz`);
     await tar.create({
         gzip: true,
-        file: archivePath,
+        file: tmpArchive,
         cwd: root,
     }, ["."]);
+    // 写入完成后 rename 为最终路径，避免失败时留下不完整快照
+    await fs.rename(tmpArchive, archivePath);
     const manifest = {
         snapshot_id: `snapshot-stable-${ts}`,
         created_at: utcTimestamp(),
@@ -59,15 +69,40 @@ export async function restoreSnapshot(manifest) {
     const dest = manifest.preview_id
         ? skillPreviewDir(manifest.skill_id, manifest.preview_id)
         : skillStableDir(manifest.skill_id);
-    // Callers must archive the current state before restoring. We clear the
-    // destination so that files removed since the snapshot was taken do not
-    // linger after restore.
-    await fs.rm(dest, { recursive: true, force: true });
-    await fs.mkdir(dest, { recursive: true });
-    await tar.extract({
-        gzip: true,
-        file: manifest.path,
-        cwd: dest,
-    });
+    // 验证 snapshot tar.gz 存在且可读
+    try {
+        await fs.access(manifest.path);
+    }
+    catch {
+        throw new Error(`Snapshot archive not found: ${manifest.path}`);
+    }
+    // 先提取到临时目录，验证完整性后再替换
+    const tmpDest = `${dest}.restore-tmp-${process.pid}`;
+    await fs.mkdir(tmpDest, { recursive: true });
+    try {
+        await tar.extract({
+            gzip: true,
+            file: manifest.path,
+            cwd: tmpDest,
+        });
+        // 验证提取结果：至少包含 SKILL.md
+        try {
+            await fs.access(path.join(tmpDest, "SKILL.md"));
+        }
+        catch {
+            throw new Error(`Snapshot restore failed: extracted content at ${tmpDest} is missing SKILL.md — snapshot may be corrupted`);
+        }
+        // 原子替换
+        await fs.rm(dest, { recursive: true, force: true });
+        await fs.rename(tmpDest, dest);
+    }
+    catch (err) {
+        // 清理临时目录
+        try {
+            await fs.rm(tmpDest, { recursive: true, force: true });
+        }
+        catch { }
+        throw err;
+    }
 }
 //# sourceMappingURL=snapshot.js.map

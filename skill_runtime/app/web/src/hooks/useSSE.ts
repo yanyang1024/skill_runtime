@@ -55,12 +55,17 @@ export function useSSE(
   useEffect(() => {
     if (!runId || !stageId || !sessionId) return;
 
-    setStreaming(true);
     setError(undefined);
     partTypesRef.current.clear();
     pendingDeltasRef.current = [];
 
-    const es = chatApi.createEventSource(runId, stageId, attempt, sessionId);
+    let es: EventSource;
+    try {
+      es = chatApi.createEventSource(runId, stageId, attempt, sessionId);
+    } catch (err) {
+      setError(`无法创建 SSE 连接: ${err instanceof Error ? err.message : String(err)}`);
+      return;
+    }
     eventSourceRef.current = es;
 
     es.onmessage = (e) => {

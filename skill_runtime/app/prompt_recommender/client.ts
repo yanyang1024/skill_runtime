@@ -33,27 +33,34 @@ export class LocalV1Client {
   }
 
   async chatCompletion(opts: ChatCompletionOptions): Promise<ChatCompletionResponse> {
-    const resp = await fetch(`${this.baseURL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: opts.model ?? this.defaultModel,
-        messages: opts.messages,
-        temperature: opts.temperature ?? 0.7,
-        max_tokens: opts.max_tokens ?? 512,
-        stream: opts.stream ?? false,
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    try {
+      const resp = await fetch(`${this.baseURL}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: opts.model ?? this.defaultModel,
+          messages: opts.messages,
+          temperature: opts.temperature ?? 0.7,
+          max_tokens: opts.max_tokens ?? 512,
+          stream: opts.stream ?? false,
+        }),
+        signal: controller.signal,
+      });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(`Local v1 API error ${resp.status}: ${text}`);
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Local v1 API error ${resp.status}: ${text}`);
+      }
+
+      return (await resp.json()) as ChatCompletionResponse;
+    } finally {
+      clearTimeout(timeout);
     }
-
-    return (await resp.json()) as ChatCompletionResponse;
   }
 }
 

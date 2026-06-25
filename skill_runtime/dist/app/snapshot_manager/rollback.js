@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
 import { stableBackupDir, previewBackupDir } from "../shared/utils/paths.js";
-import { restoreSnapshot } from "./snapshot.js";
+import { restoreSnapshot, createStableSnapshot, createPreviewSnapshot } from "./snapshot.js";
 export async function findSnapshotManifest(skillId, snapshotId) {
     const candidates = [];
     // stable snapshots
@@ -52,6 +52,18 @@ export async function rollbackSkill(skillId, snapshotId) {
     const manifest = await findSnapshotManifest(skillId, snapshotId);
     if (!manifest) {
         throw new Error(`Snapshot not found: ${snapshotId}`);
+    }
+    // 回滚前先对当前状态打快照，以便 undo
+    try {
+        if (manifest.preview_id) {
+            await createPreviewSnapshot(skillId, manifest.preview_id, "pre-rollback", "rollback");
+        }
+        else {
+            await createStableSnapshot(skillId, "pre-rollback", "rollback");
+        }
+    }
+    catch (snapErr) {
+        console.error("[rollback] pre-rollback snapshot failed:", snapErr);
     }
     await restoreSnapshot(manifest);
 }

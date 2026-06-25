@@ -9,17 +9,26 @@ const DEFAULT_CONFIG = {
 };
 export async function loadLocalV1Config() {
     const configPath = path.join(REPO_ROOT, "configs", "model-providers", "local-v1.yaml");
+    let raw;
     try {
-        const raw = await fs.readFile(configPath, "utf-8");
-        const parsed = YAML.parse(raw);
-        return {
-            endpoint: parsed.endpoint ?? DEFAULT_CONFIG.endpoint,
-            model: parsed.model ?? DEFAULT_CONFIG.model,
-            api_key: parsed.api_key ?? DEFAULT_CONFIG.api_key,
-        };
+        raw = await fs.readFile(configPath, "utf-8");
     }
-    catch {
-        return { ...DEFAULT_CONFIG };
+    catch (err) {
+        const nodeErr = err;
+        if (nodeErr.code === "ENOENT") {
+            return { ...DEFAULT_CONFIG };
+        }
+        throw new Error(`Failed to read model provider config: ${nodeErr.message}`);
     }
+    const parsed = YAML.parse(raw);
+    if (parsed === null || typeof parsed !== "object") {
+        throw new Error(`Invalid model provider config at ${configPath}: expected object, got ${typeof parsed}`);
+    }
+    const cfg = parsed;
+    return {
+        endpoint: typeof cfg.endpoint === "string" && cfg.endpoint.length > 0 ? cfg.endpoint : DEFAULT_CONFIG.endpoint,
+        model: typeof cfg.model === "string" && cfg.model.length > 0 ? cfg.model : DEFAULT_CONFIG.model,
+        api_key: typeof cfg.api_key === "string" && cfg.api_key.length > 0 ? cfg.api_key : DEFAULT_CONFIG.api_key,
+    };
 }
 //# sourceMappingURL=localV1Config.js.map

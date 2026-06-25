@@ -94,6 +94,20 @@ export async function getArtifact(runId: string, stageId: string, name: string, 
   return apiText(`/api/runs/${runId}/stage/${stageId}/artifact/${encodeURIComponent(name)}?attempt=${attempt}`);
 }
 
+export async function getRuntimeStatus(
+  runId: string,
+  stageId: string,
+  attempt = 1,
+): Promise<{ registered: boolean; status: string; healthy: boolean; error?: string; port?: number }> {
+  return apiGet(`/api/runs/${runId}/stage/${stageId}/status?attempt=${attempt}`) as Promise<{
+    registered: boolean;
+    status: string;
+    healthy: boolean;
+    error?: string;
+    port?: number;
+  }>;
+}
+
 export async function saveDirectorReview(runId: string, stageId: string, content: string, attempt = 1): Promise<unknown> {
   return apiPost(`/api/runs/${runId}/stage/${stageId}/director-review`, { attempt, content });
 }

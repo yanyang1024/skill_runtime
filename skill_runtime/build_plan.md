@@ -1,4 +1,11 @@
-# Skill Growth Studio v0.1 应用构建计划
+# ~~HISTORICAL — v0.1/v0.2 构建计划~~
+
+> 本文档为 v0.1/v0.2 时代的构建计划，已于 v0.3 全部落地。
+> 当前架构与实现见 `docs/ARCHITECTURE.md` 与 `AGENTS.md`。
+
+---
+
+# Skill Growth Studio v0.1 应用构建计划（历史档案）
 
 > 依据 `ori_need.txt` 与 `plan.txt` 整理，面向第一版可运行的本地化 Skill 生命周期管理应用。
 > 测试 Skill 来源：`reference_skill/tech-doc-didactic-rewriter/`。

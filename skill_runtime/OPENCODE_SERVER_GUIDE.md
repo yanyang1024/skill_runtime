@@ -1,4 +1,10 @@
-# OpenCode Server 集成与测试指南
+# ~~DEPRECATED — 已合并至 docs/opencode-integration.md~~
+
+> 本文档与 `OPENCODE_SERVER_GUIDE_new.md` 已合并为 `docs/opencode-integration.md`，后者包含 skill_runtime 与 OpenCode 集成的完整说明。
+
+---
+
+# OpenCode Server 集成与测试指南（历史档案）
 
 > 基于实际测试整理，包含配置、启动、可用端点、功能验证示例。
 >
@@ -84,7 +90,7 @@
       "name": "DeepSeek API",
       "options": {
         "baseURL": "https://api.deepseek.com/v1",
-        "apiKey": "api-key"
+        "apiKey": "secret-api-key"
       },
       "models": {
         "deepseek-v4-pro": {

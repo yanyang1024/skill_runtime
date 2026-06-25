@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { skillRoot } from "../shared/utils/paths.js";
+import { resolveContainedPath, PathSecurityError } from "../shared/utils/security.js";
 import { filenameTimestamp, utcTimestamp } from "../shared/utils/time.js";
 import type { ArchiveManifest } from "../shared/schemas/index.js";
 
@@ -21,16 +22,38 @@ export async function archiveFiles(
   await fs.mkdir(archiveRoot, { recursive: true });
 
   const archivedFiles: ArchiveManifest["archived_files"] = [];
+  const skillRootPath = skillRoot(skillId);
 
   for (const op of operations) {
     const absOriginal = path.isAbsolute(op.originalPath)
       ? op.originalPath
-      : path.join(skillRoot(skillId), op.originalPath);
+      : path.join(skillRootPath, op.originalPath);
 
-    const relativeInsideSkill = path.relative(skillRoot(skillId), absOriginal);
+    // 路径穿越防护
+    try {
+      resolveContainedPath(skillRootPath, op.originalPath);
+    } catch (err) {
+      if (err instanceof PathSecurityError) {
+        throw err;
+      }
+    }
+
+    const relativeInsideSkill = path.relative(skillRootPath, absOriginal);
     const archiveTarget = path.join(archiveRoot, relativeInsideSkill);
     await fs.mkdir(path.dirname(archiveTarget), { recursive: true });
-    await fs.rename(absOriginal, archiveTarget);
+
+    try {
+      await fs.rename(absOriginal, archiveTarget);
+    } catch (err) {
+      const nodeErr = err as NodeJS.ErrnoException;
+      if (nodeErr.code === "EXDEV") {
+        // 跨设备 fallback: 复制 + 删除
+        await fs.copyFile(absOriginal, archiveTarget);
+        await fs.unlink(absOriginal);
+      } else {
+        throw err;
+      }
+    }
 
     archivedFiles.push({
       original_path: relativeInsideSkill,

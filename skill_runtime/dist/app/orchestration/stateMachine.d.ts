@@ -18,4 +18,5 @@ export declare function createStageState(opts: {
 }): Promise<StageState>;
 export declare function updateStageState(runId: string, stageId: StageId, attempt: number, patch: Partial<StageState>): Promise<StageState>;
 export declare function appendStageTransitionForRun(runId: string, transition: StageTransition): Promise<void>;
+export declare function removeRunDir(runId: string): Promise<void>;
 //# sourceMappingURL=stateMachine.d.ts.map

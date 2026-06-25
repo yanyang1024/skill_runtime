@@ -1,4 +1,11 @@
-# Skill Growth Studio Web UI 设计方案
+# ~~DEPRECATED — 已被 React SPA 替代 (app/web/)
+
+> 本文档描述 v0.1/v0.2 时代的原生 ES Modules + iframe 方案，已于 v0.3 被 React 19 + Vite 6 自建 ChatPage 完全替代。
+> 当前前端代码位于 `app/web/src/`，文档见 `docs/ARCHITECTURE.md`。
+
+---
+
+# Skill Growth Studio Web UI 设计方案（历史档案）
 
 > 目标：把 CLI 能力包装成一个直观的单页 Web 控制台，让用户可以“作为导演”查看 Skill 内容、对比版本、并同时观察多个隔离的 OpenCode 会话。
 

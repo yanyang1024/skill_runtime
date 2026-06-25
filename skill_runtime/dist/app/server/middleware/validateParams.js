@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { StageId } from "../../shared/schemas/index.js";
-import { assertSafeIdentifier, sanitizePathComponent, PathSecurityError, } from "../../shared/utils/security.js";
+import { assertSafeIdentifier, PathSecurityError, } from "../../shared/utils/security.js";
 const AttemptSchema = z
     .union([z.string(), z.number()])
     .optional()
@@ -67,7 +67,7 @@ export function validateArtifactParams() {
             const attempt = AttemptSchema.parse(rawAttempt);
             const runId = firstString(req.params.runId);
             const stageId = StageId.parse(firstString(req.params.stageId));
-            const name = sanitizePathComponent(firstString(req.params.name));
+            const name = firstString(req.params.name);
             assertSafeIdentifier(runId, "run");
             assertSafeIdentifier(stageId, "stage");
             assertSafeIdentifier(String(attempt), "attempt");

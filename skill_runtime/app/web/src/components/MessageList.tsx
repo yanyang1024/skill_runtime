@@ -16,8 +16,8 @@ export function MessageList({ messages, streaming }: MessageListProps) {
 
   return (
     <div className="message-list">
-      {messages.length === 0 && (
-        <div className="message-empty">还没有消息。在下方输入 prompt 开始对话。</div>
+      {messages.length === 0 && !streaming && (
+        <div className="message-empty">还没有消息。请先启动 Stage，然后在下方输入 prompt 开始对话。</div>
       )}
       {messages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />

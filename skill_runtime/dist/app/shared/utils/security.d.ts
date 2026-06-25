@@ -1,6 +1,10 @@
 export declare class PathSecurityError extends Error {
     constructor(message: string);
 }
+export interface SanitizeResult {
+    value: string;
+    replaced: boolean;
+}
 /**
  * 校验标识符安全。不满足时抛出 PathSecurityError。
  */
@@ -11,7 +15,7 @@ export declare function assertSafeIdentifier(value: unknown, kind: "skill" | "ru
  * - 仅保留 a-zA-Z0-9-_.
  * - 截断至 128 字符
  */
-export declare function sanitizePathComponent(value: string): string;
+export declare function sanitizePathComponent(value: string): SanitizeResult;
 /**
  * 将相对路径解析为 root 内的绝对路径。
  * 防御层级：
@@ -23,6 +27,7 @@ export declare function sanitizePathComponent(value: string): string;
 export declare function resolveContainedPath(root: string, relative: string): string;
 /**
  * 校验给定的绝对路径确实位于 root 内部。用于校验外部已解析的路径。
+ * 使用 fs.realpathSync 解析 symlink，与 safeResolve 保持一致。
  */
 export declare function assertContainedPath(root: string, candidate: string): void;
 /**

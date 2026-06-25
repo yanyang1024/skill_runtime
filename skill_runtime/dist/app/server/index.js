@@ -53,8 +53,11 @@ async function startServer() {
     const webRoot = await detectWebRoot();
     // Static SPA
     app.use(express.static(webRoot));
-    // SPA fallback
-    app.get("*", (_req, res) => {
+    // SPA fallback — 排除 /api/*，避免未匹配 API 路由返回 HTML
+    app.get("*", (req, res) => {
+        if (req.path.startsWith("/api/")) {
+            return res.status(404).json({ error: "API endpoint not found" });
+        }
         res.sendFile(path.join(webRoot, "index.html"));
     });
     const server = app.listen(PORT, () => {
@@ -64,12 +67,36 @@ async function startServer() {
         console.log(`Skill Growth Studio server listening on http://localhost:${actualPort}`);
     });
     process.on("SIGTERM", async () => {
-        await stopAllRuntimes();
-        process.exit(0);
+        const shutdownTimer = setTimeout(() => {
+            console.error("Shutdown timeout: forcing exit");
+            process.exit(1);
+        }, 15000);
+        try {
+            await stopAllRuntimes();
+        }
+        catch (err) {
+            console.error("Error during shutdown:", err);
+        }
+        finally {
+            clearTimeout(shutdownTimer);
+            process.exit(0);
+        }
     });
     process.on("SIGINT", async () => {
-        await stopAllRuntimes();
-        process.exit(0);
+        const shutdownTimer = setTimeout(() => {
+            console.error("Shutdown timeout: forcing exit");
+            process.exit(1);
+        }, 15000);
+        try {
+            await stopAllRuntimes();
+        }
+        catch (err) {
+            console.error("Error during shutdown:", err);
+        }
+        finally {
+            clearTimeout(shutdownTimer);
+            process.exit(0);
+        }
     });
 }
 void startServer();

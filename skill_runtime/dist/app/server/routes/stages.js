@@ -26,6 +26,21 @@ router.post("/:runId/stage/:stageId/start", async (req, res) => {
             res.status(404).json({ error: "run not found" });
             return;
         }
+        // 防并发：检查是否已有同名 runtime
+        const serverId = `${runId}-${stageId}-${attempt}`;
+        const existing = getRuntime(serverId);
+        if (existing?.status === "running") {
+            res.json({
+                server_id: existing.server_id,
+                stage_id: existing.stage_id,
+                port: existing.port,
+                open_url: existing.open_url,
+                proxy_url: existing.proxy_url,
+                status: existing.status,
+                info: "already running",
+            });
+            return;
+        }
         const runtime = await startStageRuntime({
             run_id: runId,
             stage_id: stageId,
@@ -47,6 +62,10 @@ router.post("/:runId/stage/:stageId/start", async (req, res) => {
         });
     }
     catch (err) {
+        try {
+            await updateStageState(runId, stageId, attempt, { status: "error" });
+        }
+        catch { /* best-effort */ }
         res.status(500).json({ error: String(err) });
     }
 });
@@ -59,15 +78,17 @@ router.post("/:runId/stage/:stageId/stop", async (req, res) => {
         runtime?.abort_event_stream?.();
         const result = await stopStageRuntime(serverId);
         if (result.stopped) {
-            // v0.3 使用共享 opencode serve，单个 stage 停止时共享进程通常仍在运行，
-            // 因此以 stopStageRuntime 成功移除管理即视为 graceful。
-            const graceful = true;
             const nextStatus = "completed";
             const contract = getStageContract(stageId);
-            if (graceful && contract.skill_mount === "preview-writable") {
+            if (contract.skill_mount === "preview-writable") {
                 const run = await loadRunState(runId);
                 if (run?.preview_id) {
-                    await syncWorkToPreview(run.skill_id, runId, stageId, attempt, run.preview_id);
+                    try {
+                        await syncWorkToPreview(run.skill_id, runId, stageId, attempt, run.preview_id);
+                    }
+                    catch (syncErr) {
+                        console.error("[stages] syncWorkToPreview failed during stop:", syncErr);
+                    }
                 }
             }
             await updateStageState(runId, stageId, attempt, {
@@ -143,12 +164,22 @@ router.post("/:runId/stage/:stageId/retry", async (req, res) => {
         }
         const { findNextAttempt } = await import("../../orchestration/runLifecycle.js");
         const nextAttempt = await findNextAttempt(runId, stageId);
+        // 检查是否已经有同 attempt 的 runtime 在运行（防竞态）
+        const nextServerId = `${runId}-${stageId}-${nextAttempt}`;
+        if (getRuntime(nextServerId)) {
+            res.json({ server_id: nextServerId, attempt: nextAttempt, info: "already running" });
+            return;
+        }
         const runtime = await startStageRuntime({
             run_id: runId,
             stage_id: stageId,
             skill_id: run.skill_id,
             preview_id: run.preview_id,
             attempt: nextAttempt,
+            previous_stage_id: req.body.previous_stage_id,
+            previous_attempt: req.body.previous_attempt,
+            sessionLogPath: req.body.session_log_path,
+            apiDocsAvailable: req.body.api_docs_available,
         });
         res.json({
             server_id: runtime.server_id,
@@ -178,6 +209,10 @@ router.post("/:runId/stage/:stageId/director-review", async (req, res) => {
     const { runId, stageId, attempt } = getRunStageParams(req);
     const { content } = req.body;
     try {
+        if (typeof content !== "string" || content.trim().length === 0) {
+            res.status(400).json({ error: "missing or empty review content" });
+            return;
+        }
         const run = await loadRunState(runId);
         if (!run) {
             res.status(404).json({ error: "run not found" });
@@ -212,6 +247,18 @@ router.post("/:runId/stage/:stageId/recommend-prompt", async (req, res) => {
     catch (err) {
         res.status(500).json({ error: String(err) });
     }
+});
+router.get("/:runId/stage/:stageId/status", async (req, res) => {
+    const { runId, stageId, attempt } = getRunStageParams(req);
+    const serverId = `${runId}-${stageId}-${attempt}`;
+    const runtime = getRuntime(serverId);
+    res.json({
+        registered: !!runtime,
+        status: runtime?.status ?? "not_registered",
+        healthy: runtime?.healthy ?? false,
+        error: runtime?.error ?? null,
+        port: runtime?.port ?? null,
+    });
 });
 router.get("/", (_req, res) => {
     res.json(listRuntimes());

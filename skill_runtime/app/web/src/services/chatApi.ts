@@ -40,7 +40,9 @@ export async function deleteSession(
   attempt: number,
   sessionId: string,
 ): Promise<Response> {
-  return fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}`, { method: "DELETE" });
+  const res = await fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => "deleteSession failed")}`);
+  return res;
 }
 
 export async function abortSession(
@@ -49,11 +51,13 @@ export async function abortSession(
   attempt: number,
   sessionId: string,
 ): Promise<Response> {
-  return fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}/abort`, {
+  const res = await fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}/abort`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({}),
   });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => "abortSession failed")}`);
+  return res;
 }
 
 export async function sendMessage(
@@ -91,11 +95,13 @@ export async function replyQuestion(
   questionId: string,
   answer: unknown,
 ): Promise<Response> {
-  return fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}/question/${questionId}`, {
+  const res = await fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}/question/${questionId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(answer),
   });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => "replyQuestion failed")}`);
+  return res;
 }
 
 export async function replyPermission(
@@ -106,11 +112,13 @@ export async function replyPermission(
   permissionId: string,
   allowed: boolean,
 ): Promise<Response> {
-  return fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}/permission/${permissionId}`, {
+  const res = await fetch(`${chatBase(runId, stageId, attempt)}/session/${sessionId}/permission/${permissionId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ allowed }),
   });
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => "replyPermission failed")}`);
+  return res;
 }
 
 export function createEventSource(

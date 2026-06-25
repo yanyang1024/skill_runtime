@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 /**
  * 路径安全工具：四层路径穿越防御 + 标识符消毒。
  *
@@ -7,6 +8,7 @@ import fs from "node:fs/promises";
  * 1. 所有从 HTTP 请求进入的标识符必须先经 assertSafeIdentifier / sanitizePathComponent。
  * 2. 所有相对路径必须先经 resolveContainedPath / safeResolve，展开 .. 与 symlink 后再验证仍在 root 内。
  * 3. 绝不把用户输入直接拼接到文件系统路径中。
+ * 4. 所有 containment 检查统一使用 fs.realpath 解析 symlink，保持一致性。
  */
 const SAFE_IDENTIFIER_PATTERNS = {
     // skill id 保持与 Zod SkillId 一致：小写字母、数字、连字符
@@ -44,12 +46,15 @@ export function assertSafeIdentifier(value, kind) {
  * - 截断至 128 字符
  */
 export function sanitizePathComponent(value) {
+    const original = value;
     let cleaned = value.replace(/\//g, "_").replace(/\\/g, "_").replace(/\.\./g, "_");
     const allowed = new Set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.");
     cleaned = Array.from(cleaned)
         .map((c) => (allowed.has(c) ? c : "_"))
         .join("");
-    return cleaned.slice(0, 128) || "unknown";
+    const truncated = cleaned.slice(0, 128);
+    const result = truncated || "unknown";
+    return { value: result, replaced: result !== original };
 }
 /**
  * 将相对路径解析为 root 内的绝对路径。
@@ -76,13 +81,22 @@ export function resolveContainedPath(root, relative) {
 }
 /**
  * 校验给定的绝对路径确实位于 root 内部。用于校验外部已解析的路径。
+ * 使用 fs.realpathSync 解析 symlink，与 safeResolve 保持一致。
  */
 export function assertContainedPath(root, candidate) {
-    const resolvedRoot = path.resolve(root);
-    const resolvedCandidate = path.resolve(candidate);
+    const resolvedRoot = resolveRealPath(root);
+    const resolvedCandidate = resolveRealPath(candidate);
     if (resolvedCandidate !== resolvedRoot &&
         !resolvedCandidate.startsWith(resolvedRoot + path.sep)) {
         throw new PathSecurityError(`路径不在允许的根目录内: ${candidate}`);
+    }
+}
+function resolveRealPath(p) {
+    try {
+        return fsSync.realpathSync(p);
+    }
+    catch {
+        return path.resolve(p);
     }
 }
 /**

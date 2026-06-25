@@ -24,14 +24,20 @@ export async function createRun(opts: {
   const runId = generateRunId();
   const dir = runDir(runId);
   await fs.mkdir(dir, { recursive: true });
-  // 创建跨阶段 digest 模板
   const digestPath = path.join(dir, "stage-digest.md");
-  await fs.writeFile(
-    digestPath,
-    `# Stage Digest\n\n## Run\n${runId}\n\n## Skill\n${opts.skill_id}\n\n## Preview\n${opts.preview_id ?? "N/A"}\n\n## Current Stage\nN/A\n\n## Key Findings\n\n## Next Recommended Action\n\n`,
-    "utf-8",
-  );
-  return createRunState({ run_id: runId, skill_id: opts.skill_id, preview_id: opts.preview_id });
+  try {
+    await fs.writeFile(
+      digestPath,
+      `# Stage Digest\n\n## Run\n${runId}\n\n## Skill\n${opts.skill_id}\n\n## Preview\n${opts.preview_id ?? "N/A"}\n\n## Current Stage\nN/A\n\n## Key Findings\n\n## Next Recommended Action\n\n`,
+      "utf-8",
+    );
+    return await createRunState({ run_id: runId, skill_id: opts.skill_id, preview_id: opts.preview_id });
+  } catch (err) {
+    // 回滚：写入 YAML 失败时，清理已创建的目录
+    const { removeRunDir } = await import("./stateMachine.js");
+    await removeRunDir(runId);
+    throw err;
+  }
 }
 
 export async function findNextAttempt(runId: string, stageId: StageId): Promise<number> {
@@ -46,8 +52,10 @@ async function stageExists(runId: string, stageId: StageId, attempt: number): Pr
   try {
     await fs.access(stageDir(runId, stageId, attempt));
     return true;
-  } catch {
-    return false;
+  } catch (err) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code === "ENOENT") return false;
+    throw err;
   }
 }
 
@@ -105,8 +113,10 @@ export async function listStageOutputs(
   try {
     const entries = await fs.readdir(outDir, { withFileTypes: true });
     return entries.filter((e) => e.isFile()).map((e) => e.name);
-  } catch {
-    return [];
+  } catch (err) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code === "ENOENT") return [];
+    throw err;
   }
 }
 
@@ -126,7 +136,9 @@ export async function ensureSkillPreviewExists(
   try {
     await fs.access(skillPreviewDir(skillId, previewId));
     return true;
-  } catch {
-    return false;
+  } catch (err) {
+    const nodeErr = err as NodeJS.ErrnoException;
+    if (nodeErr.code === "ENOENT") return false;
+    throw err;
   }
 }

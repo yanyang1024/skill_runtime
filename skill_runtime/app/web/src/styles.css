@@ -80,8 +80,37 @@ body,
 }
 
 .status {
-  color: var(--text-muted);
   font-size: 0.9rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius);
+  transition: background 0.2s;
+}
+
+.status-idle {
+  color: var(--text-muted);
+}
+
+.status-loading {
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.1);
+}
+
+.status-success {
+  color: var(--success);
+}
+
+.status-error {
+  color: var(--danger);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.app-error-banner {
+  background: rgba(248, 81, 73, 0.12);
+  border-bottom: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .director-console {
@@ -432,6 +461,13 @@ body,
   border-radius: var(--radius);
   border: none;
   cursor: pointer;
+}
+
+.question-submit:disabled,
+.permission-allow:disabled,
+.permission-deny:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .question-submit,

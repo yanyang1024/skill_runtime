@@ -22,8 +22,12 @@ async function scanMtimes(dir) {
             }
         }
     }
-    catch {
-        // directory may not exist yet
+    catch (err) {
+        const nodeErr = err;
+        const key = [...watchers.keys()].find(() => true); // not ideal — we need access to the key for error reporting
+        if (nodeErr.code !== "ENOENT") {
+            console.error(`[artifactWatcher] scanMtimes error (${nodeErr.code}):`, nodeErr.message);
+        }
     }
     return map;
 }

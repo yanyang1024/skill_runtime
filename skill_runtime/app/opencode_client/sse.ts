@@ -501,8 +501,11 @@ async function processEventStream(
 
         const isSessionIdle = e.type === "session.idle";
         if (isSessionIdle) {
-          // session.idle 是最后事件，先把所有缓冲 delta  flush 掉
-          await flushAllPending();
+          try {
+            await flushAllPending();
+          } catch (flushErr) {
+            console.error("[sse] flushAllPending on session.idle failed:", flushErr);
+          }
           idle = true;
         }
 
@@ -523,7 +526,12 @@ async function processEventStream(
     }
 
     // 流正常结束但没有收到 session.idle：补发终端事件并 flush 残留 delta
-    await flushAllPending();
+    try {
+      await flushAllPending();
+    } catch (flushErr) {
+      console.error("[sse] flushAllPending failed:", flushErr);
+    }
+    // 无论 flush 是否成功，都必须发终端事件（避免前端永久 streaming）
     if (endedNormally && !idle) {
       emitTerminal("completed");
     } else if (signal.aborted) {

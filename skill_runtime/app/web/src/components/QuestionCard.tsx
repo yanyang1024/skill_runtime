@@ -9,8 +9,14 @@ interface QuestionCardProps {
 export function QuestionCard({ question, onReply }: QuestionCardProps) {
   const [textAnswer, setTextAnswer] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit =
+    question.kind === "text" ? textAnswer.trim().length > 0 : selected.length > 0;
 
   const handleReply = () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
     if (question.kind === "multiple") {
       onReply(question.questionId, selected);
     } else if (question.kind === "choice" || question.kind === "confirm") {
@@ -54,10 +60,11 @@ export function QuestionCard({ question, onReply }: QuestionCardProps) {
           value={textAnswer}
           onChange={(e) => setTextAnswer(e.target.value)}
           placeholder="输入自定义回答..."
+          disabled={submitting}
         />
       )}
-      <button className="question-submit" onClick={handleReply}>
-        回复
+      <button className="question-submit" onClick={handleReply} disabled={!canSubmit || submitting}>
+        {submitting ? "发送中…" : "回复"}
       </button>
     </div>
   );

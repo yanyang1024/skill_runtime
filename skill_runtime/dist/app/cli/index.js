@@ -18,6 +18,13 @@ async function main() {
     switch (command) {
         case "server": {
             const proc = spawn("tsx", ["app/server/index.ts"], { stdio: "inherit" });
+            proc.on("error", (err) => {
+                console.error(`启动 server 失败: ${err.message}`);
+                if (err.code === "ENOENT") {
+                    console.error("提示: tsx 未安装，请运行 pnpm install 或直接使用 pnpm dev");
+                }
+                process.exit(1);
+            });
             proc.on("exit", (code) => process.exit(code ?? 0));
             break;
         }
@@ -32,5 +39,8 @@ async function main() {
             process.exit(1);
     }
 }
-main();
+main().catch((err) => {
+    console.error("CLI 致命错误:", err);
+    process.exit(1);
+});
 //# sourceMappingURL=index.js.map

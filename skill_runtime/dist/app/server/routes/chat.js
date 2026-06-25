@@ -11,16 +11,31 @@ function getRuntimeForRequest(req) {
     const serverId = `${runId}-${stageId}-${attempt}`;
     return getRuntime(serverId) ?? null;
 }
+function gateRuntime(req, res) {
+    const runtime = getRuntimeForRequest(req);
+    if (!runtime) {
+        res.status(404).json({ error: "runtime not running" });
+        return null;
+    }
+    if (runtime.status !== "running" || !runtime.healthy) {
+        res.status(503).json({
+            error: "runtime not ready",
+            status: runtime.status,
+            healthy: runtime.healthy,
+            detail: runtime.error ?? null,
+        });
+        return null;
+    }
+    return runtime;
+}
 function serverError(res, err) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
 }
 // POST /session -> 创建 session
 router.post("/session", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     const { title } = req.body;
     try {
         const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
@@ -33,11 +48,9 @@ router.post("/session", async (req, res) => {
 });
 // GET /session/:sessionId -> 获取 session 状态
 router.get("/session/:sessionId", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     try {
         const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
         const session = await client.getSession(runtime.workspace_path, req.params.sessionId);
@@ -49,11 +62,9 @@ router.get("/session/:sessionId", async (req, res) => {
 });
 // DELETE /session/:sessionId -> 删除 session
 router.delete("/session/:sessionId", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     const { runId, stageId, attempt } = getSafeParams(req);
     const sessionId = req.params.sessionId;
     try {
@@ -69,11 +80,9 @@ router.delete("/session/:sessionId", async (req, res) => {
 });
 // POST /session/:sessionId/abort -> abort
 router.post("/session/:sessionId/abort", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     const { runId, stageId, attempt } = getSafeParams(req);
     const sessionId = req.params.sessionId;
     try {
@@ -88,11 +97,9 @@ router.post("/session/:sessionId/abort", async (req, res) => {
 });
 // POST /session/:sessionId/message -> 发送 prompt（异步，立即返回）
 router.post("/session/:sessionId/message", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     const { parts, agent, model } = req.body;
     const { runId, stageId, attempt } = getSafeParams(req);
     const sessionId = req.params.sessionId;
@@ -103,7 +110,8 @@ router.post("/session/:sessionId/message", async (req, res) => {
         const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
         // 先启动后台 SSE 消费，避免错过 prompt_async 触发后的早期事件
         const outputDir = stageOutputDir(runId, stageId, attempt);
-        void ensureEventStream(runtime.base_url, runtime.workspace_path, outputDir, runId, stageId, attempt, sessionId);
+        ensureEventStream(runtime.base_url, runtime.workspace_path, outputDir, runId, stageId, attempt, sessionId)
+            .catch((err) => console.error("[chat] ensureEventStream failed:", err));
         const resp = await client.sendPromptAsync(runtime.workspace_path, sessionId, {
             parts: Array.isArray(parts) ? parts : [],
             agent,
@@ -121,12 +129,11 @@ router.post("/session/:sessionId/message", async (req, res) => {
 });
 // GET /session/:sessionId/message?limit= -> 拉取历史消息
 router.get("/session/:sessionId/message", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
-    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const rawLimit = req.query.limit;
+    const limit = rawLimit && !Number.isNaN(Number(rawLimit)) ? Number(rawLimit) : undefined;
     try {
         const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
         const messages = await client.getMessages(runtime.workspace_path, req.params.sessionId, limit);
@@ -138,11 +145,9 @@ router.get("/session/:sessionId/message", async (req, res) => {
 });
 // POST /session/:sessionId/question/:questionId -> 回复 question
 router.post("/session/:sessionId/question/:questionId", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     try {
         const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
         const resp = await client.replyQuestion(runtime.workspace_path, req.params.sessionId, req.params.questionId, req.body);
@@ -154,11 +159,9 @@ router.post("/session/:sessionId/question/:questionId", async (req, res) => {
 });
 // POST /session/:sessionId/permission/:permissionId -> 允许/拒绝权限
 router.post("/session/:sessionId/permission/:permissionId", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     const { allowed } = req.body;
     try {
         const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
@@ -171,11 +174,9 @@ router.post("/session/:sessionId/permission/:permissionId", async (req, res) => 
 });
 // GET /events?session_id= -> SSE 代理
 router.get("/events", async (req, res) => {
-    const runtime = getRuntimeForRequest(req);
-    if (!runtime) {
-        res.status(404).json({ error: "runtime not running" });
+    const runtime = gateRuntime(req, res);
+    if (!runtime)
         return;
-    }
     const sessionId = req.query.session_id;
     if (typeof sessionId !== "string" || sessionId.length === 0) {
         res.status(400).json({ error: "missing session_id query parameter" });
@@ -190,7 +191,12 @@ router.get("/events", async (req, res) => {
     const listener = (event) => {
         if (res.writableEnded)
             return;
-        res.write(`data: ${JSON.stringify(event)}\n\n`);
+        try {
+            res.write(`data: ${JSON.stringify(event)}\n\n`);
+        }
+        catch {
+            cleanup();
+        }
     };
     emitter.on("event", listener);
     const cleanup = () => {
@@ -200,7 +206,8 @@ router.get("/events", async (req, res) => {
     res.on("close", cleanup);
     // 确保后台正在消费 OpenCode /event 流
     const outputDir = stageOutputDir(runId, stageId, attempt);
-    void ensureEventStream(runtime.base_url, runtime.workspace_path, outputDir, runId, stageId, attempt, sessionId);
+    ensureEventStream(runtime.base_url, runtime.workspace_path, outputDir, runId, stageId, attempt, sessionId)
+        .catch((err) => console.error("[chat] ensureEventStream failed:", err));
 });
 export default router;
 //# sourceMappingURL=chat.js.map

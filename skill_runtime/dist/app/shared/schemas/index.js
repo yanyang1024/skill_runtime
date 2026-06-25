@@ -45,7 +45,7 @@ export const RunState = z.object({
 export const StageState = z.object({
     stage_id: StageId,
     run_id: z.string(),
-    status: z.enum(["pending", "running", "waiting_input", "completed", "failed"]),
+    status: z.enum(["pending", "running", "waiting_input", "completed", "failed", "error"]),
     attempt: z.number().int().min(1),
     server_id: z.string().optional(),
     workspace_path: FilePath,

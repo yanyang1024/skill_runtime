@@ -17,7 +17,7 @@
   - **Grow（生长）**：`grow-plan`（只读规划）与 `grow-build`（修改 preview）stage；批量修改后进入 `grow-quality-review`。
   - **Rehearse（排练）**：`rehearse-preview`（导演体验）与 `rehearse-iteration`（基于 director review 迭代）stage。
   - **Stabilize（稳定化）**：`stabilize-release` stage 做发布前语义检查；确定性脚本执行 promote / rollback。
-- **当前完成度**：v0.3 已完成 headless `opencode serve` per-stage runtime、OpenCode Gateway（`x-opencode-directory` 全方法注入）、自建 ChatPage（React + Vite）、SSE 归一化、bwrap 默认启用、四层路径穿越防护、54 个测试用例全部通过。
+- **当前完成度**：v0.3 已完成 headless `opencode serve` per-stage runtime、OpenCode Gateway（`x-opencode-directory` 全方法注入）、自建 ChatPage（React + Vite）、SSE 归一化、bwrap 默认启用、四层路径穿越防护、80 个测试用例全部通过 (79 pass, 1 skip)。
 
 ---
 
@@ -51,6 +51,8 @@ skill_runtime/
 │   │   └── index.ts         # 当前仅实现 server/help
 │   ├── server/              # Express 控制平面
 │   │   ├── index.ts         # 服务入口，挂载路由、静态资源、mock API
+│   │   ├── stageRuntimeManager.ts  # opencode serve 生命周期管理（核心实现）
+│   │   ├── artifactWatcher.ts      # stage output 目录变化监听
 │   │   ├── routes/
 │   │   │   ├── skills.ts    # /api/skills/*（tree、file、runs、promote、rollback）
 │   │   │   ├── runs.ts      # /api/runs/*（创建/列出 run）
@@ -60,14 +62,7 @@ skill_runtime/
 │   │   │   └── events.ts    # /api/events SSE 状态流
 │   │   ├── middleware/
 │   │   │   └── validateParams.ts  # run/stage/skill/attempt 参数校验
-│   │   ├── opencode_gateway/
-│   │   │   ├── OpenCodeClient.ts  # OpenCode HTTP client（x-opencode-directory 全方法注入）
-│   │   │   └── sseNormalizer.ts   # SSE 事件归一化
-│   │   ├── runtime/
-│   │   │   └── StageRuntimeManager.ts  # opencode serve 生命周期管理
-│   │   ├── security/
-│   │   │   └── WorkspaceResolver.ts    # 路径消毒、穿越防护、symlink 解析
-│   │   └── stageRuntimeManager.ts      # 实际实现（由 runtime/ 重新导出）
+│   │   └── stageRuntimeManager.ts      # opencode serve 生命周期管理
 │   ├── orchestration/       # 阶段状态机 + run 编排
 │   │   ├── stageContracts.ts    # StageRuntimeContract 定义（所有 stage 均为 serve 模式）
 │   │   ├── stateMachine.ts      # RunState / StageState 持久化
@@ -121,9 +116,14 @@ skill_runtime/
 │   │           └── chat.ts
 │   ├── ui/                  # v0.2 旧版原生 ES Modules SPA（保留兼容，不再使用）
 │   ├── workers/             # 旧版四个阶段执行器（保留兼容）
+│   ├── log_collector/       # 日志收集
 │   └── shared/              # 工具与 schema
 │       ├── schemas/index.ts # Zod schema + TypeScript 类型
-│       └── utils/           # paths、time、security、fs、snapshot、archive
+│       └── utils/           # paths、time、security、fs、sse、localV1Config、growthRun
+├── scripts/                 # 辅助脚本
+├── docs/                    # 技术文档
+│   ├── ARCHITECTURE.md      # 系统架构文档
+│   └── opencode-integration.md # OpenCode 集成指南
 ├── skills/<skill-id>/
 ├── runs/<run_id>/           # 一次完整生长 run
 ├── prompt_library/
@@ -133,8 +133,9 @@ skill_runtime/
 ├── api_docs/<skill-id>/
 ├── .Grow_backups/
 ├── configs/
-│   ├── bwrap-profiles/{stage.profile,mounts.yaml}
-│   ├── model-providers/local-v1.yaml
+│   ├── bwrap-profiles/{stage.profile,rehearse.profile,mounts.yaml}
+│   ├── model-providers/{local-v1.yaml,custom.yaml,sglang.yaml}
+│   ├── opencode-templates/{skill-opencode.json,stage-opencode.json}
 │   └── quality-gates/default.yaml
 ├── tests/
 │   ├── schemas.test.ts
@@ -143,7 +144,8 @@ skill_runtime/
 │   ├── port-function.test.ts
 │   ├── security.test.ts     # v0.3 路径安全测试
 │   ├── chat-api.test.ts     # v0.3 OpenCode client / SSE 解析测试
-│   └── bwrap.test.ts        # v0.3 bwrap 命令测试
+│   ├── bwrap.test.ts        # v0.3 bwrap 命令测试
+│   └── artifact-watcher.test.ts  # v0.3 ArtifactWatcher 测试
 ├── dist/
 │   ├── app/                 # 后端构建输出
 │   └── web/                 # 前端构建输出
@@ -229,7 +231,13 @@ pnpm test
 
 ### 5.7 共享工具 `app/shared/`
 
-- `utils/security.ts`：四层路径防御 + `safeResolve`（处理 symlink）。
+- `utils/security.ts`：四层路径防御 + `safeResolve`（处理 symlink）
+- `utils/paths.ts`：所有目录路径常量（REPO_ROOT、skillRoot、runsDir 等）
+- `utils/time.ts`：`utcTimestamp()`、`filenameTimestamp()`
+- `utils/fs.ts`：`copyDir()`、`removeDir()`、`readDirNames()`
+- `utils/sse.ts`：`parseChatSSEEvent()` 前端 SSE 解析
+- `utils/localV1Config.ts`：local-v1 provider 配置加载
+- `utils/growthRun.ts`：growth run 工具函数
 
 ---
 
@@ -293,7 +301,7 @@ v0.3 新增/变更：
 ### 8.1 当前测试状态
 
 - `pnpm build` 通过 TypeScript 严格检查 + Vite 生产构建。
-- `pnpm test` 54 个用例全部通过（旧版 5 + schema 7 + v0.2 2 + port-function 13 + security 14 + chat-api 6 + bwrap 4），1 个 skip（deepseek）。
+- `pnpm test` 80 个用例全部通过（79 pass, 1 skip — deepseek），1 个 skip（deepseek）。
 - 实际启动 `opencode serve` 的端到端 Stage runtime 测试需要本地已安装 `opencode` CLI 并配置好模型服务。
 
 ---
@@ -354,3 +362,5 @@ v0.3 新增/变更：
 | `tests/chat-api.test.ts` | OpenCode client 与 SSE 归一化测试 |
 | `tests/bwrap.test.ts` | bwrap 按域挂载测试 |
 | `tests/artifact-watcher.test.ts` | ArtifactWatcher 测试 |
+| `docs/ARCHITECTURE.md` | 系统架构技术文档 |
+| `docs/opencode-integration.md` | OpenCode serve 集成指南 |

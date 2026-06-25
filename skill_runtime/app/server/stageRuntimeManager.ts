@@ -19,7 +19,7 @@ import {
   watchStageOutput,
   unwatchStageOutput,
 } from "./artifactWatcher.js";
-import { emitArtifactChanged } from "./routes/events.js";
+import { emitArtifactChanged, emitStageStatusChanged } from "./routes/events.js";
 
 // per-stage serve: each stage has its own opencode serve process and port.
 
@@ -31,6 +31,8 @@ export interface RunningStage extends OpencodeRuntime {
   active_session_id?: string;
   abort_event_stream?: () => void;
   unwatch_output?: () => void;
+  healthy: boolean;
+  error?: string;
 }
 
 const runtimes = new Map<string, RunningStage>();
@@ -181,7 +183,7 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
     }
   }
 
-  const { loadStageState, updateStageState } = await import(
+  const { loadStageState, updateStageState, loadRunState, updateRunState: updateRun } = await import(
     "../orchestration/stateMachine.js"
   );
   const { initStage } = await import("../orchestration/runLifecycle.js");
@@ -196,12 +198,6 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
     stageState = created;
   }
 
-  await updateStageState(opts.run_id, opts.stage_id, attempt, {
-    status: "running",
-    server_id: serverId,
-  });
-
-  const { loadRunState } = await import("../orchestration/stateMachine.js");
   const runState = await loadRunState(opts.run_id);
   if (!runState) {
     throw new Error(`Run not found: ${opts.run_id}`);
@@ -243,6 +239,18 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
       )
     : ["opencode", "serve", "--hostname", "127.0.0.1", "--port", String(port)];
 
+  // 启动前校验：确保必要二进制文件存在
+  if (shouldUseBwrap()) {
+    try {
+      await fs.access("/usr/bin/bwrap");
+    } catch {
+      throw new Error("bwrap is enabled but /usr/bin/bwrap not found – install bubblewrap or set STAGE_USE_BWRAP=0");
+    }
+  }
+
+  const opencodePath = cmd[0]!;
+  // 实际二进制由 spawn 在 PATH 中查找; 如果 spawn 报 ENOENT, 后续 waitForHealth 会捕获
+
   const proc = spawn(cmd[0]!, cmd.slice(1), {
     cwd: workspaceDir,
     env: {
@@ -254,7 +262,40 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
     },
   });
 
-  await waitForHealth(port, proc);
+  let healthErr = "";
+  try {
+    await waitForHealth(port, proc);
+  } catch (err) {
+    healthErr = err instanceof Error ? err.message : String(err);
+    // 健康检查失败：注册一个 error runtime 便于上层查询，然后 kill 子进程
+    const errorRuntime: RunningStage = {
+      server_id: serverId,
+      stage_id: opts.stage_id,
+      run_id: opts.run_id,
+      skill_id: opts.skill_id,
+      runtime_mode: contract.runtime_mode,
+      port,
+      base_url: `http://127.0.0.1:${port}`,
+      open_url: `http://127.0.0.1:${port}`,
+      open_url_with_auth: "",
+      proxy_url: "",
+      workspace_path: workspaceDir,
+      opencode_config_dir: path.join(workspaceDir, ".opencode"),
+      process_pid: proc.pid,
+      status: "error",
+      attempt,
+      process: proc,
+      healthy: false,
+      error: healthErr,
+    };
+    runtimes.set(serverId, errorRuntime);
+    proc.kill("SIGTERM");
+    await updateStageState(opts.run_id, opts.stage_id, attempt, {
+      server_id: serverId,
+      status: "error",
+    }).catch(() => {});
+    throw new Error(`Health check failed for stage ${opts.stage_id}: ${healthErr}`);
+  }
 
   const username = process.env.OPENCODE_SERVER_USERNAME ?? "opencode";
   const password = process.env.OPENCODE_SERVER_PASSWORD ?? "skillgrowth";
@@ -278,6 +319,7 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
     status: "running",
     attempt,
     process: proc,
+    healthy: true,
   };
 
   runtimes.set(serverId, runtime);
@@ -290,14 +332,39 @@ export async function startStageRuntime(opts: StartStageRuntimeOptions): Promise
         rt.unwatch_output = unwatch;
       }
     },
+    (err) => {
+      console.error("[stageRuntime] watchStageOutput failed:", err);
+    },
   );
 
   proc.on("exit", (code, signal) => {
     const rt = runtimes.get(serverId);
+    const finalStatus = code === 0 && !signal ? "completed" : "error";
     if (rt) {
       rt.status = "stopped";
+      rt.healthy = false;
       rt.exit_code = code;
       rt.exit_signal = signal;
+      if (code !== 0 || signal) {
+        rt.error = `Process exited with code ${code} signal ${signal}`;
+      }
+    }
+    void updateStageState(opts.run_id, opts.stage_id, attempt, {
+      status: finalStatus,
+    }).catch(() => {});
+    // 广播 stage 状态变化
+    emitStageStatusChanged({
+      run_id: opts.run_id,
+      stage_id: opts.stage_id,
+      attempt,
+      status: finalStatus,
+      server_id: serverId,
+    });
+    // 更新 run 状态
+    if (finalStatus === "completed" || finalStatus === "error") {
+      updateRun(opts.run_id, {
+        status: finalStatus === "completed" ? "completed" : "failed",
+      }).catch(() => {});
     }
   });
 

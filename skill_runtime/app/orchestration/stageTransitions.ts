@@ -82,6 +82,42 @@ export const RECOMMENDED_TRANSITIONS: RecommendedTransition[] = [
     carry_outputs: ["iteration-review.md"],
     label: "准备发布",
   },
+  // ─── 恢复路径 (error / retry) ────────────────────────────
+  {
+    from: "stabilize-release",
+    to: "stabilize-release",
+    reason: "rescan",
+    carry_outputs: [],
+    label: "重新检查",
+  },
+  {
+    from: "observe-log-review",
+    to: "observe-log-review",
+    reason: "rescan",
+    carry_outputs: [],
+    label: "重新观察",
+  },
+  {
+    from: "observe-api-scan",
+    to: "observe-api-scan",
+    reason: "rescan",
+    carry_outputs: [],
+    label: "重新扫描",
+  },
+  {
+    from: "grow-build",
+    to: "grow-build",
+    reason: "retry",
+    carry_outputs: [],
+    label: "重新构建",
+  },
+  {
+    from: "rehearse-iteration",
+    to: "rehearse-iteration",
+    reason: "retry",
+    carry_outputs: [],
+    label: "重新迭代",
+  },
 ];
 
 export function getRecommendedNextStages(from: StageId): RecommendedTransition[] {
@@ -105,5 +141,7 @@ export function createStageTransition(
 
 export function getDefaultPreviousStage(current: StageId): StageId | undefined {
   const incoming = RECOMMENDED_TRANSITIONS.filter((t) => t.to === current);
-  return incoming[0]?.from;
+  // prefer "fix" edges (e.g. grow-quality-review → grow-build over grow-plan → grow-build)
+  const fix = incoming.find((t) => t.reason === "fix");
+  return fix?.from ?? incoming[0]?.from;
 }

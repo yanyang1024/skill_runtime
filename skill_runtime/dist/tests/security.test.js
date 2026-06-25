@@ -28,20 +28,20 @@ describe("security: identifier validation", () => {
 });
 describe("security: path component sanitization", () => {
     it("replaces path separators", () => {
-        assert.equal(sanitizePathComponent("a/b\\c"), "a_b_c");
+        assert.equal(sanitizePathComponent("a/b\\c").value, "a_b_c");
     });
     it("replaces double dots", () => {
-        assert.equal(sanitizePathComponent(".."), "_");
+        assert.equal(sanitizePathComponent("..").value, "_");
     });
     it("removes illegal chars", () => {
-        assert.equal(sanitizePathComponent("hello world!"), "hello_world_");
+        assert.equal(sanitizePathComponent("hello world!").value, "hello_world_");
     });
     it("truncates long components", () => {
         const long = "a".repeat(200);
-        assert.equal(sanitizePathComponent(long).length, 128);
+        assert.equal(sanitizePathComponent(long).value.length, 128);
     });
     it("falls back to unknown for empty input", () => {
-        assert.equal(sanitizePathComponent(""), "unknown");
+        assert.equal(sanitizePathComponent("").value, "unknown");
     });
 });
 describe("security: resolveContainedPath", () => {

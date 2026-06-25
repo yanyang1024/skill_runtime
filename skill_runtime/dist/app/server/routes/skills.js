@@ -2,7 +2,7 @@ import { Router } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import YAML from "yaml";
-import { skillRoot, toPosix, runsDir, skillStableDir, skillPreviewDir, skillReleaseDir } from "../../shared/utils/paths.js";
+import { skillRoot, toPosix, runsDir, skillStableDir, skillPreviewDir, skillReleaseDir, REPO_ROOT } from "../../shared/utils/paths.js";
 import { safeResolve, assertSafeIdentifier, PathSecurityError, } from "../../shared/utils/security.js";
 import { validateSkillParams, getSafeParams } from "../middleware/validateParams.js";
 import { loadRunState } from "../../orchestration/stateMachine.js";
@@ -11,6 +11,21 @@ import { rollbackSkill } from "../../snapshot_manager/rollback.js";
 import { archiveFiles } from "../../snapshot_manager/archive.js";
 import { filenameTimestamp } from "../../shared/utils/time.js";
 const router = Router();
+function skillsBaseDir() {
+    return path.join(REPO_ROOT, "skills");
+}
+// GET / — 列出所有 skill 目录（供前端 skill selector 使用）
+router.get("/", async (_req, res) => {
+    try {
+        const baseDir = skillsBaseDir();
+        const entries = await fs.readdir(baseDir, { withFileTypes: true });
+        const skillNames = entries.filter((e) => e.isDirectory() && !e.name.startsWith(".")).map((e) => e.name);
+        res.json(skillNames);
+    }
+    catch (err) {
+        res.status(500).json({ error: String(err) });
+    }
+});
 router.use("/:skillId/*", validateSkillParams());
 router.use("/:skillId", validateSkillParams());
 async function buildTree(absPath, skillRootPath) {
@@ -74,9 +89,14 @@ router.get("/:skillId/runs", async (req, res) => {
         for (const entry of entries) {
             if (!entry.isDirectory())
                 continue;
-            const state = await loadRunState(entry.name);
-            if (state && state.skill_id === skillId) {
-                runs.push(state);
+            try {
+                const state = await loadRunState(entry.name);
+                if (state && state.skill_id === skillId) {
+                    runs.push(state);
+                }
+            }
+            catch {
+                // 单个 run 损坏不影响整个列表
             }
         }
         res.json(runs);
@@ -108,6 +128,26 @@ router.post("/:skillId/promote", async (req, res) => {
             return;
         }
         assertSafeIdentifier(previewId, "preview");
+        // 质量门控：如果提供了 runId，检查 grow-quality-review 阶段的最新 attempt 是否已完成
+        if (runId) {
+            const { loadStageState, loadRunState: loadRun } = await import("../../orchestration/stateMachine.js");
+            const { findNextAttempt } = await import("../../orchestration/runLifecycle.js");
+            // 找到最新的有状态的 attempt
+            const nextAttempt = await findNextAttempt(runId, "grow-quality-review");
+            let qualityState = null;
+            for (let a = nextAttempt - 1; a >= 1; a--) {
+                qualityState = await loadStageState(runId, "grow-quality-review", a);
+                if (qualityState)
+                    break;
+            }
+            if (!qualityState || qualityState.status !== "completed") {
+                res.status(400).json({
+                    error: "Quality gate not passed: grow-quality-review stage must be completed before promote",
+                    qualityStatus: qualityState?.status ?? "not_found",
+                });
+                return;
+            }
+        }
         // 1. snapshot stable
         const snapshot = await createStableSnapshot(skillId, "promote", runId);
         // 2. move old stable to releases
@@ -122,11 +162,24 @@ router.post("/:skillId/promote", async (req, res) => {
         }
         const releaseDir = skillReleaseDir(skillId, releaseVersion);
         await copyDir(skillStableDir(skillId), releaseDir);
-        // 3. archive old stable instead of deleting, then recreate empty stable and copy preview
+        // 3. archive old stable, then copy preview into stable
         const previewDir = skillPreviewDir(skillId, previewId);
         await archiveFiles(skillId, [{ originalPath: "stable", reason: `promote old stable to release ${releaseVersion}` }], "promote", runId);
         await fs.mkdir(skillStableDir(skillId), { recursive: true });
-        await copyDir(previewDir, skillStableDir(skillId));
+        try {
+            await copyDir(previewDir, skillStableDir(skillId));
+        }
+        catch (copyErr) {
+            // 复制失败：尝试从快照恢复 stable，避免空目录
+            const { restoreSnapshot } = await import("../../snapshot_manager/snapshot.js");
+            try {
+                await restoreSnapshot(snapshot);
+            }
+            catch (restoreErr) {
+                console.error("[skills] promote rollback failed:", restoreErr);
+            }
+            throw copyErr;
+        }
         // 4. write changelog
         const changelogPath = path.join(skillStableDir(skillId), "CHANGELOG.md");
         await fs.writeFile(changelogPath, `# Changelog\n\n## ${releaseVersion}\n\n- Promoted from preview ${previewId}\n- Run: ${runId ?? "N/A"}\n- Snapshot: ${snapshot.snapshot_id}\n`, "utf-8");
@@ -140,6 +193,10 @@ router.post("/:skillId/rollback", async (req, res) => {
     const { snapshotId } = req.body;
     const { skillId } = getSafeParams(req);
     try {
+        if (typeof snapshotId !== "string" || snapshotId.length === 0) {
+            res.status(400).json({ error: "missing snapshotId" });
+            return;
+        }
         await rollbackSkill(skillId, snapshotId);
         res.json({ ok: true });
     }
