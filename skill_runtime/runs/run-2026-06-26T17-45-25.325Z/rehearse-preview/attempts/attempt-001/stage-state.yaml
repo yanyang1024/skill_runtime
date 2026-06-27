@@ -1,0 +1,9 @@
+stage_id: rehearse-preview
+run_id: run-2026-06-26T17-45-25.325Z
+status: error
+attempt: 1
+workspace_path: /home/yy/skill_runtime/runs/run-2026-06-26T17-45-25.325Z/rehearse-preview/attempts/attempt-001/workspace
+outputs: []
+digest_path: /home/yy/skill_runtime/runs/run-2026-06-26T17-45-25.325Z/rehearse-preview/attempts/attempt-001/stage-digest.md
+created_at: 2026-06-26T17:46:18.288Z
+updated_at: 2026-06-26T17:46:18.294Z

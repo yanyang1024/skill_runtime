@@ -1,0 +1,27 @@
+{
+  "skill_name": "tech-doc-didactic-rewriter",
+  "description": "将技术文档/技术方案解构并重写为易于理解和教学的HTML内容",
+  "evals": [
+    {
+      "id": 1,
+      "name": "zero-to-hero-microservices",
+      "prompt": "我最近在准备团队内部的技术分享，主题是微服务架构。团队里有一些刚毕业的新人，对微服务完全没概念。这里有我们项目的架构描述文档：\n\n=== 项目架构描述 ===\n我们的电商平台由以下几个微服务组成：\n1. 用户服务 (User Service)：负责用户注册、登录、权限管理\n2. 商品服务 (Product Service)：商品信息的 CRUD、库存管理\n3. 订单服务 (Order Service)：订单创建、支付流程、状态流转\n4. 网关服务 (API Gateway)：统一入口、路由转发、限流熔断\n服务间通过 gRPC 通信，使用 RabbitMQ 做异步消息。每个服务独立部署在 K8s 上，有独立的 MySQL 实例。\n\n请帮我把这个微服务架构改写成一份教学向的 HTML，用 Cool Teacher 的方式，让新人能看懂微服务到底是什么、为什么要拆分、各个组件干什么的。",
+      "expected_output": "一份教学HTML文件，包含微服务核心概念的Cool Teacher五步法讲解，适合零基础读者",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "explain-kubernetes-like-im-five",
+      "prompt": "我一直搞不懂 Kubernetes 到底是干嘛的，看到那些 Pod、Service、Deployment 的名词就头大。你能不能用最通俗的方式给我讲清楚 K8s 的核心概念？生成一个好看的 HTML 页面，我要存下来反复看。",
+      "expected_output": "一份教学HTML文件，用Cool Teacher五步法讲解Kubernetes核心概念(Pod/Service/Deployment)，适合完全零基础读者",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "tech-proposal-to-client-training",
+      "prompt": "我们公司要给客户做一个技术方案汇报，但这个方案涉及的术语太多了（什么容器化、CI/CD、蓝绿部署、灰度发布），客户那边的负责人是非技术背景的。我需要把这份方案改写成他能看懂的教学材料。\n\n=== 技术方案摘要 ===\n项目：XX银行核心系统容器化迁移方案\n技术栈：Docker + Kubernetes + GitLab CI/CD + Harbor 镜像仓库\n部署策略：采用蓝绿部署模式，降低发布风险。通过 GitLab CI 实现自动化构建、测试、部署。使用 Prometheus + Grafana 做监控告警。\n\n帮我做成一个漂亮的 HTML 教学页面，要：\n1. 先解释为什么要容器化（客户最关心的是\"为什么要花这个钱\"）\n2. 再逐一解释每个技术是干什么的（用比喻）\n3. 最后串起来讲整个流程\n让客户看完能点头说'哦，我理解为什么要这么做和怎么做了'",
+      "expected_output": "一份教学HTML文件，面向非技术背景的客户，解释容器化迁移方案中的核心技术概念和整体流程",
+      "files": []
+    }
+  ]
+}

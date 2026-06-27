@@ -8,6 +8,29 @@ router.get("/", (_req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders?.();
+    // cleanup 需先声明，后续 listener/heartbeat 引用它
+    let idleTimer;
+    let heartbeat;
+    const cleanup = () => {
+        clearTimeout(idleTimer);
+        clearInterval(heartbeat);
+        emitter.off("status", listener);
+        emitter.off("artifact_changed", artifactListener);
+        emitter.off("stage_status", stageStatusListener);
+    };
+    // 5 分钟空闲超时 — 没有任何事件时自动清理连接
+    idleTimer = setTimeout(cleanup, 300000);
+    // 心跳 keep-alive：每 30s 发送 comment，防止代理断开
+    heartbeat = setInterval(() => {
+        if (res.writableEnded)
+            return;
+        try {
+            res.write(": heartbeat\n\n");
+        }
+        catch {
+            cleanup();
+        }
+    }, 30000);
     const listener = (data) => {
         if (res.writableEnded)
             return;
@@ -17,6 +40,8 @@ router.get("/", (_req, res) => {
         catch {
             cleanup();
         }
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(cleanup, 300000);
     };
     const artifactListener = (data) => {
         if (res.writableEnded)
@@ -27,18 +52,9 @@ router.get("/", (_req, res) => {
         catch {
             cleanup();
         }
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(cleanup, 300000);
     };
-    // 心跳 keep-alive：每 30s 发送 comment，防止代理断开
-    const heartbeat = setInterval(() => {
-        if (res.writableEnded)
-            return;
-        try {
-            res.write(": heartbeat\n\n");
-        }
-        catch {
-            cleanup();
-        }
-    }, 30000);
     const stageStatusListener = (data) => {
         if (res.writableEnded)
             return;
@@ -48,16 +64,12 @@ router.get("/", (_req, res) => {
         catch {
             cleanup();
         }
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(cleanup, 300000);
     };
     emitter.on("status", listener);
     emitter.on("artifact_changed", artifactListener);
     emitter.on("stage_status", stageStatusListener);
-    const cleanup = () => {
-        clearInterval(heartbeat);
-        emitter.off("status", listener);
-        emitter.off("artifact_changed", artifactListener);
-        emitter.off("stage_status", stageStatusListener);
-    };
     _req.on("close", cleanup);
     res.on("close", cleanup);
 });

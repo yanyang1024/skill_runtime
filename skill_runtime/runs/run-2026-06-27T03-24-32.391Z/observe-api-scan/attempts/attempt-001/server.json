@@ -1,0 +1,14 @@
+{
+  "server_id": "run-2026-06-27T03-24-32.391Z-observe-api-scan-1",
+  "stage_id": "observe-api-scan",
+  "run_id": "run-2026-06-27T03-24-32.391Z",
+  "skill_id": "tech-doc-didactic-rewriter",
+  "runtime_mode": "serve",
+  "serve_mode": "per-stage",
+  "port": 9504,
+  "base_url": "http://127.0.0.1:9504",
+  "open_url": "http://127.0.0.1:9504",
+  "workspace_path": "/home/yy/skill_runtime/runs/run-2026-06-27T03-24-32.391Z/observe-api-scan/attempts/attempt-001/workspace",
+  "opencode_config_dir": "/home/yy/skill_runtime/runs/run-2026-06-27T03-24-32.391Z/observe-api-scan/attempts/attempt-001/workspace/.opencode",
+  "created_at": "2026-06-27T03:29:29.843Z"
+}

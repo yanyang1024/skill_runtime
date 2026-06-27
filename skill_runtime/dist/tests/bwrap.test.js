@@ -12,6 +12,7 @@ function makeCtx(overrides) {
         stageId: "grow-build",
         attempt: 1,
         skillMount: "preview-writable",
+        workWritable: true,
         ...overrides,
     };
 }

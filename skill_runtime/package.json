@@ -4,13 +4,17 @@
   "description": "Skill Growth Studio v0.3 - 基于 headless OpenCode serve + 自建 ChatPage 的本地 Skill 生命周期导演台",
   "type": "module",
   "main": "dist/app/server/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc && pnpm build:web",
     "build:web": "vite build --config app/web/vite.config.ts",
     "dev": "concurrently \"tsx watch app/server/index.ts\" \"vite --config app/web/vite.config.ts\"",
     "start": "node dist/app/server/index.js",
     "cli": "tsx app/cli/index.ts",
-    "test": "tsx --test tests/**/*.test.ts"
+    "test": "tsx --test tests/**/*.test.ts",
+    "check": "tsx scripts/check-prereqs.ts"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +28,7 @@
     "express": "^4.21.2",
     "http-proxy-middleware": "^3.0.3",
     "marked": "^15.0.7",
+    "multer": "^2.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
@@ -36,6 +41,7 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/express": "^5.0.0",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.15.12",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",

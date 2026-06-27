@@ -22,6 +22,13 @@ read_only:
     target: "{{REPO_ROOT}}/prompt_library"
   - source: "{{REPO_ROOT}}/api_docs/{{SKILL_ID}}"
     target: "{{REPO_ROOT}}/api_docs/{{SKILL_ID}}"
+  # 系统路径（真实目录 mount 到软链接位置，使 ELF interpreter 路径可解析）
+  - source: "/usr"
+    target: "/usr"
+  - source: "/usr/lib"
+    target: "/lib"
+  - source: "/usr/lib64"
+    target: "/lib64"
 
 bind:
   - source: "{{WORKSPACE_DIR}}"

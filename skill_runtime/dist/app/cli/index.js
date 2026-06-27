@@ -26,6 +26,8 @@ async function main() {
                 process.exit(1);
             });
             proc.on("exit", (code) => process.exit(code ?? 0));
+            process.on("SIGTERM", () => { proc.kill(); process.exit(0); });
+            process.on("SIGINT", () => { proc.kill(); process.exit(0); });
             break;
         }
         case undefined:

@@ -7,6 +7,7 @@ export interface BwrapContext {
     stageId: string;
     attempt: number;
     skillMount: "stable-readonly" | "preview-readonly" | "preview-writable" | "none";
+    workWritable: boolean;
 }
 /**
  * 是否使用 bwrap。默认启用，可通过 STAGE_USE_BWRAP=0 关闭。

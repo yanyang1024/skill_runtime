@@ -71,6 +71,10 @@ SKILL_GROWTH_PORT=8080 pnpm dev
 # CLI
 pnpm cli server    # 启动 Web 服务
 pnpm cli           # 查看帮助
+
+# 环境预检
+pnpm check
+# 检查 Node.js 版本、opencode、bwrap、模型端点等前置条件
 ```
 
 ---
@@ -448,6 +452,8 @@ DEEPSEEK_API_KEY=sk-xxxxxx pnpm test
 |---|---|
 | `AGENTS.md` | AI 编程 Agent 指南（面向 AI 助手的项目背景） |
 | `API_GUIDE.md` | 完整 API 参考（含 ChatSSEEvent 协议） |
+| `docs/STAGES.md` | **Stage 使用指南** — 8 个 stage 的区别、推荐流程、共享文件 |
+| `docs/SESSION_AND_FILE_FLOW.md` | **会话与文件流转** — 会话生命周期、SSE 双层架构、文件上传/产物/流转 |
 | `docs/ARCHITECTURE.md` | 系统架构、组件深潜、数据流、安全模型 |
 | `docs/opencode-integration.md` | OpenCode serve 集成详解 |
 | `web_ui_design.md` | v0.1/v0.2 旧版 UI 设计方案（已废弃） |

@@ -13,6 +13,7 @@ function makeCtx(overrides?: Partial<Parameters<typeof buildBwrapCommand>[0]>) {
     stageId: "grow-build",
     attempt: 1,
     skillMount: "preview-writable" as const,
+    workWritable: true,
     ...overrides,
   };
 }

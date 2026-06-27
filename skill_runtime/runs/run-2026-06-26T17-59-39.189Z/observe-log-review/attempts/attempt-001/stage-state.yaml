@@ -1,0 +1,10 @@
+stage_id: observe-log-review
+run_id: run-2026-06-26T17-59-39.189Z
+status: error
+attempt: 1
+server_id: run-2026-06-26T17-59-39.189Z-observe-log-review-1
+workspace_path: /home/yy/skill_runtime/runs/run-2026-06-26T17-59-39.189Z/observe-log-review/attempts/attempt-001/workspace
+outputs: []
+digest_path: /home/yy/skill_runtime/runs/run-2026-06-26T17-59-39.189Z/observe-log-review/attempts/attempt-001/stage-digest.md
+created_at: 2026-06-26T17:59:43.104Z
+updated_at: 2026-06-26T17:59:43.592Z

@@ -41,6 +41,13 @@ export async function createStableSnapshot(skillId, trigger, sourceRun) {
 }
 export async function createPreviewSnapshot(skillId, previewId, trigger, sourceRun) {
     const root = skillPreviewDir(skillId, previewId);
+    // 预检查：确保源目录存在且非空（至少包含 SKILL.md）
+    try {
+        await fs.access(path.join(root, "SKILL.md"));
+    }
+    catch {
+        throw new Error(`Preview snapshot aborted: source directory ${root} has no SKILL.md`);
+    }
     const ts = filenameTimestamp();
     const backupRoot = previewBackupDir(skillId, previewId);
     await fs.mkdir(backupRoot, { recursive: true });

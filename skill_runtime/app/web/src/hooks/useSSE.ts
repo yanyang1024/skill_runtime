@@ -2,14 +2,6 @@ import { useEffect, useRef, useCallback } from "react";
 import type { ChatSSEEvent, ChatMessage, MessagePart, PendingPermission, PendingQuestion } from "../types/chat";
 import * as chatApi from "../services/chatApi";
 
-interface SSEState {
-  messages: ChatMessage[];
-  pendingPermissions: PendingPermission[];
-  pendingQuestions: PendingQuestion[];
-  streaming: boolean;
-  error?: string;
-}
-
 interface SSEActions {
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   setPendingPermissions: React.Dispatch<React.SetStateAction<PendingPermission[]>>;
@@ -30,6 +22,9 @@ export function useSSE(
   const rafRef = useRef<number | null>(null);
   const pendingDeltasRef = useRef<ChatSSEEvent[]>([]);
   const partTypesRef = useRef<Map<string, "text" | "reasoning" | "tool" | "error">>(new Map());
+  const mountedRef = useRef(true);
+  const retryCountRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const flushPendingDeltas = useCallback(() => {
     if (pendingDeltasRef.current.length === 0) return;
@@ -55,56 +50,82 @@ export function useSSE(
   useEffect(() => {
     if (!runId || !stageId || !sessionId) return;
 
+    mountedRef.current = true;
+    retryCountRef.current = 0;
     setError(undefined);
     partTypesRef.current.clear();
     pendingDeltasRef.current = [];
 
-    let es: EventSource;
-    try {
-      es = chatApi.createEventSource(runId, stageId, attempt, sessionId);
-    } catch (err) {
-      setError(`无法创建 SSE 连接: ${err instanceof Error ? err.message : String(err)}`);
-      return;
-    }
-    eventSourceRef.current = es;
+    function connect() {
+      if (!mountedRef.current) return;
 
-    es.onmessage = (e) => {
-      const event = chatApi.parseSSEEvent(e.data);
-      if (!event) return;
-
-      if (event.type === "text_delta" || event.type === "reasoning_delta" || event.type === "tool_delta") {
-        pendingDeltasRef.current.push(event);
-        scheduleFlush();
-      } else {
-        // 非 delta 事件立即应用
-        flushPendingDeltas();
-        setMessages((prev) => {
-          const next = [...prev];
-          applyEvent(next, event, partTypesRef.current, setPendingPermissions, setPendingQuestions);
-          return next;
-        });
-
-        if (
-          event.type === "message_end" ||
-          event.type === "error" ||
-          (event.type === "run_status" &&
-            (event.status === "completed" || event.status === "failed" || event.status === "aborted"))
-        ) {
-          setStreaming(false);
-        }
+      let es: EventSource;
+      try {
+        es = chatApi.createEventSource(runId!, stageId!, attempt, sessionId!);
+      } catch (err) {
+        setError(`无法创建 SSE 连接: ${err instanceof Error ? err.message : String(err)}`);
+        return;
       }
-    };
+      eventSourceRef.current = es;
 
-    es.onerror = () => {
-      setError("SSE 连接错误");
-      setStreaming(false);
-    };
+      es.onmessage = (e) => {
+        if (!mountedRef.current) return;
+        const event = chatApi.parseSSEEvent(e.data);
+        if (!event) return;
+
+        if (event.type === "text_delta" || event.type === "reasoning_delta" || event.type === "tool_delta") {
+          pendingDeltasRef.current.push(event);
+          scheduleFlush();
+        } else {
+          flushPendingDeltas();
+          setMessages((prev) => {
+            const next = [...prev];
+            applyEvent(next, event, partTypesRef.current, setPendingPermissions, setPendingQuestions);
+            return next;
+          });
+
+          if (
+            event.type === "message_end" ||
+            event.type === "error" ||
+            (event.type === "run_status" &&
+              (event.status === "completed" || event.status === "failed" || event.status === "aborted"))
+          ) {
+            setStreaming(false);
+          }
+        }
+      };
+
+      es.onerror = () => {
+        if (!mountedRef.current) return;
+        es.close();
+        eventSourceRef.current = null;
+        setStreaming(false);
+
+        retryCountRef.current++;
+        if (retryCountRef.current <= 5) {
+          const delay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 10000);
+          timerRef.current = setTimeout(() => {
+            if (mountedRef.current) connect();
+          }, delay);
+        } else {
+          setError(`SSE 连接失败（已重试 5 次），请刷新页面`);
+        }
+      };
+    }
+
+    connect();
 
     return () => {
-      es.close();
+      mountedRef.current = false;
+      eventSourceRef.current?.close();
+      eventSourceRef.current = null;
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
       flushPendingDeltas();
     };
@@ -112,9 +133,14 @@ export function useSSE(
 
   const close = useCallback(() => {
     eventSourceRef.current?.close();
+    eventSourceRef.current = null;
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+    }
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
     flushPendingDeltas();
   }, [flushPendingDeltas]);

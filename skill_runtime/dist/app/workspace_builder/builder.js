@@ -1,11 +1,18 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getStageContract } from "../orchestration/stageContracts.js";
+import { getRecommendedNextStages } from "../orchestration/stageTransitions.js";
 import { stageDir, stageWorkspaceDir, stageInputDir, stageOutputDir, stageWorkDir, skillStableDir, skillPreviewDir, toPosix, } from "../shared/utils/paths.js";
 import { buildOpencodeConfig } from "./opencodeConfig.js";
 import { archiveFiles } from "../snapshot_manager/archive.js";
 import { utcTimestamp } from "../shared/utils/time.js";
 async function copyDir(src, dest) {
+    try {
+        await fs.access(src);
+    }
+    catch {
+        throw new Error(`Source directory not found: ${src}`);
+    }
     await fs.mkdir(dest, { recursive: true });
     const entries = await fs.readdir(src, { withFileTypes: true });
     for (const entry of entries) {
@@ -55,13 +62,32 @@ export async function buildStageWorkspace(opts) {
     await copySkillSnapshot(skill_id, sourceSkillVersion, snapshotDir);
     // 5. Copy skill to .opencode/skills/<skill_id>/ for OpenCode discovery
     await copySkillSnapshot(skill_id, sourceSkillVersion, skillMountDir);
-    // 6. Copy previous stage outputs
+    // 6. Copy previous stage outputs (按 carry_outputs 精确复制，而非整体目录)
     if (previousStageId) {
         const prevOutputDir = stageOutputDir(run_id, previousStageId, previousAttempt ?? 1);
         const prevInputDir = path.join(inputDir, "previous_stage_output");
         try {
             await fs.access(prevOutputDir);
-            await copyDir(prevOutputDir, prevInputDir);
+            await fs.mkdir(prevInputDir, { recursive: true });
+            // 查找从上一 stage 到当前 stage 的推荐流转，获取 carry_outputs
+            const transitions = getRecommendedNextStages(previousStageId);
+            const transition = transitions.find((t) => t.to === stage_id);
+            if (transition && transition.carry_outputs.length > 0) {
+                for (const file of transition.carry_outputs) {
+                    const srcFile = path.join(prevOutputDir, file);
+                    try {
+                        await fs.access(srcFile);
+                        await fs.copyFile(srcFile, path.join(prevInputDir, file));
+                    }
+                    catch {
+                        // 单个文件可能不存在，跳过
+                    }
+                }
+            }
+            else {
+                // 无 carry_outputs 定义时回退到整体目录复制
+                await copyDir(prevOutputDir, prevInputDir);
+            }
         }
         catch {
             // previous stage may not have outputs yet

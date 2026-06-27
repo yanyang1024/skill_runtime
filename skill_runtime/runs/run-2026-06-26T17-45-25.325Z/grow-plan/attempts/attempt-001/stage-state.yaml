@@ -1,0 +1,10 @@
+stage_id: grow-plan
+run_id: run-2026-06-26T17-45-25.325Z
+status: error
+attempt: 1
+server_id: run-2026-06-26T17-45-25.325Z-grow-plan-1
+workspace_path: /home/yy/skill_runtime/runs/run-2026-06-26T17-45-25.325Z/grow-plan/attempts/attempt-001/workspace
+outputs: []
+digest_path: /home/yy/skill_runtime/runs/run-2026-06-26T17-45-25.325Z/grow-plan/attempts/attempt-001/stage-digest.md
+created_at: 2026-06-26T17:46:02.787Z
+updated_at: 2026-06-26T17:46:03.178Z

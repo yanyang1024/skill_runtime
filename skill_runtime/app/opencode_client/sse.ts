@@ -408,13 +408,14 @@ async function processEventStream(
   signal: AbortSignal,
   opts: ProcessOptions,
 ): Promise<void> {
+  let rawFile: fs.FileHandle | undefined;
   await fs.mkdir(outputDir, { recursive: true });
 
   const rawPath = path.join(outputDir, "session-stream.md");
   const reasoningPath = path.join(outputDir, "session-stream-reasoning.md");
   const contentPath = path.join(outputDir, "session-stream-content.md");
 
-  const rawFile = await fs.open(rawPath, "w");
+  rawFile = await fs.open(rawPath, "w");
   await rawFile.writeFile(`# Event Stream for session ${sessionId}\n\n`);
 
   const state: NormalizerState = {
@@ -539,6 +540,6 @@ async function processEventStream(
     }
   } finally {
     await reader.cancel().catch(() => null);
-    await rawFile.close();
+    await rawFile?.close();
   }
 }

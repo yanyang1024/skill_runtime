@@ -25,7 +25,7 @@
 
 | 层级 | 选型 | 说明 |
 |---|---|---|
-| 运行时 | Node.js 20+ | `package.json` 中 `engines` 未指定，但依赖要求 Node 20+ |
+| 运行时 | Node.js 20+ | `package.json` 中 `engines` 指定 Node >= 20 |
 | 包管理器 | `pnpm` | 根目录存在 `pnpm-lock.yaml`，请使用 `pnpm install` |
 | 模块系统 | ESM | `package.json` 设置 `"type": "module"`；后端 `tsconfig.json` 使用 `NodeNext` |
 | 语言 | TypeScript 5.8+ | 后端源码位于 `app/`，构建输出到 `dist/`；前端源码位于 `app/web/src/` |
@@ -105,6 +105,7 @@ skill_runtime/
 │   │       │   ├── PermissionCard.tsx
 │   │       │   ├── ChatInput.tsx
 │   │       │   ├── PromptAssistant.tsx
+│   │       │   ├── ErrorBoundary.tsx
 │   │       │   └── ArtifactPanel.tsx
 │   │       ├── hooks/
 │   │       │   ├── useChatSession.ts
@@ -121,6 +122,7 @@ skill_runtime/
 │       ├── schemas/index.ts # Zod schema + TypeScript 类型
 │       └── utils/           # paths、time、security、fs、sse、localV1Config、growthRun
 ├── scripts/                 # 辅助脚本
+│   └── check-prereqs.ts     # pnpm check 环境预检
 ├── docs/                    # 技术文档
 │   ├── ARCHITECTURE.md      # 系统架构文档
 │   └── opencode-integration.md # OpenCode 集成指南
@@ -180,6 +182,10 @@ pnpm cli                 # 查看帮助
 # 测试
 pnpm test
 # 等价于：tsx --test tests/**/*.test.ts
+
+# 环境预检
+pnpm check
+# 检查 skills、opencode、bwrap、模型端点等前置条件
 ```
 
 ---
@@ -196,10 +202,9 @@ pnpm test
 - `routes/artifacts.ts`：Stage 产物列表与内容读取。
 - `routes/events.ts`：SSE `/api/events` 全局状态流。
 - `middleware/validateParams.ts`：统一校验 `:runId`、`:stageId`、`:attempt`、`:skillId`、`:name`。
-- `opencode_gateway/OpenCodeClient.ts`：封装 OpenCode HTTP 方法，每个请求强制注入 `x-opencode-directory`。
-- `opencode_client/sse.ts`：消费 OpenCode `/event` SSE，归一化为前端 `ChatSSEEvent`；`opencode_gateway/sseNormalizer.ts` 重新导出该能力。
-- `runtime/StageRuntimeManager.ts`：按 `StageRuntimeContract` 分配端口、构造 workspace、spawn `opencode serve`、readiness 检测、bwrap 隔离、停止清理。
-- `security/WorkspaceResolver.ts`：标识符消毒、路径穿越防护、symlink 解析。
+- `opencode_client/index.ts`：封装 OpenCode HTTP 方法，每个请求强制注入 `x-opencode-directory`。
+- `opencode_client/sse.ts`：消费 OpenCode `/event` SSE，归一化为前端 `ChatSSEEvent`。
+- `stageRuntimeManager.ts`：按 `StageRuntimeContract` 分配端口、构造 workspace、spawn `opencode serve`、bwrap 隔离、停止清理。
 
 ### 5.2 OpenCode Gateway `app/opencode_client/`
 

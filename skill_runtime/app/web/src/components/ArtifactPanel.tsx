@@ -17,26 +17,46 @@ interface ArtifactPanelProps {
 
 export function ArtifactPanel({ runId, stageId, attempt }: ArtifactPanelProps) {
   const [artifacts, setArtifacts] = useState<Array<{ name: string }>>([]);
+  const [artifactError, setArtifactError] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [content, setContent] = useState<string>("");
   const eventSourceRef = useRef<EventSource | null>(null);
   const selectedRef = useRef<string | null>(null);
   const mountedRef = useRef(true);
+  const retryCountRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 保持 ref 与 state 同步，避免 EventSource 回调依赖 selected state
   selectedRef.current = selected;
 
   const refresh = useCallback(async () => {
     if (!runId || !stageId) {
       setArtifacts([]);
+      setArtifactError("");
       setContent("");
       return;
     }
     try {
       const list = await listArtifacts(runId, stageId, attempt);
-      if (mountedRef.current) setArtifacts(list);
-    } catch {
-      if (mountedRef.current) setArtifacts([]);
+      if (mountedRef.current) {
+        setArtifacts(list);
+        setArtifactError("");
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        setArtifacts([]);
+        setArtifactError(err instanceof Error ? err.message : String(err));
+      }
+    }
+  }, [runId, stageId, attempt]);
+
+  const handleSelect = useCallback(async (name: string) => {
+    if (!runId || !stageId) return;
+    setSelected(name);
+    try {
+      const text = await getArtifact(runId, stageId, name, attempt);
+      if (mountedRef.current) setContent(text);
+    } catch (err) {
+      if (mountedRef.current) setContent(`读取失败: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, [runId, stageId, attempt]);
 
@@ -51,61 +71,88 @@ export function ArtifactPanel({ runId, stageId, attempt }: ArtifactPanelProps) {
   useEffect(() => {
     if (!runId || !stageId) return;
 
-    const es = new EventSource("/api/events");
-    eventSourceRef.current = es;
+    mountedRef.current = true;
+    retryCountRef.current = 0;
 
-    es.addEventListener("artifact_changed", (e) => {
-      let event: ArtifactChangedEvent | null = null;
-      try {
-        event = JSON.parse((e as MessageEvent).data) as ArtifactChangedEvent;
-      } catch {
-        return;
-      }
-      if (
-        event &&
-        event.run_id === runId &&
-        event.stage_id === stageId &&
-        event.attempt === attempt
-      ) {
-        void refresh();
-        // 如果当前正在查看的 artifact 被更新了，自动重载内容
-        if (event.name && selectedRef.current === event.name) {
-          void handleSelect(event.name);
+    function connectSSE() {
+      if (!mountedRef.current) return;
+      const es = new EventSource("/api/events");
+      eventSourceRef.current = es;
+
+      es.addEventListener("artifact_changed", (e) => {
+        let event: ArtifactChangedEvent | null = null;
+        try {
+          event = JSON.parse((e as MessageEvent).data) as ArtifactChangedEvent;
+        } catch {
+          return;
         }
-      }
-    });
+        if (
+          event &&
+          event.run_id === runId &&
+          event.stage_id === stageId &&
+          event.attempt === attempt
+        ) {
+          void refresh();
+          if (event.name && selectedRef.current === event.name) {
+            void handleSelect(event.name);
+          }
+        }
+      });
+
+      es.onerror = () => {
+        if (!mountedRef.current) return;
+        es.close();
+        eventSourceRef.current = null;
+        retryCountRef.current++;
+        if (retryCountRef.current <= 5) {
+          const delay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 10000);
+          reconnectTimerRef.current = setTimeout(() => {
+            if (mountedRef.current) connectSSE();
+          }, delay);
+        }
+      };
+    }
+
+    connectSSE();
 
     return () => {
-      es.close();
+      if (reconnectTimerRef.current !== null) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
-  }, [runId, stageId, attempt, refresh]);
+  }, [runId, stageId, attempt, refresh, handleSelect]);
 
-  const handleSelect = useCallback(async (name: string) => {
+  const handleDownload = (name: string) => {
     if (!runId || !stageId) return;
-    setSelected(name);
-    try {
-      const text = await getArtifact(runId, stageId, name, attempt);
-      if (mountedRef.current) setContent(text);
-    } catch (err) {
-      if (mountedRef.current) setContent(`读取失败: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }, [runId, stageId, attempt]);
+    const url = `/api/runs/${runId}/stage/${stageId}/artifact/${encodeURIComponent(name)}?attempt=${attempt}&download=1`;
+    window.open(url, "_blank");
+  };
 
   return (
     <section className="artifact-panel">
       <h3>Artifacts</h3>
+      {artifactError && <div className="artifact-error">{artifactError}</div>}
       <div className="artifact-list">
         {artifacts.map((a) => (
-          <button
-            key={a.name}
-            className={selected === a.name ? "active" : ""}
-            onClick={() => handleSelect(a.name)}
-          >
-            {a.name}
-          </button>
+          <div key={a.name} className="artifact-item">
+            <button
+              className={selected === a.name ? "active" : ""}
+              onClick={() => handleSelect(a.name)}
+            >
+              {a.name}
+            </button>
+            <button className="artifact-download" onClick={() => handleDownload(a.name)} title="下载">
+              ⬇
+            </button>
+          </div>
         ))}
       </div>
+      {artifacts.length === 0 && !artifactError && (
+        <div className="artifact-empty">暂无产物</div>
+      )}
       <pre className="artifact-viewer">{content}</pre>
     </section>
   );

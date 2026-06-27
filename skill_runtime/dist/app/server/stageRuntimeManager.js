@@ -1,13 +1,17 @@
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import net from "node:net";
 import { spawn } from "cross-spawn";
+import { spawnSync } from "node:child_process";
 import { getStageContract } from "../orchestration/stageContracts.js";
 import { createStableSnapshot, createPreviewSnapshot, } from "../snapshot_manager/snapshot.js";
 import { buildStageWorkspace } from "../workspace_builder/builder.js";
 import { buildBwrapCommand, shouldUseBwrap } from "../workspace_builder/bwrap.js";
 import { createOpencodeSessionClient } from "../opencode_client/index.js";
 import { abortEventStream, removeSSEEmitter, } from "../opencode_client/sse.js";
+import { skillPreviewDir, skillStableDir } from "../shared/utils/paths.js";
+import { copyDir } from "../shared/utils/fs.js";
 import { watchStageOutput, unwatchStageOutput, } from "./artifactWatcher.js";
 import { emitArtifactChanged, emitStageStatusChanged } from "./routes/events.js";
 const runtimes = new Map();
@@ -16,8 +20,12 @@ function generateServerId(runId, stageId, attempt) {
     return `${runId}-${stageId}-${attempt}`;
 }
 async function allocatePort() {
+    const MAX_PORT = 9600;
     while (true) {
         const port = nextPort++;
+        if (port > MAX_PORT) {
+            throw new Error(`No available ports in range 9500-${MAX_PORT}`);
+        }
         const open = await isPortOpen(port);
         if (!open)
             return port;
@@ -48,21 +56,24 @@ function getAuth() {
 }
 async function waitForHealth(port, proc, timeout = 30000) {
     const started = Date.now();
-    let output = "";
+    let stdout = "";
+    let stderr = "";
     let resolved = false;
     const auth = getAuth();
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
             cleanup();
-            reject(new Error(`Timeout waiting for opencode serve on port ${port}`));
+            reject(new Error(`Timeout waiting for opencode serve on port ${port}\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`));
         }, timeout);
         const onStdout = (chunk) => {
-            output += chunk.toString();
+            stdout += chunk.toString();
         };
-        const onStderr = onStdout;
+        const onStderr = (chunk) => {
+            stderr += chunk.toString();
+        };
         const onExit = (code) => {
             cleanup();
-            reject(new Error(`opencode serve exited with ${code}\n${output}`));
+            reject(new Error(`opencode serve exited with ${code}\n--- stdout ---\n${stdout}\n--- stderr ---\n${stderr}`));
         };
         const cleanup = () => {
             clearTimeout(timer);
@@ -122,6 +133,28 @@ export async function startStageRuntime(opts) {
         }
         await stopStageRuntime(serverId);
     }
+    // 自动初始化 preview：preview-* stage 需要 preview 目录存在
+    if (contract.skill_mount === "preview-readonly" || contract.skill_mount === "preview-writable") {
+        const pid = opts.preview_id ?? "p1";
+        const previewDir = skillPreviewDir(opts.skill_id, pid);
+        const stableDir = skillStableDir(opts.skill_id);
+        try {
+            await fs.access(previewDir);
+        }
+        catch {
+            try {
+                await copyDir(stableDir, previewDir);
+                console.log(`[stageRuntime] auto-initialized preview ${pid} from stable for stage ${opts.stage_id}`);
+            }
+            catch (copyErr) {
+                throw new Error(`Failed to initialize preview ${pid} from stable: ${String(copyErr)}`);
+            }
+        }
+        // 确保 opts 中有 preview_id
+        if (!opts.preview_id) {
+            opts.preview_id = pid;
+        }
+    }
     if (contract.requires_snapshot_before_start) {
         if (opts.stage_id === "grow-build" || opts.stage_id === "rehearse-iteration") {
             if (!opts.preview_id) {
@@ -161,8 +194,41 @@ export async function startStageRuntime(opts) {
         skill_id: opts.skill_id,
         sessionLogPath: opts.sessionLogPath,
         apiDocsAvailable: opts.apiDocsAvailable,
+        previous_stage_id: opts.previous_stage_id,
+        previous_attempt: opts.previous_attempt,
     });
+    // opencode 路径解析（bwrap 内 PATH 不可用，须使用绝对路径）
+    let resolvedOpencodePath = "opencode";
+    try {
+        const whichResult = spawnSync("which", ["opencode"], { encoding: "utf-8" });
+        if (whichResult.status === 0 && whichResult.stdout.trim()) {
+            resolvedOpencodePath = fsSync.realpathSync(whichResult.stdout.trim());
+        }
+        await new Promise((resolve, reject) => {
+            const check = spawn("opencode", ["--version"], { stdio: "pipe" });
+            check.on("error", (err) => reject(err));
+            check.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`opencode --version exit ${code}`))));
+        });
+    }
+    catch (err) {
+        const nodeErr = err;
+        if (nodeErr.code === "ENOENT") {
+            throw new Error("opencode CLI not found in PATH. Install it via: npm install -g @opencode-ai/opencode-ai");
+        }
+        throw new Error(`opencode CLI check failed: ${nodeErr.message}`);
+    }
     // 启动 headless opencode serve，绑定到当前 stage workspace
+    const opencodeCommand = [resolvedOpencodePath, "serve", "--hostname", "127.0.0.1", "--port", String(port)];
+    // bwrap 预检
+    if (shouldUseBwrap()) {
+        const bwrapPath = process.platform === "linux" ? "/usr/bin/bwrap" : "bwrap";
+        try {
+            await fs.access(bwrapPath);
+        }
+        catch {
+            throw new Error(`bwrap is enabled but ${bwrapPath} not found – install bubblewrap or set STAGE_USE_BWRAP=0`);
+        }
+    }
     const cmd = shouldUseBwrap()
         ? await buildBwrapCommand({
             workspacePath: workspaceDir,
@@ -172,19 +238,13 @@ export async function startStageRuntime(opts) {
             stageId: opts.stage_id,
             attempt,
             skillMount: contract.skill_mount,
-        }, ["opencode", "serve", "--hostname", "127.0.0.1", "--port", String(port)])
-        : ["opencode", "serve", "--hostname", "127.0.0.1", "--port", String(port)];
-    // 启动前校验：确保必要二进制文件存在
-    if (shouldUseBwrap()) {
-        try {
-            await fs.access("/usr/bin/bwrap");
-        }
-        catch {
-            throw new Error("bwrap is enabled but /usr/bin/bwrap not found – install bubblewrap or set STAGE_USE_BWRAP=0");
-        }
+            workWritable: contract.work_writable,
+        }, opencodeCommand)
+        : opencodeCommand;
+    if (process.env.BWRAP_DEBUG || process.env.STAGE_DEBUG) {
+        console.log(`[stageRuntime] spawn ${cmd.join(" ")}`);
+        console.log(`[stageRuntime] cwd: ${workspaceDir}`);
     }
-    const opencodePath = cmd[0];
-    // 实际二进制由 spawn 在 PATH 中查找; 如果 spawn 报 ENOENT, 后续 waitForHealth 会捕获
     const proc = spawn(cmd[0], cmd.slice(1), {
         cwd: workspaceDir,
         env: {

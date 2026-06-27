@@ -14,6 +14,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
+// Node 版本检查
+const nodeMajor = parseInt(process.versions.node.split(".")[0]!, 10);
+if (nodeMajor < 20) {
+  console.error(`Skill Growth Studio requires Node.js >= 20 (current: ${process.versions.node})`);
+  process.exit(1);
+}
+
+// 加载 .env 文件（Node 20+ 内置支持）
+try { process.loadEnvFile?.(path.join(REPO_ROOT, ".env")); } catch { /* .env optional */ }
+
 async function detectWebRoot(): Promise<string> {
   const candidates = [
     path.join(REPO_ROOT, "dist", "web"),
@@ -75,6 +85,14 @@ async function startServer(): Promise<void> {
     const actualPort = typeof address === "string" ? PORT : address?.port ?? PORT;
     emitStatus(`监听端口 ${actualPort} (webRoot: ${webRoot})`, "idle");
     console.log(`Skill Growth Studio server listening on http://localhost:${actualPort}`);
+  });
+
+  server.on("error", (err: NodeJS.ErrnoException) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${PORT} is already in use. Set SKILL_GROWTH_PORT env var or free the port.`);
+      process.exit(1);
+    }
+    throw err;
   });
 
   process.on("SIGTERM", async () => {

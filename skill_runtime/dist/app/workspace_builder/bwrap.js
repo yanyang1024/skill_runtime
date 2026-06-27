@@ -61,8 +61,13 @@ export async function buildBwrapCommand(ctx, opencodeCommand) {
     catch {
         // profile 不存在则回退到 inline 默认参数
         profileLines = [
-            "--unshare-all",
+            "--unshare-pid",
+            "--unshare-ipc",
+            "--unshare-uts",
             "--die-with-parent",
+            `--ro-bind /usr /usr`,
+            `--ro-bind /usr/lib /lib`,
+            `--ro-bind /usr/lib64 /lib64`,
             `--ro-bind ${REPO_ROOT} ${REPO_ROOT}`,
             `--bind ${ctx.workspacePath} ${ctx.workspacePath}`,
             "--tmpfs /tmp",
@@ -70,7 +75,9 @@ export async function buildBwrapCommand(ctx, opencodeCommand) {
             "--dev /dev",
         ];
     }
-    const expandedProfile = profileLines.map((line) => expandBwrapTemplate(line, ctx));
+    const expandedProfile = profileLines
+        .map((line) => expandBwrapTemplate(line, ctx))
+        .flatMap((line) => line.split(/\s+/).filter((s) => s.length > 0));
     // 读取按域预配置的挂载
     const mounts = await loadMountsConfig();
     const mountArgs = [];
@@ -87,6 +94,11 @@ export async function buildBwrapCommand(ctx, opencodeCommand) {
         pushMount(mount, "ro-bind");
     }
     for (const mount of mounts.bind ?? []) {
+        // 跳过 work/ 挂载 — 只有 work_writable 的 stage 才需要
+        const sourceExpanded = expandBwrapTemplate(mount.source, ctx);
+        if (sourceExpanded.includes("/workspace/work") && !ctx.workWritable) {
+            continue;
+        }
         pushMount(mount, "bind");
     }
     // preview 目录根据 skill_mount 动态决定可写或只读
@@ -94,7 +106,19 @@ export async function buildBwrapCommand(ctx, opencodeCommand) {
         const mode = ctx.skillMount === "preview-writable" ? "bind" : "ro-bind";
         pushMount(mounts.preview_mount, mode);
     }
-    return ["bwrap", ...expandedProfile, ...mountArgs, ...opencodeCommand];
+    // opencode 二进制路径动态挂载（bwrap 容器内 PATH 不可用，须 mount 二进制所在目录）
+    const binaryPath = opencodeCommand[0];
+    if (path.isAbsolute(binaryPath)) {
+        const binDir = path.dirname(binaryPath);
+        if (!mountArgs.includes(binDir)) {
+            mountArgs.push("--ro-bind", binDir, binDir);
+        }
+    }
+    const cmd = ["bwrap", ...expandedProfile, ...mountArgs, ...opencodeCommand];
+    if (process.env.BWRAP_DEBUG) {
+        console.log("[bwrap] command:", cmd.join(" "));
+    }
+    return cmd;
 }
 export { PathSecurityError };
 //# sourceMappingURL=bwrap.js.map

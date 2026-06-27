@@ -28,6 +28,9 @@ export async function prepareStageInputs(opts) {
             await fs.mkdir(dest, { recursive: true });
             await fs.copyFile(sessionLogPath, path.join(dest, path.basename(sessionLogPath)));
         }
+        else {
+            console.warn(`[stageInputs] session log not found: ${sessionLogPath}`);
+        }
     }
     if (apiDocsAvailable) {
         const src = apiDocsDir(skill_id);
@@ -37,8 +40,12 @@ export async function prepareStageInputs(opts) {
             await copyDir(src, dest);
         }
         catch {
-            // no api docs
+            console.warn(`[stageInputs] api docs not found or empty: ${src}`);
         }
+    }
+    // 从 rehearse-preview 传递 director-review.md（如果在流转链中）
+    if (opts.previous_stage_id === "rehearse-preview" && opts.previous_attempt) {
+        await copyDirectorReview(run_id, "rehearse-preview", opts.previous_attempt, stage_id, attempt);
     }
 }
 export async function copyDirectorReview(run_id, fromStageId, fromAttempt, toStageId, toAttempt) {

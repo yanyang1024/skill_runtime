@@ -63,7 +63,13 @@ export function ChatPage({ runId, stageId, attempt, pendingSendText, onPendingSe
 
       <MessageList messages={messages} streaming={streaming} />
 
-      <ChatInput onSend={sendMessage} disabled={!runId || !stageId} onAbort={abort} streaming={streaming} />
+      <ChatInput
+        onSend={sendMessage}
+        disabled={!runId || !stageId}
+        onAbort={abort}
+        streaming={streaming}
+        uploadUrl={runId && stageId ? `/api/runs/${runId}/stage/${stageId}/upload?attempt=${attempt}` : undefined}
+      />
     </div>
   );
 }

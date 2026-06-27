@@ -1,0 +1,9 @@
+snapshot_id: snapshot-stable-2026-06-26T17-51-34.544Z
+created_at: 2026-06-26T17:51:34.546Z
+skill_id: integration-test-skill-1782496294539
+path: /home/yy/skill_runtime/.Grow_backups/stable/integration-test-skill-1782496294539/2026-06-26T17-51-34.544Z.tar.gz
+included:
+  - skills/integration-test-skill-1782496294539/stable
+triggered_by: grow-live-run
+source_run: grow-1782496294543
+restore_command: skill-growth restore --snapshot snapshot-stable-2026-06-26T17-51-34.544Z

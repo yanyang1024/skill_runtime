@@ -57,8 +57,8 @@ export function useChatSession(
   }, [runId, stageId, attempt]);
 
   const sendMessage = useCallback(
-    async (text: string) => {
-      if (!runId || !stageId || !text.trim()) return;
+    async (text: string, attachment?: { name: string; path: string }) => {
+      if (!runId || !stageId || (!text.trim() && !attachment)) return;
       try {
         let sid = sessionId;
         if (!sid) {
@@ -78,17 +78,26 @@ export function useChatSession(
           setSessionId(sid);
         }
 
+        // 构建消息内容（包含附件信息）
+        let messageText = text.trim();
+        if (attachment) {
+          const fileInfo = `\n[附件: ${attachment.name} 已上传到 ${attachment.path}]`;
+          messageText = messageText ? messageText + fileInfo : `请处理上传的文件 ${attachment.name}`;
+        }
+
         // 先加入用户消息（乐观更新）
         const userMessage: ChatMessage = {
           id: `user-${Date.now()}`,
           role: "user",
-          parts: [{ type: "text", id: `user-part-${Date.now()}`, content: text }],
+          parts: [{ type: "text", id: `user-part-${Date.now()}`, content: messageText }],
           createdAt: Date.now(),
         };
         setMessages((prev) => [...prev, userMessage]);
 
         try {
-          await chatApi.sendMessage(runId, stageId, attempt, sid!, [{ type: "text", text }]);
+          // 构建发送的 parts
+          const parts: unknown[] = [{ type: "text", text: messageText }];
+          await chatApi.sendMessage(runId, stageId, attempt, sid!, parts);
           setStreaming(true);
         } catch (sendErr) {
           // 回滚乐观更新的用户消息

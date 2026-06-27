@@ -10,7 +10,7 @@ import {
   updateStageState,
 } from "./stateMachine.js";
 import { getStageContract } from "./stageContracts.js";
-import { runDir, stageDir, stageWorkspaceDir, stageOutputDir, skillPreviewDir } from "../shared/utils/paths.js";
+import { runDir, skillRoot, stageDir, stageWorkspaceDir, stageOutputDir, skillPreviewDir } from "../shared/utils/paths.js";
 import { filenameTimestamp } from "../shared/utils/time.js";
 
 export function generateRunId(): string {
@@ -21,6 +21,13 @@ export async function createRun(opts: {
   skill_id: string;
   preview_id?: string;
 }): Promise<RunState> {
+  const preview_id = opts.preview_id ?? "p1";
+  // 检查 skill 的 stable 目录是否存在（至少需要 SKILL.md）
+  try {
+    await fs.access(path.join(skillRoot(opts.skill_id), "stable", "SKILL.md"));
+  } catch {
+    throw new Error(`Skill not found: ${opts.skill_id} — please create skills/${opts.skill_id}/stable/SKILL.md first`);
+  }
   const runId = generateRunId();
   const dir = runDir(runId);
   await fs.mkdir(dir, { recursive: true });
@@ -28,10 +35,10 @@ export async function createRun(opts: {
   try {
     await fs.writeFile(
       digestPath,
-      `# Stage Digest\n\n## Run\n${runId}\n\n## Skill\n${opts.skill_id}\n\n## Preview\n${opts.preview_id ?? "N/A"}\n\n## Current Stage\nN/A\n\n## Key Findings\n\n## Next Recommended Action\n\n`,
+      `# Stage Digest\n\n## Run\n${runId}\n\n## Skill\n${opts.skill_id}\n\n## Preview\n${preview_id}\n\n## Current Stage\nN/A\n\n## Key Findings\n\n## Next Recommended Action\n\n`,
       "utf-8",
     );
-    return await createRunState({ run_id: runId, skill_id: opts.skill_id, preview_id: opts.preview_id });
+    return await createRunState({ run_id: runId, skill_id: opts.skill_id, preview_id });
   } catch (err) {
     // 回滚：写入 YAML 失败时，清理已创建的目录
     const { removeRunDir } = await import("./stateMachine.js");

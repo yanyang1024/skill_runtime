@@ -1,0 +1,14 @@
+{
+  "server_id": "run-2026-06-26T18-04-30.959Z-observe-log-review-1",
+  "stage_id": "observe-log-review",
+  "run_id": "run-2026-06-26T18-04-30.959Z",
+  "skill_id": "tech-doc-didactic-rewriter",
+  "runtime_mode": "serve",
+  "serve_mode": "per-stage",
+  "port": 9501,
+  "base_url": "http://127.0.0.1:9501",
+  "open_url": "http://127.0.0.1:9501",
+  "workspace_path": "/home/yy/skill_runtime/runs/run-2026-06-26T18-04-30.959Z/observe-log-review/attempts/attempt-001/workspace",
+  "opencode_config_dir": "/home/yy/skill_runtime/runs/run-2026-06-26T18-04-30.959Z/observe-log-review/attempts/attempt-001/workspace/.opencode",
+  "created_at": "2026-06-26T18:04:34.628Z"
+}

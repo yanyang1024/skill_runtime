@@ -571,6 +571,87 @@ body,
   border-color: var(--accent);
 }
 
+.artifact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.artifact-download {
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.artifact-download:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.artifact-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+}
+
+.artifact-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.attach-button {
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.attach-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-attachment {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.attachment-remove {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.25rem;
+}
+
+.assistant-retry {
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
 .artifact-viewer {
   flex: 1;
   overflow-y: auto;

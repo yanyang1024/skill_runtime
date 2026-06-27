@@ -42,7 +42,26 @@ export function PromptAssistant({ runId, stageId, attempt, serverId, onSend }: P
     <aside className="prompt-assistant">
       <h3>Prompt Assistant</h3>
       {loading && <div>推荐中…</div>}
-      {error && <div className="assistant-error">{error}</div>}
+      {error && (
+        <div className="assistant-error">
+          {error}
+          <button className="assistant-retry" onClick={() => {
+            setLoading(true);
+            setError("");
+            recommendPrompt(runId!, stageId!, attempt, serverId ?? `${runId}-${stageId}-${attempt}`)
+              .then((rec) => {
+                setPrimary(rec.primary);
+                setAlternatives(rec.alternatives ?? []);
+                setRationale(rec.rationale);
+                setRisk(rec.risk_hint ?? "无");
+              })
+              .catch((err) => setError(err.message))
+              .finally(() => setLoading(false));
+          }} disabled={!runId || !stageId}>
+            重试
+          </button>
+        </div>
+      )}
       {!loading && !error && (
         <>
           <div className="assistant-section">
