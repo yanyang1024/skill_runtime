@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import type { TokenStats } from "../hooks/useChatSession";
 
 interface ChatInputProps {
   onSend: (text: string, attachment?: { name: string; path: string }) => void;
@@ -7,12 +8,14 @@ interface ChatInputProps {
   streaming?: boolean;
   /** 上传文件的后端端点基础路径 */
   uploadUrl?: string;
+  tokenStats?: TokenStats;
 }
 
-export function ChatInput({ onSend, disabled, onAbort, streaming, uploadUrl }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, onAbort, streaming, uploadUrl, tokenStats }: ChatInputProps) {
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState<{ name: string; path: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -44,6 +47,7 @@ export function ChatInput({ onSend, disabled, onAbort, streaming, uploadUrl }: C
       setAttachment({ name: result.filename, path: result.path });
     } catch (err) {
       console.error("Upload failed:", err);
+      setUploadError(err instanceof Error ? err.message : "上传失败");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -58,6 +62,9 @@ export function ChatInput({ onSend, disabled, onAbort, streaming, uploadUrl }: C
           <button className="attachment-remove" onClick={() => setAttachment(null)}>×</button>
         </div>
       )}
+      {uploadError && (
+        <div className="chat-attachment error">{uploadError}</div>
+      )}
       <textarea
         ref={textareaRef}
         rows={3}
@@ -67,6 +74,22 @@ export function ChatInput({ onSend, disabled, onAbort, streaming, uploadUrl }: C
         placeholder="输入 prompt，按 Enter 发送，Shift+Enter 换行..."
         disabled={disabled}
       />
+      {tokenStats && tokenStats.limit > 0 && tokenStats.input > 0 && (
+        (() => {
+          const pct = Math.round(tokenStats.input / tokenStats.limit * 100);
+          const level = pct > 100 ? "critical" : pct > 80 ? "warning" : pct > 60 ? "caution" : "ok";
+          return (
+            <div className={`token-bar token-${level}`}>
+              <div className="token-fill" style={{ width: `${Math.min(100, pct)}%` }} />
+              <span className="token-text">
+                {level === "critical" ? "⚠ 已超出限制！建议中止并简化 prompt。" :
+                 level === "warning" ? `⚠ 上下文 ${pct}% 已用，建议精简 prompt` :
+                 `${pct}% (${Math.round(tokenStats.input / 1000)}K / ${Math.round(tokenStats.limit / 1000)}K)`}
+              </span>
+            </div>
+          );
+        })()
+      )}
       <div className="chat-input-actions">
         <input
           ref={fileInputRef}

@@ -132,4 +132,16 @@ export function createEventSource(
   );
 }
 
+/** 重连已有 session 的 SSE 流（页面刷新恢复） */
+export function subscribeEventSource(
+  runId: string,
+  stageId: string,
+  attempt: number,
+  sessionId: string,
+): EventSource {
+  return new EventSource(
+    `${chatBase(runId, stageId, attempt)}/subscribe?session_id=${encodeURIComponent(sessionId)}`,
+  );
+}
+
 export { parseChatSSEEvent as parseSSEEvent };

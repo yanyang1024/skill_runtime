@@ -468,6 +468,7 @@ async function processEventStream(
   let buffer = "";
   let idle = false;
   let endedNormally = false;
+  let lastDeltaTime = Date.now();
 
   try {
     while (!idle && !signal.aborted) {
@@ -510,7 +511,9 @@ async function processEventStream(
           idle = true;
         }
 
+        const pendingBefore = state.pendingDeltas.size;
         const normalized = normalizeOpenCodeEvent(e.type ?? "unknown", props, state);
+        if (state.pendingDeltas.size > pendingBefore) lastDeltaTime = Date.now();
         if (!normalized) continue;
 
         const events = Array.isArray(normalized) ? normalized : [normalized];
@@ -523,6 +526,28 @@ async function processEventStream(
           }
           opts.onEvent(ne);
         }
+
+        // Delta 缓冲超时保护：若 5 秒内未收到 part_start，强制 flush 所有缓冲
+        if (state.pendingDeltas.size > 0 && Date.now() - lastDeltaTime > 5000) {
+          await flushAllPending();
+        }
+      }
+    }
+
+    // 处理 buffer 中残留的最后一行（流结束时可能没有尾随 \n）
+    if (buffer.trim()) {
+      const line = buffer.trim();
+      if (line.startsWith("data: ")) {
+        try {
+          const json = line.slice("data: ".length);
+          const event = JSON.parse(json) as { type?: string; properties?: Record<string, unknown> };
+          const props = event.properties ?? {};
+          const normalized = normalizeOpenCodeEvent(event.type ?? "unknown", props, state);
+          if (normalized) {
+            const events = Array.isArray(normalized) ? normalized : [normalized];
+            for (const ne of events) opts.onEvent(ne);
+          }
+        } catch { /* ignore parse errors on final chunk */ }
       }
     }
 

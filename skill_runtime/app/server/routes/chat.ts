@@ -65,14 +65,33 @@ router.post("/session", async (req, res) => {
   }
 });
 
-// GET /session/:sessionId -> 获取 session 状态
+// GET /session/:sessionId -> 获取 session 状态（含 token 统计 + 上下文限制）
 router.get("/session/:sessionId", async (req, res) => {
   const runtime = gateRuntime(req, res);
   if (!runtime) return;
   try {
     const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
-    const session = await client.getSession(runtime.workspace_path, req.params.sessionId);
-    res.json(session);
+    const session = await client.getSession(runtime.workspace_path, req.params.sessionId) as Record<string, unknown>;
+    // 获取模型上下文限制
+    let contextLimit = 131072;
+    try {
+      const configResp = await fetch(`${runtime.base_url}/config`, {
+        headers: { authorization: `Basic ${Buffer.from(`${process.env.OPENCODE_SERVER_USERNAME ?? "opencode"}:${process.env.OPENCODE_SERVER_PASSWORD ?? "skillgrowth"}`).toString("base64")}` },
+      });
+      if (configResp.ok) {
+        const config = await configResp.json() as Record<string, unknown>;
+        const model = session?.model as Record<string, unknown> | undefined;
+        const pid = (model?.providerID ?? "local-v1") as string;
+        const mid = (model?.id ?? "glm4:9b") as string;
+        const providers = config?.provider as Record<string, unknown> | undefined;
+        const provider = providers?.[pid] as Record<string, unknown> | undefined;
+        const models = provider?.models as Record<string, unknown> | undefined;
+        const modelCfg = models?.[mid] as Record<string, unknown> | undefined;
+        const limit = modelCfg?.limit as Record<string, number> | undefined;
+        if (limit?.context) contextLimit = limit.context;
+      }
+    } catch { /* best-effort */ }
+    res.json({ ...session, context_limit: contextLimit });
   } catch (err) {
     serverError(res, err);
   }
@@ -243,13 +262,87 @@ router.get("/events", async (req, res) => {
 
   emitter.on("event", listener);
 
+  // 30s heartbeat 防止代理/load balancer 断开闲置连接
+  const heartbeat = setInterval(() => {
+    if (res.writableEnded) return;
+    try { res.write(": heartbeat\n\n"); } catch { cleanup(); }
+  }, 30000);
+
   const cleanup = () => {
+    clearInterval(heartbeat);
     emitter.off("event", listener);
   };
   req.on("close", cleanup);
   res.on("close", cleanup);
 
   // 确保后台正在消费 OpenCode /event 流
+  const outputDir = stageOutputDir(runId, stageId, attempt);
+  ensureEventStream(runtime.base_url, runtime.workspace_path, outputDir, runId, stageId, attempt, sessionId)
+    .catch((err) => console.error("[chat] ensureEventStream failed:", err));
+});
+
+// GET /subscribe?session_id= — 重连已有 session 的 SSE 流（页面刷新恢复）
+router.get("/subscribe", async (req, res) => {
+  const runtime = gateRuntime(req, res);
+  if (!runtime) return;
+
+  const sessionId = req.query.session_id;
+  if (typeof sessionId !== "string" || sessionId.length === 0) {
+    res.status(400).json({ error: "missing session_id query parameter" });
+    return;
+  }
+
+  const { runId, stageId, attempt } = getSafeParams<{
+    runId: string;
+    stageId: string;
+    attempt: number;
+  }>(req);
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  (res as Response & { flushHeaders?: () => void }).flushHeaders?.();
+
+  // 先拉取历史消息，重放为初始事件
+  try {
+    const client = createOpencodeSessionClient({ baseUrl: runtime.base_url });
+    const history = await client.getMessages(runtime.workspace_path, sessionId);
+    if (Array.isArray(history)) {
+      for (const msg of history) {
+        const info = (msg as Record<string, unknown>)?.info as Record<string, unknown> | undefined;
+        const parts = (msg as Record<string, unknown>)?.parts as Array<Record<string, unknown>> | undefined;
+        if (info?.id) {
+          res.write(`data: ${JSON.stringify({ type: "message_start", message_id: info.id, role: (info.role ?? "assistant") as string })}\n\n`);
+          if (Array.isArray(parts)) {
+            for (const part of parts) {
+              const pType = (part.type ?? "text") as string;
+              if (part.id) {
+                res.write(`data: ${JSON.stringify({ type: "part_start", message_id: info.id, part_id: part.id, part_type: pType === "text" || pType === "reasoning" || pType === "tool" || pType === "error" ? pType : "text" })}\n\n`);
+                if (typeof part.text === "string") {
+                  res.write(`data: ${JSON.stringify({ type: pType === "reasoning" ? "reasoning_delta" : "text_delta", message_id: info.id, part_id: part.id, content: part.text })}\n\n`);
+                }
+              }
+            }
+          }
+          res.write(`data: ${JSON.stringify({ type: "message_end", message_id: info.id })}\n\n`);
+        }
+      }
+    }
+  } catch {
+    // history fetch best-effort
+  }
+
+  // 然后连接实时 SSE
+  const emitter = getSSEEmitter(runId, stageId, attempt, sessionId);
+  const listener = (event: ChatSSEEvent) => {
+    if (res.writableEnded) return;
+    try { res.write(`data: ${JSON.stringify(event)}\n\n`); } catch { cleanup(); }
+  };
+  emitter.on("event", listener);
+  const cleanup = () => { emitter.off("event", listener); };
+  req.on("close", cleanup);
+  res.on("close", cleanup);
+
   const outputDir = stageOutputDir(runId, stageId, attempt);
   ensureEventStream(runtime.base_url, runtime.workspace_path, outputDir, runId, stageId, attempt, sessionId)
     .catch((err) => console.error("[chat] ensureEventStream failed:", err));

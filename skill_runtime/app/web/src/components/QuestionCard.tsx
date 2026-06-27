@@ -15,15 +15,13 @@ export function QuestionCard({ question, onReply }: QuestionCardProps) {
     question.kind === "text" ? textAnswer.trim().length > 0 : selected.length > 0;
 
   const handleReply = () => {
-    if (!canSubmit) return;
+    if (!canSubmit || submitting) return;
     setSubmitting(true);
-    if (question.kind === "multiple") {
-      onReply(question.questionId, selected);
-    } else if (question.kind === "choice" || question.kind === "confirm") {
-      onReply(question.questionId, selected[0] ?? "");
-    } else {
-      onReply(question.questionId, textAnswer);
-    }
+    onReply(question.questionId, question.kind === "multiple" ? selected :
+      (question.kind === "choice" || question.kind === "confirm") ? (selected[0] ?? "") :
+      textAnswer);
+    // 安全网：2s 后无论如何复位
+    setTimeout(() => setSubmitting(false), 2000);
   };
 
   return (

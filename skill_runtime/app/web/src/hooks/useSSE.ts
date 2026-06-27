@@ -70,6 +70,7 @@ export function useSSE(
 
       es.onmessage = (e) => {
         if (!mountedRef.current) return;
+        retryCountRef.current = 0;  // 成功收到消息时复位重试计数
         const event = chatApi.parseSSEEvent(e.data);
         if (!event) return;
 
@@ -104,6 +105,7 @@ export function useSSE(
         retryCountRef.current++;
         if (retryCountRef.current <= 5) {
           const delay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 10000);
+          if (timerRef.current !== null) clearTimeout(timerRef.current);
           timerRef.current = setTimeout(() => {
             if (mountedRef.current) connect();
           }, delay);

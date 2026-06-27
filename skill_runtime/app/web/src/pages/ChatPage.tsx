@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { MessageList } from "../components/MessageList";
 import { ChatInput } from "../components/ChatInput";
+import { ContextPanel } from "../components/ContextPanel";
 import { QuestionCard } from "../components/QuestionCard";
 import { PermissionCard } from "../components/PermissionCard";
 import { useChatSession } from "../hooks/useChatSession";
@@ -25,6 +26,7 @@ export function ChatPage({ runId, stageId, attempt, pendingSendText, onPendingSe
     replyQuestion,
     replyPermission,
     clearError,
+    tokenStats,
   } = useChatSession(runId, stageId, attempt);
 
   useEffect(() => {
@@ -52,6 +54,8 @@ export function ChatPage({ runId, stageId, attempt, pendingSendText, onPendingSe
         </div>
       )}
 
+      <ContextPanel runId={runId} stageId={stageId} attempt={attempt} tokenStats={tokenStats} />
+
       <div className="chat-interactions">
         {pendingPermissions.map((p) => (
           <PermissionCard key={p.requestId} permission={p} onReply={replyPermission} />
@@ -69,6 +73,7 @@ export function ChatPage({ runId, stageId, attempt, pendingSendText, onPendingSe
         onAbort={abort}
         streaming={streaming}
         uploadUrl={runId && stageId ? `/api/runs/${runId}/stage/${stageId}/upload?attempt=${attempt}` : undefined}
+        tokenStats={tokenStats}
       />
     </div>
   );

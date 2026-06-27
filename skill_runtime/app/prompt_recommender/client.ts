@@ -34,7 +34,7 @@ export class LocalV1Client {
 
   async chatCompletion(opts: ChatCompletionOptions): Promise<ChatCompletionResponse> {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 60000);
     try {
       const resp = await fetch(`${this.baseURL}/chat/completions`, {
         method: "POST",
@@ -58,6 +58,11 @@ export class LocalV1Client {
       }
 
       return (await resp.json()) as ChatCompletionResponse;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error("Prompt recommender timed out (60s). The model might be busy — try again or use SKILL_GROWTH_RECOMMENDER_MODEL to specify a faster model.");
+      }
+      throw err;
     } finally {
       clearTimeout(timeout);
     }

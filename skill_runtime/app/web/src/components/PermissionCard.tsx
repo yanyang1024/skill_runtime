@@ -10,8 +10,11 @@ export function PermissionCard({ permission, onReply }: PermissionCardProps) {
   const [replying, setReplying] = useState(false);
 
   const handleReply = (allowed: boolean) => {
+    if (replying) return;
     setReplying(true);
     onReply(permission.requestId, allowed);
+    // 安全网：2s 后无论如何复位（防止回调永不返回）
+    setTimeout(() => setReplying(false), 2000);
   };
 
   return (

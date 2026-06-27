@@ -6,6 +6,7 @@ import { stageDir, stageWorkspaceDir, stageInputDir, stageOutputDir, stageWorkDi
 import { buildOpencodeConfig } from "./opencodeConfig.js";
 import { archiveFiles } from "../snapshot_manager/archive.js";
 import { utcTimestamp } from "../shared/utils/time.js";
+import { hardlinkDir } from "../shared/utils/fs.js";
 async function copyDir(src, dest) {
     try {
         await fs.access(src);
@@ -26,9 +27,14 @@ async function copyDir(src, dest) {
         }
     }
 }
-async function copySkillSnapshot(skillId, sourceVersion, destDir) {
+async function copySkillSnapshot(skillId, sourceVersion, destDir, useHardlink = true) {
     const srcDir = sourceVersion === "stable" ? skillStableDir(skillId) : skillPreviewDir(skillId, sourceVersion);
-    await copyDir(srcDir, destDir);
+    if (useHardlink) {
+        await hardlinkDir(srcDir, destDir);
+    }
+    else {
+        await copyDir(srcDir, destDir);
+    }
 }
 export async function buildStageWorkspace(opts) {
     const { runState, stageState, port, previousStageId, previousAttempt } = opts;
@@ -97,12 +103,23 @@ export async function buildStageWorkspace(opts) {
     if (contract.work_writable) {
         const workDir = stageWorkDir(run_id, stage_id, attempt);
         await fs.mkdir(workDir, { recursive: true });
-        // For build/iteration, copy preview skill into work/ for actual editing
+        // For build/iteration, copy preview skill into work/ for actual editing (不可硬链接)
         if (contract.skill_mount === "preview-writable" && sourceSkillVersion !== "stable") {
-            await copySkillSnapshot(skill_id, sourceSkillVersion, workDir);
+            await copySkillSnapshot(skill_id, sourceSkillVersion, workDir, false);
         }
     }
-    // 8. Write server.json metadata
+    // 8. 预置 output 模板文件（减少 AI 从零生成文件的 token 消耗）
+    for (const file of contract.expected_outputs) {
+        const templatePath = path.join(outputDir, file);
+        try {
+            await fs.access(templatePath);
+        }
+        catch {
+            const name = file.replace(/\.md$/, "").replace(/-/g, " ");
+            await fs.writeFile(templatePath, `# ${name}\n\n(由 AI 根据任务自动填充)\n`, "utf-8");
+        }
+    }
+    // 9. Write server.json metadata
     const serverMeta = {
         server_id: stageState.server_id ?? `${run_id}-${stage_id}-${attempt}`,
         stage_id,
@@ -118,7 +135,7 @@ export async function buildStageWorkspace(opts) {
         created_at: utcTimestamp(),
     };
     await fs.writeFile(path.join(baseDir, "server.json"), JSON.stringify(serverMeta, null, 2), "utf-8");
-    // 9. Write stage-digest.md template
+    // 10. Write stage-digest.md template
     const digestPath = path.join(baseDir, "stage-digest.md");
     await fs.writeFile(digestPath, `# Stage Digest\n\n## Stage\n${stage_id}\n## Attempt\n${attempt}\n## Current Goal\n${contract.agent_role}\n## Completed Outputs\n\n## Key Findings\n\n## Next Recommended Action\n\n`, "utf-8");
     return { workspaceDir, opencodeConfig: config };

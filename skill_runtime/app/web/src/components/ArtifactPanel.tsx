@@ -106,6 +106,7 @@ export function ArtifactPanel({ runId, stageId, attempt }: ArtifactPanelProps) {
         retryCountRef.current++;
         if (retryCountRef.current <= 5) {
           const delay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 10000);
+          if (reconnectTimerRef.current !== null) clearTimeout(reconnectTimerRef.current);
           reconnectTimerRef.current = setTimeout(() => {
             if (mountedRef.current) connectSSE();
           }, delay);

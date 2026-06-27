@@ -17,7 +17,7 @@
   - **Grow（生长）**：`grow-plan`（只读规划）与 `grow-build`（修改 preview）stage；批量修改后进入 `grow-quality-review`。
   - **Rehearse（排练）**：`rehearse-preview`（导演体验）与 `rehearse-iteration`（基于 director review 迭代）stage。
   - **Stabilize（稳定化）**：`stabilize-release` stage 做发布前语义检查；确定性脚本执行 promote / rollback。
-- **当前完成度**：v0.3 已完成 headless `opencode serve` per-stage runtime、OpenCode Gateway（`x-opencode-directory` 全方法注入）、自建 ChatPage（React + Vite）、SSE 归一化、bwrap 默认启用、四层路径穿越防护、80 个测试用例全部通过 (79 pass, 1 skip)。
+- **当前完成度**：v0.3 已完成 headless `opencode serve` per-stage runtime、OpenCode Gateway（`x-opencode-directory` 全方法注入）、自建 ChatPage（React + Vite）、SSE 归一化、bwrap 默认启用（PID/IPC/UTS 隔离）、四层路径穿越防护、Token 预算监控、上下文可见性面板、阶段流转文件传递、文件上传/下载、会话重连、运行健康监控、80 个测试用例全部通过（79 pass, 1 skip）。
 
 ---
 
@@ -37,7 +37,7 @@
 | YAML/JSON | `yaml` | 解析/序列化配置文件和产物 |
 | 快照打包 | `tar` (npm) | 生成 `.Grow_backups/stable|preview/<skill>/<UTC>.tar.gz` |
 | 测试 | Node 内置 `node:test` + `assert/strict` | 不引入额外重型测试框架 |
-| LLM / Runtime | 本地 OpenAI-compatible v1 + OpenCode serve | Prompt Recommender 与 OpenCode 均走 `configs/model-providers/local-v1.yaml` |
+| LLM / Runtime | 本地 OpenAI-compatible v1 + OpenCode serve | 默认模型 qwen3.5:9b（262K 上下文）；Prompt Recommender 与 OpenCode 均走 `configs/model-providers/local-v1.yaml` |
 | Python 环境 | `py312_skill/` | 已创建 Python 3.12 虚拟环境，预留给日志解析/trace 规范化脚本 |
 
 ---
@@ -106,6 +106,7 @@ skill_runtime/
 │   │       │   ├── ChatInput.tsx
 │   │       │   ├── PromptAssistant.tsx
 │   │       │   ├── ErrorBoundary.tsx
+│   │       │   ├── ContextPanel.tsx
 │   │       │   └── ArtifactPanel.tsx
 │   │       ├── hooks/
 │   │       │   ├── useChatSession.ts
@@ -121,8 +122,9 @@ skill_runtime/
 │   └── shared/              # 工具与 schema
 │       ├── schemas/index.ts # Zod schema + TypeScript 类型
 │       └── utils/           # paths、time、security、fs、sse、localV1Config、growthRun
+│   ├── logger.ts              # 结构化日志（零依赖）
 ├── scripts/                 # 辅助脚本
-│   └── check-prereqs.ts     # pnpm check 环境预检
+│   └── check-prereqs.ts     # pnpm check 环境预检（8 项前置条件检查）
 ├── docs/                    # 技术文档
 │   ├── ARCHITECTURE.md      # 系统架构文档
 │   └── opencode-integration.md # OpenCode 集成指南
@@ -306,7 +308,7 @@ v0.3 新增/变更：
 ### 8.1 当前测试状态
 
 - `pnpm build` 通过 TypeScript 严格检查 + Vite 生产构建。
-- `pnpm test` 80 个用例全部通过（79 pass, 1 skip — deepseek），1 个 skip（deepseek）。
+- `pnpm test` 80 个用例全部通过（79 pass, 1 skip — deepseek）。
 - 实际启动 `opencode serve` 的端到端 Stage runtime 测试需要本地已安装 `opencode` CLI 并配置好模型服务。
 
 ---
@@ -369,3 +371,7 @@ v0.3 新增/变更：
 | `tests/artifact-watcher.test.ts` | ArtifactWatcher 测试 |
 | `docs/ARCHITECTURE.md` | 系统架构技术文档 |
 | `docs/opencode-integration.md` | OpenCode serve 集成指南 |
+| `docs/STAGES.md` | Stage 使用指南 — 8 个 stage 的区别和推荐流程 |
+| `docs/SESSION_AND_FILE_FLOW.md` | 会话与文件流转 — 会话生命周期、SSE 架构、文件流转链路 |
+| `scripts/check-prereqs.ts` | 环境预检脚本（pnpm check） |
+| `app/shared/logger.ts` | 结构化日志模块 |

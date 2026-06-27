@@ -16,6 +16,86 @@ import { watchStageOutput, unwatchStageOutput, } from "./artifactWatcher.js";
 import { emitArtifactChanged, emitStageStatusChanged } from "./routes/events.js";
 const runtimes = new Map();
 let nextPort = 9500;
+// opencode 路径缓存：首次解析后复用，避免每次 stage 启动重复 which + realpath + --version
+let cachedOpencodePath = null;
+async function resolveOpencodePath() {
+    if (cachedOpencodePath)
+        return cachedOpencodePath;
+    try {
+        const whichResult = spawnSync("which", ["opencode"], { encoding: "utf-8" });
+        if (whichResult.status === 0 && whichResult.stdout.trim()) {
+            cachedOpencodePath = fsSync.realpathSync(whichResult.stdout.trim());
+        }
+        await new Promise((resolve, reject) => {
+            const check = spawn("opencode", ["--version"], { stdio: "pipe" });
+            check.on("error", (err) => reject(err));
+            check.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`opencode --version exit ${code}`))));
+        });
+    }
+    catch (err) {
+        const nodeErr = err;
+        if (nodeErr.code === "ENOENT") {
+            throw new Error("opencode CLI not found in PATH. Install it via: npm install -g @opencode-ai/opencode-ai");
+        }
+        throw new Error(`opencode CLI check failed: ${nodeErr.message}`);
+    }
+    return cachedOpencodePath ?? "opencode";
+}
+// cgroup v2 资源限制（默认关闭，通过 STAGE_CGROUP=1 启用）
+async function applyCgroupLimits(serverId, pid) {
+    if (process.env.STAGE_CGROUP !== "1")
+        return;
+    const cgroupBase = "/sys/fs/cgroup";
+    const cgroupPath = `${cgroupBase}/stage-${serverId}`;
+    try {
+        await fs.mkdir(cgroupPath);
+        const memMB = parseInt(process.env.STAGE_MEMORY_MB ?? "3200", 10);
+        const cpuQuota = parseInt(process.env.STAGE_CPU_QUOTA ?? "200000", 10);
+        await fs.writeFile(`${cgroupPath}/memory.max`, String(memMB * 1024 * 1024));
+        await fs.writeFile(`${cgroupPath}/cpu.max`, `${cpuQuota} 100000`);
+        await fs.writeFile(`${cgroupPath}/cgroup.procs`, String(pid));
+        console.log(`[stageRuntime] cgroup applied: mem=${memMB}MB cpu=${cpuQuota}us`);
+    }
+    catch (err) {
+        console.error(`[stageRuntime] cgroup setup failed:`, err);
+    }
+}
+// 运行中健康监控：定期检查 opencode 进程是否仍然响应
+function startHealthMonitor(runtime, interval = 30000) {
+    const timer = setInterval(async () => {
+        if (runtime.process.exitCode !== null || runtime.status === "stopped") {
+            clearInterval(timer);
+            return;
+        }
+        try {
+            const resp = await fetch(`${runtime.base_url}/global/health`, {
+                headers: { authorization: `Basic ${getAuth()}` },
+                signal: AbortSignal.timeout(3000),
+            });
+            if (!resp.ok) {
+                runtime.healthy = false;
+                runtime.error = `Health check returned ${resp.status}`;
+                emitStageStatusChanged({
+                    run_id: runtime.run_id, stage_id: runtime.stage_id,
+                    attempt: runtime.attempt, status: "error", server_id: runtime.server_id,
+                });
+            }
+            else {
+                runtime.healthy = true;
+            }
+        }
+        catch {
+            runtime.healthy = false;
+            runtime.error = "Health check unreachable";
+            emitStageStatusChanged({
+                run_id: runtime.run_id, stage_id: runtime.stage_id,
+                attempt: runtime.attempt, status: "error", server_id: runtime.server_id,
+            });
+            clearInterval(timer);
+        }
+    }, interval);
+    runtime.health_timer = timer;
+}
 function generateServerId(runId, stageId, attempt) {
     return `${runId}-${stageId}-${attempt}`;
 }
@@ -179,44 +259,29 @@ export async function startStageRuntime(opts) {
         throw new Error(`Run not found: ${opts.run_id}`);
     }
     const port = await allocatePort();
-    const { workspaceDir, opencodeConfig } = await buildStageWorkspace({
-        runState,
-        stageState,
-        port,
-        previousStageId: opts.previous_stage_id,
-        previousAttempt: opts.previous_attempt,
-    });
+    // 并行化：workspace 构建 与 input 准备 互不依赖，同时执行
     const { prepareStageInputs } = await import("../workspace_builder/stageInputs.js");
-    await prepareStageInputs({
-        run_id: opts.run_id,
-        stage_id: opts.stage_id,
-        attempt,
-        skill_id: opts.skill_id,
-        sessionLogPath: opts.sessionLogPath,
-        apiDocsAvailable: opts.apiDocsAvailable,
-        previous_stage_id: opts.previous_stage_id,
-        previous_attempt: opts.previous_attempt,
-    });
-    // opencode 路径解析（bwrap 内 PATH 不可用，须使用绝对路径）
-    let resolvedOpencodePath = "opencode";
-    try {
-        const whichResult = spawnSync("which", ["opencode"], { encoding: "utf-8" });
-        if (whichResult.status === 0 && whichResult.stdout.trim()) {
-            resolvedOpencodePath = fsSync.realpathSync(whichResult.stdout.trim());
-        }
-        await new Promise((resolve, reject) => {
-            const check = spawn("opencode", ["--version"], { stdio: "pipe" });
-            check.on("error", (err) => reject(err));
-            check.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`opencode --version exit ${code}`))));
-        });
-    }
-    catch (err) {
-        const nodeErr = err;
-        if (nodeErr.code === "ENOENT") {
-            throw new Error("opencode CLI not found in PATH. Install it via: npm install -g @opencode-ai/opencode-ai");
-        }
-        throw new Error(`opencode CLI check failed: ${nodeErr.message}`);
-    }
+    const [{ workspaceDir, opencodeConfig }] = await Promise.all([
+        buildStageWorkspace({
+            runState,
+            stageState,
+            port,
+            previousStageId: opts.previous_stage_id,
+            previousAttempt: opts.previous_attempt,
+        }),
+        prepareStageInputs({
+            run_id: opts.run_id,
+            stage_id: opts.stage_id,
+            attempt,
+            skill_id: opts.skill_id,
+            sessionLogPath: opts.sessionLogPath,
+            apiDocsAvailable: opts.apiDocsAvailable,
+            previous_stage_id: opts.previous_stage_id,
+            previous_attempt: opts.previous_attempt,
+        }),
+    ]);
+    // opencode 路径解析（缓存）
+    const resolvedOpencodePath = await resolveOpencodePath();
     // 启动 headless opencode serve，绑定到当前 stage workspace
     const opencodeCommand = [resolvedOpencodePath, "serve", "--hostname", "127.0.0.1", "--port", String(port)];
     // bwrap 预检
@@ -255,6 +320,9 @@ export async function startStageRuntime(opts) {
             OPENCODE_SERVER_USERNAME: process.env.OPENCODE_SERVER_USERNAME ?? "opencode",
         },
     });
+    // cgroup v2 资源限制（可选，通过 STAGE_CGROUP=1 启用）
+    if (proc.pid)
+        void applyCgroupLimits(serverId, proc.pid);
     let healthErr = "";
     try {
         await waitForHealth(port, proc);
@@ -357,6 +425,8 @@ export async function startStageRuntime(opts) {
         server_id: serverId,
         status: "running",
     });
+    // 启动运行中健康监控
+    startHealthMonitor(runtime);
     return runtime;
 }
 export async function stopStageRuntime(serverId, gracefulTimeout = 5000) {

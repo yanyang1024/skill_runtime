@@ -169,6 +169,29 @@ SSE 全局事件流，用于前端接收实时状态更新。
 
 所有路由经 `validateRunStageParams` 中间件校验参数。
 
+### `GET /context`
+
+列出模型可访问的全部文件清单，按来源分组。
+
+**响应：**
+```json
+{
+  "skill_source": "stable",
+  "inputs": {
+    "previous_stage_output": ["replay-card.md"],
+    "session_log": [],
+    "api_docs": []
+  },
+  "output_templates": ["replay-card.md", "growth-opportunities.md"]
+}
+```
+
+### `POST /upload`
+
+上传文件到 stage 的 `input/` 目录（`multipart/form-data`，10MB 限制）。
+
+**响应：** `{ "ok": true, "filename": "log.txt", "size": 1024, "path": "..." }`
+
 ### `GET /status`
 
 查询 stage runtime 健康状态（不要求 runtime 正在运行）。
@@ -328,7 +351,7 @@ SSE 全局事件流，用于前端接收实时状态更新。
 
 ### `GET /session/:sessionId`
 
-获取 session 详情。
+获取 session 详情，包含 `context_limit` 字段（模型上下文窗口大小）和 `tokens` 字段（当前 token 使用量）。
 
 ### `DELETE /session/:sessionId`
 
@@ -382,7 +405,11 @@ Abort 当前活跃的 session 处理。
 
 ### `GET /events?session_id=`
 
-SSE 流端点。Backend 将 OpenCode 原始 SSE 归一化为 `ChatSSEEvent` 后推送。每个事件格式：
+SSE 流端点。Backend 将 OpenCode 原始 SSE 归一化为 `ChatSSEEvent` 后推送。30s heartbeat 保活。
+
+### `GET /subscribe?session_id=`
+
+重连已有 session 的 SSE 流（页面刷新恢复）。先重放历史消息为初始事件，再连接实时流。每个事件格式：
 
 ```
 data: {"type":"text_delta","message_id":"...","part_id":"...","content":"你好"}
@@ -407,7 +434,7 @@ data: {"type":"text_delta","message_id":"...","part_id":"...","content":"你好"
 
 ### `GET /artifact/:name`
 
-读取指定 artifact 的内容。路径经 `safeResolve()` 校验。
+读取指定 artifact 的内容。路径经 `safeResolve()` 校验。支持 `?download=1` 参数触发文件下载（`Content-Disposition: attachment`）。
 
 ---
 

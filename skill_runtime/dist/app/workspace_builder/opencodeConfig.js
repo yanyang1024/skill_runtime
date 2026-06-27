@@ -49,9 +49,9 @@ export async function buildOpencodeConfig(opts) {
             models: {
                 [localV1Model]: {
                     name: localV1Model,
-                    tools: false,
+                    tools: true,
                     capabilities: { input: ["text"], output: ["text"] },
-                    limit: { context: 131072, output: 8192 },
+                    limit: { context: 262144, output: 8192 },
                 },
             },
         },

@@ -30,6 +30,7 @@ router.get("/", async (_req, res) => {
     const skillNames = entries.filter((e) => e.isDirectory() && !e.name.startsWith(".")).map((e) => e.name);
     res.json(skillNames);
   } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return res.json([]);
     res.status(500).json({ error: String(err) });
   }
 });

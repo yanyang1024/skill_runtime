@@ -605,6 +605,94 @@ body,
   margin-bottom: 0.25rem;
 }
 
+.context-panel {
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+
+.context-header {
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.context-header:hover { color: var(--text); }
+
+.context-token-mini {
+  font-size: 0.75rem;
+}
+
+.context-body {
+  padding: 0 1rem 0.6rem;
+}
+
+.context-section {
+  margin-top: 0.4rem;
+}
+
+.context-label {
+  color: var(--accent);
+  margin-bottom: 0.15rem;
+}
+
+.context-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.6rem;
+}
+
+.context-file {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.context-note {
+  color: var(--warning);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.context-empty {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+}
+
+.token-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+  margin: 0.5rem 0 0.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.token-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.token-ok .token-fill { background: var(--success); }
+.token-caution .token-fill { background: var(--warning); }
+.token-warning .token-fill { background: #f0883e; }
+.token-critical .token-fill { background: var(--danger); }
+
+.token-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+  display: block;
+}
+
+.token-critical .token-text { color: var(--danger); }
+.token-warning .token-text { color: #f0883e; }
+
 .attach-button {
   padding: 0.4rem 0.6rem;
   border-radius: var(--radius);

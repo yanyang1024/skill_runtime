@@ -99,19 +99,26 @@ export function createOpencodeSessionClient(
     extraHeaders?: Record<string, string>,
   ): Promise<T> {
     await ensureWorkspaceReadable(workspacePath);
-    const resp = await fetch(`${baseUrl}${urlPath}`, {
-      method,
-      headers: headers(workspacePath, auth.header, {
-        "Content-Type": "application/json",
-        ...extraHeaders,
-      }),
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    if (!resp.ok) {
-      const text = await resp.text().catch(() => "");
-      throw new Error(`OpenCode ${method} ${urlPath} failed: ${resp.status} ${text}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+    try {
+      const resp = await fetch(`${baseUrl}${urlPath}`, {
+        method,
+        headers: headers(workspacePath, auth.header, {
+          "Content-Type": "application/json",
+          ...extraHeaders,
+        }),
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal,
+      });
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        throw new Error(`OpenCode ${method} ${urlPath} failed: ${resp.status} ${text}`);
+      }
+      return (await resp.json()) as T;
+    } finally {
+      clearTimeout(timeout);
     }
-    return (await resp.json()) as T;
   }
 
   async function raw(

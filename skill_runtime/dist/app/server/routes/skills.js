@@ -23,6 +23,8 @@ router.get("/", async (_req, res) => {
         res.json(skillNames);
     }
     catch (err) {
+        if (err.code === "ENOENT")
+            return res.json([]);
         res.status(500).json({ error: String(err) });
     }
 });

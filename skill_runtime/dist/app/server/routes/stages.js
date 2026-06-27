@@ -9,7 +9,7 @@ import { refreshStageOutputs, initStage } from "../../orchestration/runLifecycle
 import { getStageContract } from "../../orchestration/stageContracts.js";
 import { syncWorkToPreview } from "../../workspace_builder/builder.js";
 import { runApiTests } from "../../api_test_runner/runner.js";
-import { stageDir } from "../../shared/utils/paths.js";
+import { stageDir, stageInputDir, stageOutputDir } from "../../shared/utils/paths.js";
 import { utcTimestamp } from "../../shared/utils/time.js";
 import { validateRunStageParams, getSafeParams, } from "../middleware/validateParams.js";
 const router = Router();
@@ -243,6 +243,48 @@ router.post("/:runId/stage/:stageId/recommend-prompt", async (req, res) => {
             goal,
         });
         res.json(recommendation);
+    }
+    catch (err) {
+        const msg = String(err);
+        const friendly = (msg.includes("timed out") || msg.includes("AbortError"))
+            ? "Prompt 推荐超时。模型端点可能负载过高，请稍后重试或使用更小模型。"
+            : msg;
+        res.status(500).json({ error: friendly });
+    }
+});
+// GET /context — 列出模型可访问的全部文件清单
+router.get("/:runId/stage/:stageId/context", async (req, res) => {
+    const { runId, stageId, attempt } = getRunStageParams(req);
+    try {
+        const run = await loadRunState(runId);
+        const inputDir = stageInputDir(runId, stageId, attempt);
+        const outputDir = stageOutputDir(runId, stageId, attempt);
+        const listFiles = async (dir) => {
+            try {
+                const entries = await fs.readdir(dir, { withFileTypes: true, recursive: true });
+                return entries.filter((e) => e.isFile()).map((e) => path.relative(dir, path.join(e.parentPath ?? dir, e.name)));
+            }
+            catch {
+                return [];
+            }
+        };
+        // 上一阶段产物
+        const prevOutput = await listFiles(path.join(inputDir, "previous_stage_output"));
+        // session log
+        const sessionLog = await listFiles(path.join(inputDir, "session_log"));
+        // api docs
+        const apiDocs = await listFiles(path.join(inputDir, "api_docs"));
+        // output 模板（预置文件）
+        const templates = await listFiles(outputDir);
+        res.json({
+            skill_source: run?.preview_id ? `preview (${run.preview_id})` : "stable",
+            inputs: {
+                previous_stage_output: prevOutput,
+                session_log: sessionLog,
+                api_docs: apiDocs,
+            },
+            output_templates: templates,
+        });
     }
     catch (err) {
         res.status(500).json({ error: String(err) });
