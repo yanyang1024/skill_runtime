@@ -1,0 +1,261 @@
+数据库结构可见，但业务含义不透明
+WrenAI 的核心设计目标就是解决这个场景——**数据库结构可见，但业务含义不透明**。以下是它的解决方案和核心逻辑。
+
+---
+
+## 你描述的问题，WrenAI 明确承认并针对性设计
+
+项目文档直接点出了这个痛点：
+
+> "AI agents do not fail on business data only because they are not smart enough. They fail because the meaning they need is scattered across warehouses, dashboards, SQL files, docs, decks, Slack threads, and **people's heads**." [1](#0-0) 
+
+---
+
+## 解决方案的核心架构：五层 Context
+
+WrenAI 把"理解数据库"拆成五层，你的场景主要涉及前三层：
+
+| 层级 | 解决什么 | 对应你的问题 |
+|---|---|---|
+| **Structural** | 表、列、类型、关系 | 数据库有哪些表和字段 |
+| **Semantic** | 数据的业务含义 | `status=4` 是什么意思 |
+| **Business** | 公司级定义 | 哪张表是"正确"的那张，前人用的是哪个字段 |
+| **Operational** | 安全使用规则 | 哪些 join 是被认可的 |
+| **Behavioral** | 历史成功案例 | 过去哪些 SQL 是对的 | [2](#0-1) 
+
+---
+
+## 具体工具：两步走策略
+
+### 第一步：`generate-mdl` — 自动扫描数据库结构
+
+AI agent 自动连接数据库，通过 `information_schema` 或 SQLAlchemy 扫描所有表、列、类型、外键，生成一份 YAML 格式的 MDL（Modeling Definition Language）文件，每张表对应一个模型。 [3](#0-2) 
+
+这一步能给你：每张表的结构、类型归一化、从外键推断的关系。但**不能**告诉你哪张表是"正确"的那张，或者字段的业务含义。 [4](#0-3) 
+
+### 第二步：`enrich-context` — 填充业务语义
+
+这是针对你场景的关键工具。它有两种模式：
+
+**Grill 模式**（适合你的场景）：AI agent 逐一提问，比如：
+- "哪张表是 canonical 的 `orders` 表？"
+- "`status = 4` 是什么意思？"
+- "`active customer` 是否排除内部账号？"
+
+你用自然语言回答，agent 把答案写入 MDL 或 `instructions.md`。
+
+**Auto-pilot 模式**（适合有文档残留的情况）：把旧的 PDF、数据字典、业务手册、历史 SQL 文件丢进 `<project>/raw/` 目录，agent 自动读取并推断语义，生成带置信度标签的审计报告。 [5](#0-4) 
+
+它能填充的十类语义 gap 包括：枚举值含义、单位（USD vs 分）、NULL 语义、魔法哨兵值、默认过滤器、同义词、时区约定、跨系统标识符、货币规则、canonical 表偏好。 [6](#0-5) 
+
+---
+
+## 知识沉淀到哪里
+
+所有挖掘出来的业务知识存在四个可版本控制的地方：
+
+| 文件 | 存什么 |
+|---|---|
+| `models/<name>/metadata.yml` | 表/列的结构定义 + 描述 |
+| `instructions.md` | 业务规则、canonical 表偏好、默认过滤器 |
+| `queries.yml` | 经过确认的自然语言→SQL 对 |
+| `.wren/memory/` | LanceDB 向量索引，用于语义检索 | [7](#0-6) 
+
+代码层面，`_check_descriptions` 函数会在 validate 时检查哪些 model/column 还没有 description，提醒你补充： [8](#0-7) 
+
+---
+
+## 核心逻辑应遵循的原则
+
+WrenAI 的设计给出了一套可复用的方法论：
+
+```
+1. 先从数据库本身能告诉你的开始（结构层）
+   → generate-mdl 自动扫描
+
+2. 再从代码/文档中挖掘数据库无法表达的含义（语义层）
+   → enrich-context 的 auto-pilot 模式读历史 SQL 和文档
+
+3. 对不确定的部分，逐一向现有知情人确认（业务层）
+   → enrich-context 的 grill 模式
+
+4. 把确认过的知识写成可审查、可版本控制的文件
+   → MDL + instructions.md + queries.yml
+
+5. 每次有人成功查询，把这个 NL→SQL 对存入记忆
+   → wren memory store，让知识随使用积累
+``` [9](#0-8) 
+
+这个逻辑的本质是：**把散落在人脑、代码、文档里的隐性知识，逐步外化为机器可读的显性文件**，而不是依赖某个人记住所有事情。 [10](#0-9) 
+
+---
+
+## 对你场景的直接映射
+
+| 你的问题 | WrenAI 的对应方案 |
+|---|---|
+| 不知道表的含义 | `generate-mdl` 扫描结构 + `enrich-context` grill 模式逐一确认 |
+| 前人离职，知识流失 | 把历史业务代码/SQL 丢进 `raw/`，auto-pilot 模式推断 |
+| 只用了某些字段 | MDL 中只暴露用到的列，未声明的列对 agent 不可见 |
+| 无法全面覆盖 | 渐进式：先 scaffold，再随使用逐步 enrich，`queries.yml` 积累 | [11](#0-10)
+
+### Citations
+
+**File:** docs/core/concepts/what_is_context.md (L6-8)
+```markdown
+
+That distinction matters because AI agents do not fail on business data only because they are not smart enough. They fail because the meaning they need is scattered across warehouses, dashboards, SQL files, docs, decks, Slack threads, and people's heads.
+
+```
+
+**File:** docs/core/concepts/what_is_context.md (L30-38)
+```markdown
+| Layer | What it answers | Examples | Status |
+| --- | --- | --- | --- |
+| **Structural** | What data exists? | Tables, columns, types, keys, relationships | Ships today |
+| **Semantic** | What does the data mean? | Models, metrics, calculated fields, enum labels, canonical tables | Ships today |
+| **Business** | What does this company mean? | Active customer, revenue, churn, internal project names, team-specific definitions | Ships today |
+| **Operational** | How should this data be used safely? | Approved join paths, sanctioned queries, query-time governance, things never to compute | In active development |
+| **Behavioral** | What worked before? | Successful natural-language-to-SQL pairs, examples, feedback, memory | In active development |
+
+The first layer lets an agent read the database. The next two layers let it understand the business. The last two layers help it act safely and improve over time.
+```
+
+**File:** docs/core/concepts/what_is_context.md (L118-133)
+```markdown
+## Where context comes from
+
+The first version of context usually comes from the database. Wren AI can scaffold MDL from tables, columns, types, and relationships so the agent has a working structural and semantic layer quickly.
+
+The deeper context comes from everywhere else:
+
+- analyst-written SQL
+- business glossaries
+- metric definitions
+- onboarding docs
+- product specs
+- decks and strategy docs
+- past questions and accepted answers
+- human corrections and review
+
+That is why Wren AI is designed around the workflow **scaffold fast, then enrich deep**. Start with the structure, then bring in the business meaning that makes the answers trustworthy.
+```
+
+**File:** docs/core/reference/skills.md (L235-240)
+```markdown
+| Sink | Categories |
+|------|-----------|
+| Column `properties.description` (prose + `[tag]` line) | enum value meanings, units (USD vs cents), NULL semantics, magic sentinels, time-grain / TZ conventions |
+| `instructions.md` (fixed `##` sections) | soft-delete default filters, business synonyms, cross-system identifiers, currency rules, canonical-table preferences |
+| `cubes/<name>/metadata.yml` | named aggregation metrics (ARR, churn, DAU) — proposed as cubes, the preferred aggregation primitive |
+| `queries.yml` / `wren memory store` | canonical and ad-hoc NL→SQL pairs |
+```
+
+**File:** docs/core/reference/skills.md (L271-279)
+```markdown
+| Phase | Goal | Key actions |
+|-------|------|-------------|
+| **1. Connect** | Confirm database access | Test connection via SQLAlchemy, driver, or `wren profile debug` |
+| **2. Discover** | Collect schema metadata | Introspect tables, columns, types, foreign keys |
+| **3. Normalize** | Convert types | `wren utils parse-type` or Python `parse_type()` |
+| **4. Scaffold** | Write YAML project | `wren context init`, create model files, relationships |
+| **5. Validate** | Check integrity | `wren context validate` → `wren context build` |
+| **6. Index** | Initialize memory | `wren memory index` |
+| **7. Iterate** | Refine with user | Add descriptions, calculated columns, views |
+```
+
+**File:** docs/core/guides/model.md (L43-52)
+```markdown
+## What scaffolding cannot give you
+
+The hard meaning lives outside the database. Scaffolding cannot tell you:
+
+- Which of `customers` / `customers_v3` / `loyalty_v3` is canonical
+- Why `status = 4` means refunded
+- Whether `active customer` excludes service accounts
+- That "Project Lighthouse" maps to `campaign_id = 4172`
+
+Bring those in with [Refine answer quality](./refine.md), the grill / auto-pilot loop that fills the semantic gaps.
+```
+
+**File:** docs/core/guides/model.md (L54-63)
+```markdown
+## Enrich as you go
+
+Once you have a baseline, add depth incrementally:
+
+- **Descriptions and business names** on models and columns, which memory uses for retrieval
+- **Calculated fields** for metrics the team agrees on (`revenue = net_total - refunds`)
+- **Relationship columns** so agents can write `orders.customer.first_name` without manual joins
+- **Views** for stable, pre-built query shapes (`completed_orders`, `monthly_revenue`)
+- **Cubes** for governed aggregations (see [Pre-aggregate with cubes](./cubes.md))
+- **Selective column exposure** to keep PII columns invisible to agents. Omit them from the model and they cannot be queried
+```
+
+**File:** docs/core/guides/refine.md (L111-120)
+```markdown
+## `enrich-context`
+
+The `enrich-context` guide goes deeper than incremental `instructions.md` edits. It reads everything you drop into `<project>/raw/` (PDFs, glossaries, handbooks, analyst SQL, data dictionaries), compares it against the current MDL / `instructions.md` / `queries.yml` / memory, and fills the gaps, writing back only to reviewable, version-controlled artifacts. It works from a ten-category gap catalog: enum value meanings, units, NULL semantics, magic sentinels, default filters, synonyms, time conventions, cross-system identifiers, currency rules, and canonical-table preferences. Named aggregation metrics (ARR, churn, DAU) are proposed as cubes.
+
+Pick one of two modes at session start:
+
+- **Grill mode**: the agent walks each gap one question at a time and asks focused questions ("Which of `customers`, `customers_v3`, `loyalty_v3` is canonical?", "What does `status = 4` mean?"). You answer in plain language; the agent drafts the change and patches MDL, `instructions.md`, `queries.yml`, or memory based on the answer category. With your OK, it can also sample low-cardinality columns from the live DB to discover enum and sentinel values.
+- **Auto-pilot mode**: drop docs, glossaries, SQL history, or a metric handbook into `<project>/raw/` and the agent reads them, applies its best inferences directly, and escalates to grill only on raw-vs-MDL conflicts and high-blast-radius additions (new cubes / views / relationships). It hands you a confidence-tagged audit at the end.
+
+Both modes only **add**. They never modify an existing field; contradictions are surfaced on a "please fix manually" list. With the `wren` skill installed (`npx skills add Canner/WrenAI`), trigger it by saying "enrich context" or "grill me on this project". The stub fetches the guide with `wren skills get enrich-context`. See the [skills reference](/oss/reference/skills#enrich-context) for the full breakdown.
+```
+
+**File:** docs/core/concepts/knowledge_management.md (L20-31)
+```markdown
+| Artifact | What it holds | Example |
+| --- | --- | --- |
+| **MDL** (semantic models) | Structure and semantics: models, columns, relationships, calculated fields, views, cubes | `loyalty_v3` is the canonical loyalty table; `revenue = price * qty - refunds` |
+| **`instructions.md`** | Business rules and operating policy the schema can't carry | "active customer excludes service accounts"; "always filter `is_deleted = false`" |
+| **Memory index** | Behavioral retrieval state: which schema items were relevant, which SQL answered a similar question, confirmed examples | local runtime state under `.wren/memory/`, usually gitignored |
+| **`queries.yml`** | Curated question→SQL pairs exported from memory to keep and share | the version-controlled surface for shared examples |
+
+MDL says what the data *means*. Instructions say how your team wants it *used*.
+Memory says what has *worked*. MDL, `instructions.md`, and `queries.yml` are
+version-controlled files in your repo; the memory index under `.wren/memory/` is
+local runtime state (usually gitignored), and you share what it learns by
+exporting curated pairs to `queries.yml`. Together they are the context layer the
+```
+
+**File:** core/wren/src/wren/context.py (L1380-1396)
+```python
+def _check_descriptions(manifest: dict, *, strict: bool = False) -> list[str]:
+    warnings: list[str] = []
+
+    for model in manifest.get("models", []):
+        name = model.get("name", "<unknown>")
+        if not _prop_description(model):
+            warnings.append(
+                f"Model '{name}' has no description — "
+                "add properties.description to improve memory search and agent comprehension"
+            )
+        if strict:
+            for col in model.get("columns", []):
+                col_name = col.get("name", "<unknown>")
+                if not _prop_description(col):
+                    warnings.append(
+                        f"Column '{col_name}' in model '{name}' has no description"
+                    )
+```
+
+**File:** docs/core/concepts/agent_learning.md (L15-26)
+```markdown
+## The two beats: scaffold fast, enrich deep
+
+Wren AI runs the agent through two beats whenever you set up a new project.
+
+**Beat 1: Scaffold fast.** The `generate-mdl` guide drives the agent through schema discovery, type normalization, and an initial MDL project. The agent can already query through that modeled layer in a few minutes. The MDL is rough but functional. It covers what the database can tell you about itself.
+
+**Beat 2: Enrich deep.** Structure is only the start. The hard business meaning lives in docs, decks, Slack threads, and analyst SQL. The `enrich-context` workflow brings that meaning in through two modes:
+
+- **Grill mode**: the agent asks one focused question at a time ("which is the canonical `orders` table?", "what does `status = 4` mean?", "should `active customer` exclude internal users?"). You answer; the agent patches MDL, `instructions.md`, `queries.yml`, or memory.
+- **Auto-pilot mode**: drop PDFs, glossaries, handbooks, and SQL history into `<project>/raw/`. The agent reads them, proposes context changes with evidence, and waits for review.
+
+Both modes write to reviewable, version-controlled artifacts. Nothing is silently absorbed into a black box.
+```
+

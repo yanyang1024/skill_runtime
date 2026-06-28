@@ -1,0 +1,343 @@
+以下分三个问题逐一解答，均基于实际代码。
+
+---
+
+## 1. 长程任务（大数据量、耗时查询）
+
+WrenAI **没有异步任务队列**，查询是同步阻塞的。它通过以下几个机制来控制长查询：
+
+**① 数据库级别超时（statement timeout）**
+
+通过 HTTP header `x-wren-db-statement_timeout` 传入超时秒数（默认 180 秒），在建立连接时注入到各数据库的会话参数： [1](#1-0) 
+
+| 数据库 | 超时参数 |
+|---|---|
+| PostgreSQL | `statement_timeout` (session option) |
+| ClickHouse | `max_execution_time` |
+| Trino | `query_max_execution_time` |
+| BigQuery | `job_timeout_ms` |
+| MSSQL | `connection.timeout` |
+
+超时触发后，各 connector 捕获 `QueryCanceled` / `TimeoutError` 并向上抛出，不会静默挂起。 [2](#1-1) 
+
+**② LIMIT 下推（pushdown_limit）**
+
+`wren-core-py` 提供 `pushdown_limit` 方法，在 Rust 层通过 AST 操作将 LIMIT 注入 SQL，防止全表扫描： [3](#1-2) 
+
+**③ 工具层硬限制**
+
+LangChain SDK 的 `wren_query` 工具硬限制返回 1000 行；需要更大数据量时需直接调用 `toolkit.query()`： [4](#1-3) 
+
+---
+
+## 2. 查数据的并发设计
+
+WrenAI 的并发设计**相对简单**，没有连接池，主要依赖以下机制：
+
+**① 每次请求独立连接**
+
+各 connector（Postgres、MySQL、ClickHouse 等）在初始化时建立一个连接，查询完成后关闭。没有连接池层。
+
+**② wren-core 的 tokio 异步运行时**
+
+Rust 引擎 `wren-core` 内部使用 tokio 异步运行时，`transform_sql` 是同步包装（`block_on`），Python 侧调用是同步的： [5](#1-4) 
+
+**③ 线程安全的懒初始化**
+
+MySQL connector 的类型映射表使用 `functools.cache` 保证多线程并发初始化时不会暴露半初始化状态： [6](#1-5) 
+
+**④ LangChain SDK 的并发限制**
+
+文档明确说明工具是同步的，LangGraph 会自动桥接到线程池，但**超过 32 个并发用户可能耗尽默认 executor**： [7](#1-6) 
+
+---
+
+## 3. 防止 SQL 注入
+
+WrenAI 有多层防注入机制：
+
+**① MDL 白名单（最核心的防线）**
+
+Agent 只能引用 MDL 中声明的模型对象（Models、Columns、Relationships），物理表名对 agent 不可见。`wren-core` 在 Rust 层通过 DataFusion 的 AST 解析和逻辑计划生成 SQL，**不是字符串拼接**，未声明的表/列在计划阶段直接报错： [8](#1-7) 
+
+**② limit 参数强制类型转换**
+
+MySQL connector 的 `_coerce_limit` 对 limit 值做 `int()` 强制转换，`"1; DROP TABLE foo"` 这类注入字符串会直接抛 `ValueError`： [9](#1-8) 
+
+测试明确覆盖了这个场景： [10](#1-9) 
+
+**③ RLAC session property 值的严格解析**
+
+行级访问控制（Row Level Access Control）的 session property 值通过 `parse_expr` 解析，只允许字面量（数字、字符串、布尔、列表、字典、INTERVAL），以下均被拒绝：
+
+- 函数调用：`upper('aaa')`
+- 子查询：`(select 1)`
+- 逻辑表达式：`1 or 1`
+- CASE 表达式 [11](#1-10) 
+
+**④ ODBC 连接字符串转义**
+
+MSSQL connector 对连接字符串中的所有值用 `_escape_odbc_value` 包裹，防止连接字符串注入： [12](#1-11) 
+
+---
+
+**总结**：WrenAI 的注入防护核心是"结构化 AST 而非字符串拼接"——SQL 经过 `wren-core` 的 Rust 引擎解析成逻辑计划再生成，用户输入的自然语言从未直接拼接进 SQL。长程任务依赖数据库侧超时 + LIMIT 下推，并发能力目前较弱，是其明确承认的限制。
+
+### Citations
+
+**File:** core/wren/src/wren/model/data_source.py (L37-103)
+```python
+X_WREN_DB_STATEMENT_TIMEOUT = "x-wren-db-statement_timeout"
+
+
+class DataSource(StrEnum):
+    athena = auto()
+    bigquery = auto()
+    canner = auto()
+    clickhouse = auto()
+    datafusion = auto()
+    mssql = auto()
+    mysql = auto()
+    doris = auto()
+    oracle = auto()
+    postgres = auto()
+    redshift = auto()
+    snowflake = auto()
+    trino = auto()
+    local_file = auto()
+    s3_file = auto()
+    minio_file = auto()
+    gcs_file = auto()
+    duckdb = auto()
+    spark = auto()
+    databricks = auto()
+
+    def get_connection_info(
+        self,
+        data: dict[str, Any] | ConnectionInfo,
+        headers: dict[str, str] | None = None,
+    ) -> ConnectionInfo:
+        headers = headers or {}
+        if isinstance(data, BaseConnectionInfo):
+            info = data
+        else:
+            info = self._build_connection_info(data)
+        match self:
+            case DataSource.postgres:
+                kwargs = info.kwargs if info.kwargs else {}
+                if "connect_timeout" not in kwargs:
+                    kwargs["connect_timeout"] = 120
+                options = kwargs.get("options", "")
+                if "statement_timeout" not in options:
+                    if options:
+                        options += " "
+                    options += f"-c statement_timeout={headers.get(X_WREN_DB_STATEMENT_TIMEOUT, 180)}s"
+                    kwargs["options"] = options
+                info.kwargs = kwargs
+            case DataSource.clickhouse:
+                session_timeout = headers.get(X_WREN_DB_STATEMENT_TIMEOUT, 180)
+                if info.settings is None:
+                    info.settings = {}
+                if "max_execution_time" not in info.settings:
+                    info.settings["max_execution_time"] = int(session_timeout)
+            case DataSource.trino:
+                session_timeout = headers.get(X_WREN_DB_STATEMENT_TIMEOUT, 180)
+                if info.kwargs is None:
+                    info.kwargs = {}
+                session_properties = info.kwargs.get("session_properties", {})
+                if "query_max_execution_time" not in session_properties:
+                    session_properties["query_max_execution_time"] = (
+                        f"{session_timeout}s"
+                    )
+                info.kwargs["session_properties"] = session_properties
+            case DataSource.bigquery:
+                session_timeout = headers.get(X_WREN_DB_STATEMENT_TIMEOUT, 180)
+                if not hasattr(info, "job_timeout_ms") or info.job_timeout_ms is None:
+                    info.job_timeout_ms = int(session_timeout) * 1000
+```
+
+**File:** core/wren/src/wren/connector/postgres.py (L259-262)
+```python
+        except psycopg.errors.QueryCanceled:
+            raise
+        except (WrenError, TimeoutError):
+            raise
+```
+
+**File:** core/wren-core-py/src/context.rs (L266-316)
+```rust
+    /// Push down the limit to the given SQL.
+    /// If the limit is None, the SQL will be returned as is.
+    /// If the limit is greater than the pushdown limit, the limit will be replaced with the pushdown limit.
+    /// Otherwise, the limit will be kept as is.
+    #[pyo3(signature = (sql, limit=None))]
+    pub fn pushdown_limit(&self, sql: &str, limit: Option<usize>) -> PyResult<String> {
+        if limit.is_none() {
+            return Ok(sql.to_string());
+        }
+        let pushdown = limit.unwrap();
+        let mut statements =
+            wren_core::parser::Parser::parse_sql(&GenericDialect {}, sql)
+                .map_err(CoreError::from)?;
+        if statements.len() != 1 {
+            return Err(CoreError::new("Only one statement is allowed").into());
+        }
+        let _ = visit_statements_mut(&mut statements, |stmt| {
+            if let Statement::Query(q) = stmt {
+                if let Some(LimitClause::LimitOffset { limit, offset, limit_by }) = &q.limit_clause {
+                    if let Some(Expr::Value(ValueWithSpan {
+                        value: Value::Number(n, is),
+                        ..
+                    })) = limit
+                    {
+                        if let Ok(curr) = n.parse::<usize>() {
+                            if curr > pushdown {
+                                q.limit_clause = Some(LimitClause::LimitOffset {
+                                    limit: Some(Expr::Value(Value::Number(pushdown.to_string(), *is).into())),
+                                    offset: offset.clone(),
+                                    limit_by: limit_by.clone(),
+                                });
+                            }
+                        }
+                    } else if limit.is_none() {
+                        q.limit_clause = Some(LimitClause::LimitOffset {
+                            limit: Some(Expr::Value(Value::Number(pushdown.to_string(), false).into())),
+                            offset: offset.clone(),
+                            limit_by: limit_by.clone(),
+                        });
+                    }
+                } else {
+                    q.limit_clause = Some(LimitClause::LimitOffset {
+                        limit: Some(Expr::Value(Value::Number(pushdown.to_string(), false).into())),
+                        offset: None,
+                        limit_by: vec![],
+                    });
+                }
+            }
+            ControlFlow::<()>::Continue(())
+        });
+        Ok(statements[0].to_string())
+```
+
+**File:** docs/core/sdk/langchain.md (L191-191)
+```markdown
+| `wren_query` returns capped row count | Hard cap at 1000 rows per tool call | Add `LIMIT` to your SQL, or use the direct API (`toolkit.query`) for larger pulls |
+```
+
+**File:** docs/core/sdk/langchain.md (L205-205)
+```markdown
+- **Synchronous tools only.** LangChain auto-bridges to a thread pool when tools run in async LangGraph; multi-tenant servers serving >32 concurrent users may exhaust the default executor.
+```
+
+**File:** core/wren-core/core/src/mdl/mod.rs (L461-479)
+```rust
+/// Transform the SQL based on the MDL (sync wrapper, requires multi-thread tokio runtime).
+///
+/// Not available on WASM — use [`transform_sql_with_ctx`] directly in async context.
+#[cfg(feature = "multi-thread")]
+pub fn transform_sql(
+    analyzed_mdl: Arc<AnalyzedWrenMDL>,
+    remote_functions: &[RemoteFunction],
+    properties: HashMap<String, Option<String>>,
+    sql: &str,
+) -> Result<String> {
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    runtime.block_on(transform_sql_with_ctx(
+        &create_wren_ctx(None, analyzed_mdl.wren_mdl().data_source().as_ref()),
+        analyzed_mdl,
+        remote_functions,
+        Arc::new(properties),
+        sql,
+    ))
+}
+```
+
+**File:** core/wren/tests/unit/test_mysql_helpers.py (L60-63)
+```python
+def test_coerce_limit_rejects_injection_string() -> None:
+    """A crafted limit value must not survive ``int()`` coercion."""
+    with pytest.raises(ValueError):
+        _coerce_limit("1; DROP TABLE foo")
+```
+
+**File:** core/wren/tests/unit/test_mysql_helpers.py (L252-260)
+```python
+def test_lazy_init_thread_safe() -> None:
+    """The cached FIELD_TYPE accessors must publish fully-populated results
+    even when many threads hit them concurrently on a cold cache.
+
+    The previous in-place dict/set mutation pattern could expose a partially
+    populated map to a thread that raced the initializer. ``functools.cache``
+    guarantees the initializer body runs to completion before the result is
+    visible to any caller.
+    """
+```
+
+**File:** docs/core/concepts/correctness.md (L36-41)
+```markdown
+### MDL: the agent cannot name what is not modeled
+
+Raw warehouses give the agent ambiguous joins, near-duplicate tables (`customers` vs `customers_v3` vs `loyalty_v3`), and columns that overlap across schemas. MDL collapses those problems into one canonical surface.
+
+If `email` is not in the `customers` model, the agent cannot query it. It does not exist in Wren AI's view of your data. If the canonical join between `orders` and `customers` is declared once in MDL, the agent does not have to invent it.
+
+```
+
+**File:** core/wren/src/wren/connector/mysql.py (L41-52)
+```python
+def _coerce_limit(limit: int | None) -> int | None:
+    """Validate and coerce a user-supplied ``limit`` to a non-negative ``int``.
+
+    ``int(limit)`` rejects strings like ``"5 OR 1=1"`` so the value can be
+    safely interpolated into SQL. Negative limits are also rejected.
+    """
+    if limit is None:
+        return None
+    coerced = int(limit)
+    if coerced < 0:
+        raise ValueError(f"limit must be non-negative, got {coerced}")
+    return coerced
+```
+
+**File:** core/wren-core/core/src/logical_plan/analyze/access_control.rs (L1028-1060)
+```rust
+        let invalid_values = vec![
+            "1 + 1",
+            "upper('aaa')",
+            "(select 1)",
+            "1 or 1",
+            "aaa",
+            "is null",
+            "is not null",
+            "case when 1 then 1 else 2 end",
+            "[upper('aaa'), upper('aaa')]",
+            "{'key': upper('aaa')}",
+            "{ key: upper('aaa') }",
+        ];
+
+        for value in invalid_values {
+            let headers: Arc<HashMap<String, Option<String>>> = Arc::new(build_headers(
+                &[("session_id".to_string(), Some(value.to_string()))],
+            ));
+
+            match build_filter_expression(
+                &state,
+                None,
+                Arc::clone(&model),
+                &headers,
+                &rule,
+            ) {
+                Err(_) => {}
+                _ => panic!(
+                    "should be error: {}",
+                    &headers.get("session_id").unwrap().as_ref().unwrap()
+                ),
+            }
+        }
+```
+
+**File:** core/wren/src/wren/connector/mssql.py (L436-437)
+```python
+def _escape_odbc_value(value: str) -> str:
+    return "{" + value.replace("}", "}}") + "}"
+```

@@ -1,0 +1,195 @@
+WrenAI 的查数据设计围绕一个核心问题展开：**LLM 能看懂数据库 schema，但不理解业务含义**，因此生成的 SQL 往往"看起来正确，实则错误"。以下是几个核心动机：
+
+---
+
+## 1. 原始 Schema 不足以支撑可信查询
+
+仓库 schema 只告诉 agent "有一列叫 `status`"，但不告诉它 `status = 4` 代表"已退款"。也不知道 `loyalty_v3` 才是规范表，而不是 `customers_v3`。
+
+> "Without MDL, every agent, dashboard, SQL script, and embedded analytics feature has to rediscover the same logic from raw structure." [1](#0-0) 
+
+这导致了重复定义、指标不一致、SQL 脆弱，以及没人完全信任的答案。
+
+---
+
+## 2. MDL：语义契约，而非文档
+
+WrenAI 设计了 **MDL（Modeling Definition Language）**，将业务逻辑编码为机器可读的 YAML 文件，作为 agent、数据团队和查询引擎之间的"契约"：
+
+- **Models**：逻辑数据集，映射到物理表
+- **Relationships**：预定义的 join 路径，agent 不需要自己发明
+- **Calculated fields**：业务指标定义一次，全局复用
+- **Views / Cubes**：稳定的分析接口 [2](#0-1) 
+
+MDL 不只是 prompt 里的元数据，它在 SQL 规划阶段被 Rust 引擎 `wren-core` 实际执行展开。 [3](#0-2) 
+
+---
+
+## 3. 五层 Context 模型：从"看到表"到"理解业务"
+
+WrenAI 定义了五层上下文，层层递进：
+
+| 层级 | 解决什么问题 |
+|---|---|
+| **Structural** | 数据存在什么（表、列、类型） |
+| **Semantic** | 数据是什么意思（业务名称、计算字段、枚举标签） |
+| **Business** | 公司怎么定义它（活跃客户、收入、流失率） |
+| **Operational** | 数据怎么安全使用（批准的 join 路径、治理规则） |
+| **Behavioral** | 过去什么有效（NL-SQL 历史对、示例） | [4](#0-3) 
+
+传统语义层只覆盖前三层，WrenAI 的 context layer 更宽，专为 autonomous agent 设计。 [5](#0-4) 
+
+---
+
+## 4. 正确性是一个系统，而非单一功能
+
+WrenAI 的核心设计哲学是：**text-to-SQL 的可靠性不来自某个聪明的 prompt，而来自多个机制协同工作**：
+
+```
+用户 SQL（针对 MDL 模型对象）
+  ↓ sqlglot 解析 & 方言转换
+  ↓ CTE rewriter 注入展开的模型 SQL
+  ↓ wren-core (Rust) 展开 MDL 语义
+  ↓ 策略检查（行/列级访问控制）
+  ↓ 目标数据库可执行 SQL
+``` [6](#0-5) 
+
+关键原语包括：
+- `wren dry-plan`：在真正执行前展开 SQL，让 agent 看到实际会跑什么
+- `wren dry-run`：对真实数据库做验证但不返回数据行
+- 结构化错误提示：列名错误时直接返回可用列，而非静默失败 [7](#0-6) 
+
+---
+
+## 5. Memory 系统：让查询经验可复用
+
+大多数 text-to-SQL 系统把每个问题都当第一次问。WrenAI 引入了基于 **LanceDB** 的记忆层：
+
+- **Schema context retrieval**：按问题检索相关的 MDL 模型和指令，而非把 500 张表全塞进 prompt
+- **Query recall**：存储已确认的 NL-SQL 对，相似问题直接复用已验证的 SQL [8](#0-7) 
+
+这形成了一个学习闭环：使用越多，context layer 越精准。
+
+---
+
+## 总结
+
+WrenAI 查数据设计的核心动机可以用一句话概括：
+
+> **Schema 告诉 agent 数据存在什么；MDL 告诉它数据的含义；Context layer 告诉它业务怎么使用数据、如何安全行动、以及过去什么有效。** [9](#0-8) 
+
+整个设计的出发点是：让 AI agent 从"自信地猜"变成"有根据地查"，同时保持所有上下文可审查、可版本控制、可跨 agent 共享。
+
+### Citations
+
+**File:** docs/core/concepts/what_is_mdl.md (L11-15)
+```markdown
+Warehouses are optimized for systems that store data, not for people and agents trying to reason about the business.
+
+A warehouse can tell an agent that a table has a column named `status`, but not that `status = 4` means refunded. It can expose `loyalty_v3`, but not explain that this is the canonical loyalty table. It can show foreign keys, but not always the join path your analytics team trusts.
+
+Without MDL, every agent, dashboard, SQL script, and embedded analytics feature has to rediscover the same logic from raw structure. That leads to duplicated definitions, inconsistent metrics, brittle SQL, and answers no one fully trusts.
+```
+
+**File:** docs/core/concepts/what_is_mdl.md (L38-44)
+```markdown
+
+- **Models** - logical datasets backed by physical tables or SQL definitions.
+- **Columns** - exposed fields, including renamed fields, expressions, primary keys, and calculated fields.
+- **Relationships** - reusable join logic between models.
+- **Calculated fields** - business logic defined once and reused across queries.
+- **Views** - named SQL statements that behave like stable virtual tables.
+- **Cubes** - structured aggregation objects with measures, dimensions, time dimensions, and hierarchies.
+```
+
+**File:** docs/core/concepts/what_is_mdl.md (L108-112)
+```markdown
+MDL is not only metadata for prompts. Wren AI uses MDL during SQL planning.
+
+When a query references modeled objects, Wren AI expands those models, relationships, calculated fields, and views into executable SQL for the target data source. The Rust semantic engine is the source of truth for how MDL semantics map to SQL.
+
+This matters because agent reliability depends on more than generating SQL text. The query needs to be planned against the same definitions your team agreed on.
+```
+
+**File:** docs/core/concepts/what_is_context.md (L31-38)
+```markdown
+| --- | --- | --- | --- |
+| **Structural** | What data exists? | Tables, columns, types, keys, relationships | Ships today |
+| **Semantic** | What does the data mean? | Models, metrics, calculated fields, enum labels, canonical tables | Ships today |
+| **Business** | What does this company mean? | Active customer, revenue, churn, internal project names, team-specific definitions | Ships today |
+| **Operational** | How should this data be used safely? | Approved join paths, sanctioned queries, query-time governance, things never to compute | In active development |
+| **Behavioral** | What worked before? | Successful natural-language-to-SQL pairs, examples, feedback, memory | In active development |
+
+The first layer lets an agent read the database. The next two layers let it understand the business. The last two layers help it act safely and improve over time.
+```
+
+**File:** docs/core/concepts/what_is_context.md (L44-56)
+```markdown
+A semantic layer is one important part of context. It defines business-facing models, relationships, calculations, and reusable logic so people and tools do not have to query raw tables directly.
+
+A context layer is broader. It includes the semantic layer, then adds the knowledge an autonomous agent needs to behave well in the real world:
+
+- which definitions are trusted
+- which tables should be preferred
+- which values mean what
+- which joins are allowed
+- when to ask a clarification
+- which past examples should guide the next query
+- how to validate, retry, repair, and evaluate generated SQL
+
+Traditional semantic layers were designed mostly for dashboards and BI workflows. Wren AI is designed for a world where agents, applications, and humans all need the same trusted answer through different interfaces.
+```
+
+**File:** docs/core/concepts/what_is_context.md (L76-83)
+```markdown
+Most text-to-SQL systems treat every question like the first question. Wren AI adds a [memory layer](/oss/concepts/memory_system) so successful work can improve future work.
+
+Memory has two jobs:
+
+- **Schema context retrieval** - index MDL and instructions, then retrieve the relevant models, columns, relationships, and guidance for each question.
+- **Query recall** - store confirmed natural-language-to-SQL pairs so similar future questions can use proven examples.
+
+This turns usage into a learning loop. The context layer becomes more useful as your team asks, corrects, and confirms more questions.
+```
+
+**File:** docs/core/concepts/what_is_context.md (L136-141)
+```markdown
+
+- **Schema** tells an agent what exists.
+- **Semantic layer** tells an agent what the data means.
+- **Context layer** tells an agent how the business uses the data, how to act safely, and what has worked before.
+
+Wren AI is the open context layer for AI agents: portable, inspectable, versionable, and shared across every agent and app that needs trusted business data.
+```
+
+**File:** docs/core/reference/architecture.md (L138-151)
+```markdown
+```text
+User SQL against MDL
+  |
+  |-- parse and qualify SQL
+  |-- identify referenced models/views
+  |-- extract the relevant MDL manifest slice
+  |-- expand models and calculated fields through wren-core
+  |-- inject expanded CTEs
+  |-- run policy checks
+  |-- transpile to the target dialect
+  |
+  v
+Executable SQL for the connected data source
+```
+```
+
+**File:** docs/core/concepts/correctness.md (L51-60)
+```markdown
+### Plan + validate: errors fail visibly
+
+`wren dry-plan` takes the agent's modeled SQL and expands it into the exact SQL that will run against the database. The agent, and you, see:
+
+- Catalog and schema resolution
+- Relationship joins inlined as CTEs
+- Policy filters from `instructions.md` injected
+- Column-level access enforced
+
+If a column name is wrong, dry-plan returns the available columns. If a relationship is missing, it says so. The agent retries with the right info instead of running broken SQL and reporting a wrong number.
+```
