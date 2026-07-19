@@ -1,0 +1,86 @@
+<section id="ch5" class="chapter">
+<h2>第 5 章 · 怎么给大模型"打分"：质量、速度与钱包</h2>
+
+<div class="callout analogy"><span class="callout-title">💡 本章类比</span>
+<p>给大模型打分，就像给一家餐厅写评价：菜好不好吃（质量）、上菜快不快（速度）、价格贵不贵（钱包），是三个独立的维度；而且商务宴请的人和外卖骑手关心的点完全不同。这一章带你认识 2026 年的"评分体系"：考试题库在快速换代，外卖时效有了行业标准，而"刷好评"已经成了一门需要防范的灰色手艺。</p>
+</div>
+
+<h3>5.1 质量维度：考试也在快速"换题库"</h3>
+<p>质量层回答"模型能不能做对"。它的第一个特征是<strong>基准的生命周期缩短到 18–24 个月</strong>，"饱和→被污染→换代"成了固定节奏。知识推理主线上，著名的大规模多任务语言理解基准（MMLU，57 学科约 1.6 万题）前沿分数已达 88–94%，被标签噪声封住天花板，判定饱和；继任者 MMLU-Pro 把选项从 4 个扩到 10 个（随机猜中率从 25% 压到 10%），还专门考推理而非记忆。再往上，GPQA Diamond 用 448 道研究生级理化生题维持区分度——PhD 专家亲自做也只有 65% 正确率；而"人类最后的考试"HLE（2684 题专家级开放作答）带工具的前沿分数约 53%，是目前远未饱和的天花板。代码线上，HumanEval 因饱和叠加污染，让位给 SWE-bench Verified（500 个真实 GitHub issue）；长上下文线上，"大海捞针"NIAH 在 1M token 规模饱和，继任者 RULER 实测发现：多数模型在原始捞针测试接近满分，长度一拉长就大跌，只有 4 个模型在 32K 长度保持满意表现。</p>
+
+<table>
+<thead><tr><th>能力</th><th>老基准</th><th>为什么不够用了</th><th>新基准</th></tr></thead>
+<tbody>
+<tr><td>知识/推理</td><td>MMLU</td><td>前沿 88–94% 封顶</td><td>MMLU-Pro / GPQA / HLE</td></tr>
+<tr><td>代码</td><td>HumanEval</td><td>饱和＋污染</td><td>SWE-bench Verified / LiveCodeBench</td></tr>
+<tr><td>长上下文</td><td>NIAH 捞针</td><td>1M token 下人人满分</td><td>RULER / LongBench</td></tr>
+<tr><td>幻觉/事实</td><td>TruthfulQA</td><td>约 25% 判错答案其实正确</td><td>SimpleQA / HalluLens</td></tr>
+<tr><td>指令/安全</td><td>—</td><td>主观评判不可靠</td><td>IFEval / HarmBench / AILuminate</td></tr>
+</tbody>
+</table>
+
+<p>几个值得记住的"清醒剂"。幻觉评测上，OpenAI 的 SimpleQA（4326 道短事实题）发布时 GPT-4o 和 Claude-3.5 得分不足 40%，而且普遍过度自信、不肯说"我不知道"；老的 TruthfulQA 则被实测证伪——约 25% 被判错的回答其实事实正确。指令遵循用 IFEval 这类可程序化验证的题目（"输出编号列表""只写一句话"），机器判 0/1 分，没有主观空间。Agent 能力不能合并成一个排名——编码（SWE-bench）、客服（τ-bench）、网页（WebArena）、桌面（OSWorld）各是一套；比分数更重要的是五个"真信号"：延迟分位数、任务成功率、单任务成本、重复运行可靠度（同任务跑 5–10 次的成功率）、工具调用成功率——单次跑出 90% 的成功率，重复跑可能只剩 60% 的可靠度。</p>
+
+<details class="deep"><summary>深入细节：多大差距才算数？</summary>
+<p>读榜是有门槛的。业界校准规则：聊天竞技场（Chatbot Arena）的 ELO 分差要大于 20 分、MMLU 差大于 2 个百分点、GPQA Diamond 差大于 4 个百分点才有意义，置信区间重叠就等于分不出高下。推理预算也要看口径："MATH 考 90%"可能藏着 20 个百分点的歧义——只试一次（pass@1）和试 256 次挑最好（best-of-256）完全是两回事，规范的分数必须附采样次数、答案选择机制和每题 token 成本。MMLU-Pro 还有个佐证自身质量的细节：思维链提示在它上面带来可测收益，在老 MMLU 上近乎无效甚至为负——说明新题确实在考推理而非记忆。偏好侧，Chatbot Arena 以盲测两两投票拟合分数，2026 年文本榜前沿约 1450–1560 分、累计超 600 万票。</p>
+</details>
+
+<h3>5.2 服务性能：八件套与"外卖时效承诺"</h3>
+<p>质量分高不代表好用。服务性能层回答"快不快、稳不稳、贵不贵"，2024 年以来已标准化为"八件套"：首 token 时延（Time To First Token, TTFT）、token 间时延（Inter-Token Latency, ITL）、端到端时延（E2E）、吞吐、有效吞吐（goodput）、SLO 达成率、每 token 成本、模型算力利用率（Model FLOPs Utilization, MFU）。其中最有外卖味道的是服务等级目标（Service Level Objective, SLO）：就像外卖平台承诺"30 分钟送达"，推理服务承诺"第一个字多少毫秒内出现、后续每个字间隔多少毫秒"。</p>
+
+<table>
+<thead><tr><th>指标</th><th>测什么</th><th>决定什么</th><th>典型口径</th></tr></thead>
+<tbody>
+<tr><td>TTFT</td><td>请求到第一个字的等待</td><td>响应感</td><td>&lt;500 ms 优秀，&gt;3 s 流失</td></tr>
+<tr><td>ITL / TBT</td><td>相邻字的间隔</td><td>流畅感</td><td>对齐阅读速度 5–15 tok/s</td></tr>
+<tr><td>E2E</td><td>整请求总耗时</td><td>代码补全等场景的唯一口径</td><td>按任务定</td></tr>
+<tr><td>吞吐</td><td>全系统 tokens/s</td><td>原始产能</td><td>不计延迟</td></tr>
+<tr><td>Goodput</td><td>满足 SLO 前提下的请求率</td><td>直接换算每查询成本</td><td>如 90% SLO 达成下测</td></tr>
+<tr><td>SLO 达成率</td><td>达标请求的比例</td><td>服务合规</td><td>按 P90/P99 尾部考核</td></tr>
+<tr><td>每 token 成本</td><td>$/百万 tokens</td><td>容量规划</td><td>对负载极敏感</td></tr>
+<tr><td>MFU</td><td>实际/峰值算力</td><td>效率诊断（非目标）</td><td>训练 35–45%，decode 仅 8–12%</td></tr>
+</tbody>
+</table>
+
+<p>八件套必须成组读，里面有三对结构性张力。<strong>其一，吞吐和体验不可兼得</strong>——"TTFT 可接受之前，吞吐没有意义"。实测例子：13B 模型在 A100 上、90% SLO 达成率下，把 prefill 和 decode 混在同一 GPU 时每卡 goodput 只有 1.6 rps，分开部署后整体达 10 rps（2.1 倍）。<strong>其二，成本必须画成负载曲线而不是点估计</strong>：同一块 H100 跑同一个模型，1 rps 和 25 rps 下每 token 成本相差 17.5–36 倍；只看一个点会被严重误导。行业层面还有个好消息叫"LLMflation"：推理成本自 2021 年起每年降约 10 倍，GPT-4 发布价（输入/输出 $30/$60 每百万 token）到 GPT-5 已降到 $1.25/$10，三年等效降约 95%。<strong>其三，MFU 是体检指标不是奋斗目标</strong>：decode 阶段 8–12% 是访存瓶颈决定的物理上限，不是优化不力。</p>
+
+<p>典型 SLO 的数字感：交互场景 TTFT 小于 500 ms 算优秀、500 ms–2 s 可接受、超过 3 s 用户开始流失；语音助手更苛刻——1 秒的话轮里，语音识别和语音合成各占约 150 ms，留给大模型的 TTFT 只有约 600 ms，超了用户就觉得"慢"，跟模型聪不聪明无关。长上下文与多轮场景还要追加一个指标：KV/prefix 缓存命中率，它直接换算成 TTFT 下降和 prefill 成本节约。生产量级：固定文档库的检索增强（RAG）场景 40–70%、多轮聊天 20–40%、代码补全不足 10%、共享系统提示的 Agentic 负载可达 75–95%；经验法则是前缀重叠超过 60% 时缓存收益明确，低于 40% 就边际了。</p>
+
+<h3>5.3 谁在看榜？四种角色，四套指标</h3>
+<p>"用户关心什么指标"没有统一答案：角色不同，首要指标系统性不同，甚至可能直接冲突——2000 tok/s 吞吐但 4 秒 TTFT 的服务，在对话场景下"感觉很慢"；200 ms TTFT 但只有 30 tok/s 的服务则"开头轻快、长答案卡顿"。所以必须成组测量，映射到产品的会话预算，而不是追逐单点最优。</p>
+
+<table>
+<thead><tr><th>角色</th><th>首要指标</th><th>关注点</th></tr></thead>
+<tbody>
+<tr><td>终端用户</td><td>TTFT、流式速度、E2E</td><td>快不快、卡不卡；语音里 TTFT 是"死寂空气"</td></tr>
+<tr><td>应用开发者</td><td>任务匹配的质量分、单任务成本</td><td>看 2–3 个对口基准，不看 16 个</td></tr>
+<tr><td>运营/SRE</td><td>goodput、SLO 达成率、成本曲线、KV 命中率</td><td>容量规划的一等输入</td></tr>
+<tr><td>采购/管理层</td><td>质量-价格-速度综合指数、安全评级</td><td>三角图＋面向非技术人的合规标签</td></tr>
+</tbody>
+</table>
+
+<p>业界选型框架已收敛到"质量–速度–价格三轴＋真实用量"的交叉结构：Artificial Analysis 用 8 个基准等权合成智能指数，价格侧按"缓存命中：输入：输出＝7:2:1"加权出混合价，还按实际 token 消耗核算单任务成本（爱写长答案、爱用推理 token 的模型，即使单价相同，单任务成本也更高）；OpenRouter 则提供需求侧信号——按真实 token 消耗量排名。2026 年的主流实践是多源交叉，而不是盯一张榜。</p>
+
+<h3>5.4 争议：榜单还能信吗？</h3>
+<div class="callout warn"><span class="callout-title">⚠️ 三大方法论争议</span>
+<p><strong>一是基准污染</strong>：研究（13 个基准×7 个模型）显示污染影响"可能比模型发布报告声称的大得多"；合成数据时代污染分四级，从原样照抄到推理模式级泄漏，后两级让传统 n-gram 检测完全失效。对策是动态滚动基准（LiveBench 每月换题）、私有 holdout 和绝不公开的内部黄金集。<strong>二是 Arena 刷榜</strong>：回答长度是主导的混淆因子；《The Leaderboard Illusion》披露 Meta 在 Llama-4 发布前私下测了 27 个变体、选择性披露最高分，作者估算额外数据访问最高可带来 112% 的分数虚增；定向操纵投票也有学术复现。可信口径：头部分数在 50–100 Elo 粒度上大体可信，10–30 分粒度上不可信。<strong>三是 Goodhart 效应</strong>：指标一旦成为目标就会失效——就算没人作弊，所有团队都按基准调模型，基准也会"泄漏"进开发决策，形成系统性过拟合；2026 年甚至演示了 8 大 Agent 基准全部可被 reward hack 到约 100%。</p>
+</div>
+
+<details class="deep"><summary>深入细节：怎么识别"刷出来"的分数？</summary>
+<p>外部检验法：观察一个模型在 MMLU 上涨时，是否同步带动 BIG-bench 和自然偏好的提升——不同步即疑似 gaming。缓解共识是"任何单一评测指标都不应被孤立信任"：私有黄金集＋1–5% 生产流量持续采样评分＋多基准交叉＋公开全部私下测试结果。综合框架如斯坦福 HELM 干脆不给单一总分，而是同时输出准确性、校准、鲁棒性、公平性、偏见、毒性、效率七维画像；GDPval-AA 则用 1320 个覆盖 44 种职业的真实经济价值任务，考核模型"干活"的偏好水平。</p>
+</details>
+
+<div class="callout verdict"><span class="callout-title">🧭 专家判定</span>
+<p>"评价维度可枚举、用户关心指标可量化"——<strong>预设成立</strong>：质量＋服务性能的双层结构已高度标准化，指标随角色系统性分野且均有定量口径。需要修正的预期是"找一个总分最高的模型"：2026 年的可信实践是质量分、服务性能、真实用量、私有 eval 的四路交叉验证——单一榜单只配当初筛，不配当终裁。</p>
+</div>
+
+<div class="callout takeaway"><span class="callout-title">✅ 要点速记</span>
+<ul>
+<li>评价体系＝质量（能不能做对）×服务性能（快不快、稳不稳、贵不贵）两层。</li>
+<li>基准 18–24 个月换一代：MMLU→MMLU-Pro/HLE、HumanEval→SWE-bench、NIAH→RULER。</li>
+<li>八件套里 TTFT 定"响应感"、ITL 定"流畅感"、goodput 统一产能与体验；成本必须按负载画曲线（可差 17.5–36 倍）。</li>
+<li>指标随角色分野：用户看 TTFT，开发者看对口基准与单任务成本，运营看 goodput 与成本曲线，采购看综合指数＋安全评级。</li>
+<li>防骗三件套：防污染（动态基准）、防刷榜（Arena 虚增可达 112%）、防 Goodhart（多源交叉验证）。</li>
+</ul>
+</div>
+</section>

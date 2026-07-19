@@ -1,0 +1,98 @@
+<section id="ch3" class="chapter">
+<h2>第 3 章 · 让闪存自己算账：NAND CIM 的机会与边界</h2>
+
+<div class="callout analogy">
+<span class="callout-title">💡 本章一句话类比</span>
+<p>传统计算的流程像仓库盘点：把一箱箱货（权重）从仓库搬到门口秤上（GPU）称重，称完再搬回去。存内计算（Compute-in-Memory, CIM）的思路是：直接在货架上装秤，原地称重，货不出库。NAND 闪存存内计算（NAND CIM）就是把"秤"装进闪存阵列。但货架上的秤精度有限、而且只会做乘加——所以本章真正要回答的是：哪些货能在库里称、哪些必须搬出去用精密仪器称，以及两套班子怎么排班。</p>
+</div>
+
+<h3>3.1 大模型的算力账：99.8% 是乘加</h3>
+
+<p>先搞清楚大模型到底在算什么。把 LLM 推理拆开看浮点运算（FLOPs），结论惊人地集中：通用矩阵乘（GEMM）贡献 99.8% 的 FLOPs——本质上全是乘加（Multiply-Accumulate, MAC）。参数分布同样集中：前馈网络（Feed-Forward Network, FFN）层占 Transformer 约三分之二的参数，注意力投影占其余约三分之一。</p>
+
+<p>但"FLOPs 占比"和"时间占比"是两回事，这里有两个反转：</p>
+
+<ul>
+<li><strong>反转一：两阶段异质。</strong>预填充（prefill）阶段是计算受限的大矩阵乘；而逐字生成（decode）阶段退化成访存受限的矩阵-向量乘（GEMV），算术强度极低。OPT-13B 在 A100 上的实测显示：端到端时间的 73.8% 花在以 GEMV 为主的 decode 上。这正好戳中 CIM 的"甜点"——权重驻留在闪存阵列里、原地做 GEMV，权重搬运直接归零，而权重搬运恰是 decode 的头号开销。</li>
+<li><strong>反转二：FLOPs 小头吃掉时间大头。</strong>softmax、层归一化（LayerNorm, LN）、残差相加这些非乘加算子，合计不到 0.2% 的 FLOPs，却吃掉约 39% 的运行时。原因不在算，而在搬：这些核的时间都耗在 HBM 与片上缓存之间的数据倒腾和同步等待上（LN 的同步停顿占比从 prefill 的 11.0% 升到 decode 的 27.7%）。</li>
+</ul>
+
+<div class="callout keypoint">
+<span class="callout-title">📌 两条分工的铁律</span>
+<p>模拟 CIM 受器件涨落和模数转换器（ADC）/数模转换器（DAC）量化限制，有效精度通常只有 3–8 bit，只会做"容错"的乘加。所以：softmax、LN、残差、Embedding 查表这些非 MAC 运算<strong>必须</strong>留给数字单元全精度执行——这不是取舍问题，是能力边界问题。几乎所有 Transformer CIM 设计都配了专用功能单元干这类活，"模拟做乘、数字做非线性"是能效最大化的必要条件。</p>
+</div>
+
+<h3>3.2 同为乘加，脾气不同：一张分工表看懂各层</h3>
+
+<p>即使都是 MAC，各投影的瓶颈和"娇气程度"也完全不同。GPU 微架构分析发现：FFN 上投影（FFN-Up）是纯粹的访存受限（访存依赖占 58%，权重流最大），是 CIM 的最佳候选；而注意力输出投影（O-Proj）和 FFN 下投影（FFN-Down）在数字端本来就卡在寄存器压力上（execution-bound），搬到 CIM 的性能增量有限。综合计算类型、瓶颈与敏感度证据，部署建议如下：</p>
+
+<table>
+<thead><tr><th>层/算子</th><th>计算类型</th><th>瓶颈特征</th><th>耐噪程度</th><th>部署建议</th></tr></thead>
+<tbody>
+<tr><td>Embedding</td><td>查表（非 MAC）</td><td>约占权重 15%，每步只查一行</td><td>误差传播到所有后续层</td><td>以 bf16 存 NAND 做查表读取，不参与计算</td></tr>
+<tr><td>注意力 QKV 投影</td><td>MAC</td><td>decode 为访存受限</td><td>全程中等敏感（ΔPPL≈1–3）</td><td>中间层可放 CIM，早期层逐层确认</td></tr>
+<tr><td>注意力输出投影</td><td>MAC</td><td>decode 为执行受限</td><td>随深度剧烈摆动：第 0 块 ΔPPL=33.1 vs 第 2–10 块 &lt;0.22</td><td>首块留数字，中间块优先放模拟</td></tr>
+<tr><td>softmax / LN / 残差</td><td>非线性（非 MAC）</td><td>&lt;0.2% FLOPs 但约 39% 运行时</td><td>—（CIM 能力集外）</td><td>一律数字单元</td></tr>
+<tr><td>FFN up/gate</td><td>MAC（decode 为 GEMV）</td><td>最大纯权重流，占 2/3 参数</td><td>第 1/2 块敏感，中间块耐噪</td><td>NAND CIM 最佳候选（首两块除外）</td></tr>
+<tr><td>FFN down</td><td>MAC</td><td>执行受限</td><td>第 0 块敏感；激活 outlier 最强处</td><td>中间块可放模拟，需 outlier 旁路保护 ADC</td></tr>
+<tr><td>LM head</td><td>MAC（大 GEMV）</td><td>每个 decode 步一次</td><td>敏感度为中位层的 8 倍</td><td>数字/高精度</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 层敏感度：有的层娇气，有的层皮实</h3>
+
+<p>为什么有的层能塞进 3–8 bit 的模拟阵列、有的一碰就崩？跨 CNN、ViT、LLM 三个领域的证据指向一个稳健规律：<strong>边界层敏感、中间层（尤其中间块的 MLP）耐噪</strong>。量化研究的惯例是把 Embedding、首层、LM head 保持高精度；剪枝研究从"删除"角度也得出同样结论；KV 缓存量化里，最早的几层（第 0–3 层）最敏感。Qwen3 的工业实测把这个梯度量化了：第 0 层 KV 敏感度是中位层的 56 倍。</p>
+
+<p>微观机理是激活 outlier：模型大到一定规模（约 6B–6.7B 参数）后，会突然冒出少量幅值特别大的特征维度，蔓延到所有层；最强的 outlier 通常出现在 FFN 输出。对模拟 CIM 来说，outlier 拉大的是 ADC 的输入动态范围——而硬件感知研究表明，I/O 侧的非理想性（ADC/DAC 分辨率与噪声）对精度的杀伤比权重噪声还大。所以"中间 MLP 耐噪"映射到模拟域时，必须附加一个前提：给 outlier 留 FP16 旁路。</p>
+
+<div class="callout warn">
+<span class="callout-title">⚠️ 流行启发式的反证："前几层数字、后几层模拟"靠谱吗？</span>
+<p>"首末层放数字"（first-last scheme）确实是最常用的映射口诀，作零成本初始猜测它优于均匀映射。但两组直接实测表明它不能当规则用：其一，LionHeart 在多负载上对比发现该策略"行为不可预测"——62% 的最优配置把末层留在模拟域，但只有 18% 保留第一层，且中间层有时比末层还敏感，按位置单调排序不成立。其二，首个针对 decoder-only LLM 的模拟 CIM 逐投影画像（GPT-2-small）更细：49 个投影里只有 4 个主导敏感度——最敏感的不是"前几层整体"，而是第 0 块内部那一个注意力输出投影（ΔPPL=33.1，比绝大多数层高一个数量级，因为这里是残差流首次聚合注意力表示的位置，噪声会穿过所有后续块）；约 82% 的投影 ΔPPL&lt;3，可安全放模拟；第 2–10 块的注意力输出投影反而是全模型最耐噪的部分（ΔPPL&lt;0.22）。连敏感度度量本身都未收敛：Hessian 二阶法、一阶梯度法互相打架，给出的层排序可能不同。</p>
+</div>
+
+<h3>3.4 正确姿势：先体检，再分工</h3>
+
+<p>既然没有一刀切的位置规则，工程上怎么办？答案是<strong>离线"体检"加"投影级"映射表</strong>：对每个目标模型跑 O(L) 次前向的扰动剖析（perturbation profiling），逐个投影注入噪声、看困惑度（PPL）掉多少，生成一张"投影 × 器件"的映射表，运行时按表调度。粒度上，逐层太粗（同一层内不同投影敏感度可差一个数量级）、逐权重太贵，对 Transformer 的推荐折中正是投影级。大规模研究表明，只需把少数最敏感层豁免到数字域，就能让 ResNet、BERT 等模型达到与全精度几乎持平的精度。</p>
+
+<p>落到 NAND CIM 的具体分工：<strong>必留数字/高精度</strong>的是 Embedding（查表而非 MAC，用 NAND 的高密度存储价值而非计算价值）、第一层（尤其首块注意力输出投影）、LM head，以及全部 softmax/LN/残差；<strong>优先放 NAND 模拟 MAC</strong>的是 decode 阶段的 FFN up/gate（最大权重流）、中间块注意力输出投影（实测最耐噪）与中间层 QKV（中等耐噪，需校准）。</p>
+
+<details class="deep">
+<summary>深入细节：异构映射的四阶段工作流</summary>
+<p>九种主流异构映射方法已被统一为四阶段工作流：硬件刻画（tile 配置、ADC/DAC、互连代理模型）→ 精度敏感度剖析（逐投影扰动实验、Hessian 或激活显著性）→ 架构感知映射（启发式/解析式/学习型）→ 系统级评估（DNN+NeuroSim、ALPINE 等）。系统级筛选的代理指标是"模拟 MAC 占比"与"数字端权重足迹"；必要时先用硬件感知（hardware-aware）训练打底，再选择性豁免少数敏感层。度量层面的争议：HAWQ 系用 Hessian 二阶信息排序；LLM-MQ 指出约 15% 层的 Hessian 非半正定、二阶信号失真，改用一阶梯度；CMPQ 又反指收敛模型的梯度近似为零，一阶信号同样失灵——这进一步削弱了任何静态规则的可靠性。</p>
+</details>
+
+<h3>3.5 CIM 与 GPU/NPU 怎么排班</h3>
+
+<p>清楚了"谁干什么"，下一个问题是"怎么交接"。2024–2026 年的 NAND CIM 系统已形成清晰的分工共识，可以概括为 IFC-NPU（in-flash computing + NPU）范式：</p>
+
+<ul>
+<li><strong>闪存侧</strong>：只存权重，承担 decode 阶段的权重 GEMV——权重不出库，搬运归零。KV cache 留在 DRAM。</li>
+<li><strong>NPU 侧</strong>：承担 prefill（计算受限的大 GEMM）与全部非线性运算（softmax/LN 等）。</li>
+</ul>
+
+<p>代表系统：Cambricon-LLM（MICRO 2024）用 chiplet 形式的 NPU 加 NAND die 协作，70B 模型跑到 3.44 token/s，比此前 flash-offloading 方案快 22–45 倍；NASiC（2026）进一步把 MoE 的专家选择融进 CIM 单周期，报告 4–114.8 倍性能与 3.9–70 倍能效提升（论文口径）。运行时层面，NeuPIMs 解决"NPU 和 PIM 只能轮流干活"的阻塞问题，用双缓冲加子批交错让两边并发，相对纯 NPU 提升吞吐 2.3 倍。</p>
+
+<p>排班最大的坑在<strong>交接成本</strong>。如果按"数字-模拟-数字-模拟"逐层交替划分，每道边界都要付一次 DAC/ADC 转换 + 格式转换 + 内存拷贝 + 同步——边缘部署的经验是这些开销"可超过加速省下的计算时间"，把子图打断成一个个"回退孤岛"。量级有明确数字：GPU 显存带宽（3.35 TB/s）与 PCIe（256 GB/s）差约 13 倍，attention 卸载案例里消除跨设备搬运惩罚直接带来 11.39 倍收益，两条曲线惊人吻合——跨设备链路带宽决定了卸载边界划在哪才划算。模拟域内部的"接口税"同样可观：ISAAC 架构里 ADC 约占芯片功耗的一半。</p>
+
+<details class="deep">
+<summary>深入细节：编译器怎么划分子图</summary>
+<p>编译期的层-器件划分可借用通用深度学习编译器的子图划分框架：ONNX Runtime 对每个执行提供方（EP）查询能力（GetCapability），贪心分配"它能执行的最大连续子图"，CPU 兜底。BYOC 路线批评逐算子执行引入不必要的数据搬运。对 CIM 混合系统的推论：划分的目标函数必须显式包含跨设备搬运项，并尽量把模拟段聚合成连续块，而非逐层交替。数据流层面，TransPIM 用 token-based 数据流替代 layer-based，避免层间激活回搬，仅数据流优化即达 4.6 倍。另一个 Amdahl 定律式提醒：attention 被卸载加速后，未加速的 FFN 会重新主导 decode 延迟——卸载范围本身受约束。</p>
+</details>
+
+<div class="callout verdict">
+<span class="callout-title">🧭 专家判定：方向大体正确，但不可当固定规则</span>
+<p>对"适合 MAC 的场景，前几层高精度数字运算、后几层模拟 MAC 精度较高"这一说法，判定为<strong>部分成立（需修正）</strong>。成立的部分：第一层/边界层最敏感是三域共识，末几层也常可留模拟，作为零成本初始猜测优于均匀映射。需修正的三点：(i) 它不成立为规则——实测行为"不可预测"，中间层可能比末层更敏感；(ii) 粒度错误——最敏感的往往是某层内部的特定投影（首块 c_proj ΔPPL=33.1 为全模型之最，而中间块同类投影 &lt;0.22），敏感度是"投影类型 × 深度"的二维函数，不存在沿深度的单调排序；(iii) 结论随模型与噪声模型而变。正确做法是离线扰动剖析加投影级映射表替代静态口诀。对 NAND CIM 落地而言，模型适配工具链（剖析器 + 映射编译器）是比阵列本身更长的短板。</p>
+</div>
+
+<div class="callout takeaway">
+<span class="callout-title">✅ 本章要点速记</span>
+<ul>
+<li>大模型 99.8% 的 FLOPs 是乘加，FFN 占 2/3 参数；decode 的权重 GEMV 占执行时间 73.8%，正是 NAND CIM"权重不出库"的甜点。</li>
+<li>softmax/LN/残差不到 0.2% 的 FLOPs 却吃掉约 39% 运行时，且根本不在模拟 CIM 能力集内，必须数字单元执行——"模拟做乘、数字做非线性"是铁律。</li>
+<li>边界层敏感、中间 MLP 耐噪是多领域共识，但"前几层数字、后几层模拟"的位置口诀被直接反证：敏感度是"投影类型 × 深度"的二维函数，须靠离线扰动剖析生成投影级映射表。</li>
+<li>落地分工是 IFC-NPU：flash 做 decode 权重 GEMV，NPU 做 prefill 与非线性；交接成本是头号陷阱（PCIe 与 HBM 差约 13 倍带宽、ADC 约占 ISAAC 一半功耗），模拟段必须聚成连续块。</li>
+<li>激活 outlier 拉大 ADC 输入动态范围，"中间层耐噪"迁移到模拟域的前提是 outlier 旁路保护。</li>
+</ul>
+</div>
+
+</section>

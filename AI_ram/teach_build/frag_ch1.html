@@ -1,0 +1,93 @@
+<section id="ch1" class="chapter">
+<h2>第 1 章 · KV Cache：给模型一个会遗忘的"笔记本"</h2>
+
+<div class="callout analogy">
+<span class="callout-title">💡 本章类比</span>
+<p>KV cache 像模型的"演算笔记本"：每处理一个词，就记一行笔记，往后每个新词都靠翻旧笔记提速。问题是笔记本（HBM 显存）只有几十页，写满就得做选择——把不常用的笔记收进抽屉（DRAM）、塞进地下仓库（SSD/对象存储），还是干脆撕掉重算？本章讲的就是这套"笔记分层收纳术"：怎么分冷热、怎么搬、什么时候搬，以及为什么说 HBF 有可能成为一座"离桌面很近的大仓库"。</p>
+</div>
+
+<h3>1.1 什么是 KV cache，为什么它装不下</h3>
+<p>大模型每算一个词，会为这个词生成一对"键"和"值"向量，存下来供后续所有词查阅——这就是键值缓存（KV cache）。它的体积有多夸张？以 Qwen3-32B 为例，<strong>每个 token 约 250 KB</strong>；一段 128K token 的长对话，KV 就是几十 GB。生产环境的数字更直观：约 2 TB 的 DRAM 只能留住约 5 分钟的 KV，而 100 TB 级 NVMe 能留 1 小时以上。</p>
+<p>好消息是，笔记的复用极度不均匀，这给了"分层"可乘之机。阿里云生产 trace 显示：to-C 聊天负载 80% 的复用发生在 10 分钟内，KV 块 P99 寿命只有 97 秒，10% 的块贡献了 77% 的复用；编程 agent 场景更极端，平均 157 轮会话、每轮只追加约 429 个 token，KV 命中率高达 98.7%。也就是说，少量"热笔记"被反复翻阅，大量"冷笔记"只是偶尔查一次——冷热分层天然成立。</p>
+<p>生产系统判定冷热靠三类信号：访问频率与新近性（LRU/LFU、频率衰减、租约）；前缀共享程度（用基数树组织前缀，"热"等于"被很多请求共享的前缀"）；以及模型层的注意力重要性（如 H2O 只留"关键 token"）。注意第三类属于"不可逆驱逐"——笔记撕了就没了，与"搬到慢层、需要时取回"的可逆分层是两套正交机制。</p>
+
+<h3>1.2 四大机制：放哪、踢谁、提前取、流水搬</h3>
+<p>分层卸载拆开来是四个机制件，目前都已完成产品化：</p>
+<ul>
+<li><strong>放置（placement）</strong>：决定每份 KV 放哪层。NVIDIA Dynamo 的 KVBM 明确划分 G1（GPU HBM）→G2（DRAM）→G3（本地 SSD）→G4（网络存储）四层，vLLM 则按 GPU→CPU→外部连接器顺序查找块。</li>
+<li><strong>驱逐（eviction）</strong>：空间不够时踢谁。趋势是从朴素 LRU 走向频率衰减、租约和预测式驱逐，还会把前缀结构信息告诉下层做"前缀感知驱逐"。</li>
+<li><strong>预取（prefetch）</strong>：趁请求排队的空档，把接下来要用的 KV 从慢层提到快层。预取完成时间的不确定性被列为核心工程难点。</li>
+<li><strong>逐层流水（layer-wise pipeline）</strong>：算第 N 层时异步加载第 N+1 层的 KV，GPU 只需单层大小的缓冲——但它对 SSD 层会适得其反（见 1.4 节争议）。</li>
+</ul>
+<p>产品化方面，月之暗面的 Mooncake 把全集群的 CPU/DRAM/SSD/网卡聚成解耦式 KV 池，真实流量下有效请求容量提升 59%–498%，日处理超 1000 亿 token；vLLM 的 KVConnector 成为事实标准接口，LMCache、SGLang HiCache、Dynamo KVBM（基于 NIXL 传输库）、字节 AIBrix 等都挂接其上。最关键的一点：这些接口都是"层无关"设计——未来 HBF 可以作为新一层直接插入，不用重写调度逻辑。</p>
+
+<h3>1.3 介质阶梯：从案板到地下仓库</h3>
+<p>各层介质的性能跨越约六个数量级。下面这张表值得记住：</p>
+<table>
+<thead>
+<tr><th>层级</th><th>容量量级</th><th>带宽量级</th><th>时延量级</th><th>一句话定位</th></tr>
+</thead>
+<tbody>
+<tr><td>GPU HBM</td><td>80–288 GB/卡</td><td>3.3–8 TB/s</td><td>约 ns–1 µs</td><td>案板：最快最小，放活跃 KV</td></tr>
+<tr><td>CPU DRAM</td><td>0.5–2 TB/机</td><td>约 300–540 GB/s</td><td>50–100 ns</td><td>储物架：热前缀的主场</td></tr>
+<tr><td>本地 NVMe SSD</td><td>整机 30–120 TB</td><td>约 14 GB/s/盘</td><td>约 50–500 µs</td><td>地下仓库：冷 KV 与数据</td></tr>
+<tr><td>对象存储（S3）</td><td>近乎无限</td><td>随并发扩展</td><td>10–500 ms</td><td>郊区总仓：几乎免费但慢</td></tr>
+<tr><td>HBF（厂商目标值）</td><td>512 GB/堆栈</td><td>读 1.6 TB/s</td><td>读 µs 级</td><td>设想中的"近案板大仓库"</td></tr>
+</tbody>
+</table>
+<p>阶梯上有两处断档。一处在 DRAM 与 SSD 之间：带宽差 20–40 倍、时延差约三个数量级，KV 保留窗口从 5 分钟跳到 1 小时——HBF 的目标区间恰好插进这个空档，但它 µs 级读时延加 4 KB 最小读粒度的脾气决定：它只接"地址可预知的大块流式读"，不接细粒度随机读。另一处在传输侧：小消息根本跑不满链路——实测 64 KB 传输仅 4 GB/s、1 MB 约 30 GB/s、16 MB 才到 49 GB/s。所以任何慢层的<em>有效</em>带宽取决于对象聚合粒度，而不是介质标称值。</p>
+
+<h3>1.4 实测有多赚？以及 SSD 层的争议</h3>
+<p>在高前缀复用负载（命中率 80–98%）下，分层卸载的收益相当可观：SGLang HiCache 官方复测吞吐最高 6 倍、首 token 时延（Time To First Token, TTFT）最高降 80%；蚂蚁集团在线问答缓存命中时 TTFT 平均降 84%；LMCache 加 vLLM 吞吐最高 15 倍；Dynamo 仅 CPU 卸载就取得 TTFT 改善 2.2–12 倍；Tutti 的 SSD 后端在严格服务目标下 TTFT 降 78.3%，性能逼近 DRAM 后端。</p>
+<div class="callout warn">
+<span class="callout-title">⚠️ 争议：SSD 层到底该不该入列？</span>
+<p>反方实测很扎心：Llama3-8B、64K 序列、75% 命中下，从 SSD 恢复 KV 造成的 GPU 空转超过总时延的 70%，逐层流水反而把气泡推到约 80%。根因不是 SSD 太慢，而是 I/O 路径以 CPU 为中心、加上布局碎片化——128K token 的 KV 对应约 25.6 万个散落的 80 KB 小对象。更麻烦的是"读不如重算"的拐点会移动：推理引擎计算提速后，从 SSD 取回就从"勉强划算"变成"不如重算"。量化拐点是单机约 24–37 GB/s、链路 80 Gbps 以上取回才快于重算。但正方也成立：Tutti 改用 GPU 中心化 I/O 后，SSD 后端逼近了 DRAM 性能。<strong>结论：分歧不在介质，而在 I/O 路径、对象粒度与负载命中率。</strong></p>
+</div>
+
+<h3>1.5 互联底座：谁来搬这些笔记</h3>
+<p>KV 在设备间搬运，靠的是互联技术。六类主流方案对比如下：</p>
+<table>
+<thead>
+<tr><th>技术</th><th>聚合带宽</th><th>时延</th><th>开放性</th><th>KV 卸载适配</th></tr>
+</thead>
+<tbody>
+<tr><td>NVLink 5（英伟达）</td><td>1.8 TB/s 双向</td><td>亚微秒</td><td>私有</td><td>机架内 GPU 直传 KV</td></tr>
+<tr><td>UALink 1.0（开放联盟）</td><td>800 Gb/s/端口起</td><td>RTT &lt;1 µs</td><td>开放</td><td>内存语义，适合 GPU 直读远端 KV</td></tr>
+<tr><td>华为灵衢 UB</td><td>每 NPU 350–392 GB/s</td><td>&lt;1 µs 增量</td><td>私有转向开放</td><td>国内唯一规模商用的 NVLink 级总线</td></tr>
+<tr><td>PCIe Gen5/6</td><td>64/128 GB/s</td><td>约 1 µs</td><td>开放</td><td>HBM↔DRAM 卸载主通道，也是瓶颈层</td></tr>
+<tr><td>CXL 2.0/3.x</td><td>约 63/256 GB/s</td><td>+100–200 ns</td><td>开放</td><td>CPU 侧内存池化，GPU 直挂尚是原型</td></tr>
+<tr><td>RoCEv2 400G</td><td>50 GB/s/方向/卡</td><td>约 1–2 µs</td><td>开放、生态最成熟</td><td><strong>当前跨节点搬 KV 的事实标准</strong></td></tr>
+</tbody>
+</table>
+<p>需要多大带宽？算一笔账：128K 上下文的 70B 模型，每对 prefill-decode GPU 之间约 10 GB KV 待传；25 Gbps 链路要传 3.2 秒，直接吞掉全部 TTFT 预算；想在 100 ms 内传完就需要约 100 GB/s——这就是头部厂商为每块 GPU 配 400 Gbps RDMA 网卡的原因。生产形态已收敛为"跨节点 GPUDirect RDMA、节点内 NVLink/PCIe、下沉存储 NVMe-oF"。国内则呈"专用总线（灵衢 UB）、以太优化（ETH-X/EthLink）、开放架构（OISA/UALink）"三轨并行、尚未收敛的格局，跨厂商 KV 池化短期还得落在 RoCEv2 这个最大公约数上。</p>
+
+<details class="deep">
+<summary>深入细节：预取能不能完全"盖住"加载时延？</summary>
+<p>工程上有明确的可掩盖条件：历史 KV 的加载总时延必须不超过"新 prefill 计算时间＋缓冲区能垫付的时间"。编程 agent 场景掩盖窗口最小——98% 以上命中、每轮仅约 429 个新 token，新计算时间极短，所以必须靠调度器的前瞻信息提前预取，不足部分用 HBM 读缓冲补齐。这也解释了为什么"调度信息"和"带宽"一样值钱。</p>
+</details>
+
+<h3>1.6 专家判定：冷热 KV 卸载至 HBF 的五条标准</h3>
+<div class="callout verdict">
+<span class="callout-title">🧭 专家判定：部分成立，边界清晰</span>
+<p>把"冷热 KV 能否卸载至 HBF"形式化为五条可操作判定式：</p>
+<ol>
+<li><strong>读-算带宽拐点</strong>：取回必须快于重算（单机约 24–37 GB/s、链路 80 Gbps 以上）。HBF 目标读带宽 1.6 TB/s，余量约两个数量级——评估 HBF 的第一指标应从"命中率"转为"有效带宽利用率"。</li>
+<li><strong>预取可掩盖</strong>：慢读必须能被调度前瞻＋预取移出关键路径，短追加场景窗口最小。</li>
+<li><strong>块粒度匹配</strong>：KV 必须聚合到 256-token 级大块（约 62.5 MB），碎片化布局是 GPU 空转的主因。</li>
+<li><strong>复用可预测</strong>：复用强偏斜（10% 的块贡献 77% 复用）且可建模，可预测才有分层价值。</li>
+<li><strong>写耐久预算</strong>：按"每日写入量×年限 ≤ 容量×P/E 次数"显式核算；实测读写比约 186:1 使历史 KV 可行，但结论对 P/E 假设一阶敏感。</li>
+</ol>
+<p>按此判定：温/冷历史 KV 与共享预计算只读 KV <strong>适配</strong> HBF（SK hynix H³ 模拟显示该分工下千万 token 上下文吞吐可达 6.14 倍）；而逐 token 追加的活跃 decode KV <strong>禁入</strong>——写耐久与 4 KB 最小读粒度均不满足。三项前提构成边界：I/O 路径 GPU 中心化、对象不低于 256-token 聚合、写耐久按 P/E 假设显式核算。再次提醒：全部 HBF 数字在 2026 下半年出样前均为厂商目标值。</p>
+</div>
+
+<div class="callout takeaway">
+<span class="callout-title">✅ 要点速记</span>
+<ul>
+<li>KV cache 每 token 约 250 KB，最快的 HBM 装不下，分层卸载是必选项而非优化项。</li>
+<li>四大机制——放置、驱逐、预取、逐层流水——均已产品化，接口层无关，HBF 可作为新层直接插入。</li>
+<li>高复用负载下实测 TTFT 降 56–84%、吞吐最高 15 倍；慢层的有效带宽取决于对象聚合粒度。</li>
+<li>SSD 层争议的本质不在介质而在 I/O 路径：CPU 中心化会吞掉带宽红利，GPU 中心化可救回。</li>
+<li>HBF 承接读多写少的历史/共享 KV 适配，活跃逐 token KV 禁入；判定前请先过五条标准。</li>
+</ul>
+</div>
+</section>

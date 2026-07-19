@@ -1,0 +1,77 @@
+<section id="ch4" class="chapter">
+<h2>第 4 章 · 模型有多"抗噪"：误差容忍度要分通路看</h2>
+
+<div class="callout analogy"><span class="callout-title">💡 本章类比</span>
+<p>把量化想象成"把一张高清照片压成表情包"：同样是压缩，压坏了蓝天没人介意，压坏了人脸就废了。模型也一样——噪声和误差落在不同"部位"（通路），后果天差地别。本章要回答一个很实际的问题：NAND 闪存做存内计算带来的噪声，到底会不会把大模型"压坏"？答案是：看打在哪个部位。</p>
+</div>
+
+<h3>4.1 先认三条路：权重、激活、KV cache</h3>
+<p>推理时，模型里有三条数据通路在跑。<strong>权重</strong>是长期记忆，训练完就冻结；<strong>激活</strong>是每层算出来的中间结果，像草稿纸；<strong>键值缓存（key-value cache, KV cache）</strong>是为了不重复计算而存下的"前文笔记"。训练决定模型的能力上限，但部署时的精度损失，全看噪声落在哪条路上。多份独立研究收敛于同一个敏感度排序：<strong>激活（尤其是 outlier）＞ KV cache（Key 远比 Value 敏感）＞ 权重</strong>；从层的维度看，首层、末层和注意力层比中间的前馈网络层更容易受伤。</p>
+
+<p>为什么说激活是"第一约束"？SmoothQuant 的观察一针见血：权重容易量化，激活不行。同样是 8-bit——只压权重，1750 亿参数的 OPT 模型几乎无损；权重和激活一起压（朴素 W8A8），平均精度直接从 71.6% 崩到 32.3%，接近瞎猜。病根是"系统性激活 outlier"：模型规模超过 67 亿参数后，总会冒出少数数值特别大的通道。LLM.int8() 的实验更能说明"落点比总量重要"：把这些 outlier 特征清零，困惑度（perplexity, PPL，越低越好）恶化 600–1000%；清零同样数量的随机特征，只恶化 0.1%——破坏力相差三到四个数量级。KV cache 内部也不平等：消融实验里"Key 给 4-bit、Value 给 2-bit"时 PPL 为 5.75，反过来"Key 2-bit、Value 4-bit"就涨到 8.06（FP16 基线 5.47）；另一组实验在同预算下两种分配方案的精度是 75.2% 对 54.7%。原因是 Key 矩阵的谱范数更大、量化误差被放大，所以"Key 多给位、Value 少给位"成了标准操作。</p>
+
+<details class="deep"><summary>深入细节：outlier 从哪来？两个方向相反的调节变量</summary>
+<p>outlier 并非模型的"宿命"。Outlier-Safe Pre-Training 通过改训练配方，把衡量分布尖峰程度的 excess kurtosis 从 1818.56 压到 0.04，4-bit 下 10 项基准均分从 26.5 提到 35.7——说明 outlier 很大程度上是训练策略的产物。还要记住两个方向相反的调节变量：<strong>模型越大越好压</strong>（GPTQ 在 175B 上 4-bit 仅损 ≤0.25 PPL，"更大的模型普遍更容易量化"）；<strong>训练越充分越难压</strong>——量化诱导退化（quantization-induced degradation, QiD）标度律分析了 1500 多个 checkpoint，发现训练 token 越多、低比特量化退化越重，甚至预测未来用 100T token 训练的模型，低比特量化将"不可取"。</p>
+</details>
+
+<h3>4.2 跟图像分类模型比：答案要分通路给</h3>
+<p>"大模型比卷积神经网络（convolutional neural network, CNN）更抗噪吗？"这个问题不能笼统回答，得拆开看。先说好消息：<strong>权重通路上，大模型确实更抗造</strong>。IBM 在《自然·通讯》2023 年的研究给 11 个负载统一施加模拟存内计算噪声并做硬件感知训练：BERT 和全部 LSTM 负载保持了 99% 以上的等效精度，而 CNN 普遍掉点、最多掉 3.6%；官方总结是"循环网络普遍表现很好，卷积网络通常最具挑战"。医学影像对比同向：transformer 架构的 Swin U-Net 指标仅降不到 0.04，金字塔 CNN 降 0.15–0.22。权重数值精度侧，GPTQ、AWQ 等现代补偿方法已把 4-bit 做到近乎无损（175B 损 ≤0.25 PPL、Llama-2-7B 约 0.1 PPL）。</p>
+
+<p>坏消息在另外两条路。<strong>激活通路上，LLM 反而比 CNN 娇气得多</strong>：CNN 的 INT8 后训练量化 2018 年起就基本解决了，LLM 的 W8A8 却必须配合 outlier 处理才能用，W4A4 至今只有旋转类方法（QuaRot 等）能稳住。<strong>KV cache 更是 CNN 根本没有的软肋</strong>：朴素 2-bit 量化能让 PPL 爆炸到 573–100870（正常值是个位数），即使专门设计的 KIVI 2-bit 也有最高 2% 的精度损失，2-bit Key 直接崩溃。</p>
+
+<table>
+<thead><tr><th>通路</th><th>典型实验</th><th>结果</th><th>一句话读法</th></tr></thead>
+<tbody>
+<tr><td>权重</td><td>GPTQ 4-bit @ OPT-175B</td><td>PPL 损 ≤0.25</td><td>大模型权重很耐压</td></tr>
+<tr><td>权重</td><td>朴素 vs 补偿方法 3-bit</td><td>RTN 完全崩溃；GPTQ 仅损 0.3–0.6</td><td>方法差距即容忍度差距</td></tr>
+<tr><td>激活×权重</td><td>朴素 W8A8 @ OPT-175B</td><td>71.6% → 32.3%</td><td>激活是第一约束</td></tr>
+<tr><td>激活×权重</td><td>SmoothQuant / LLM.int8()</td><td>回到 ≈FP16 水平</td><td>处理好 outlier 就能救</td></tr>
+<tr><td>KV cache</td><td>朴素 int2</td><td>PPL 爆到 573–100870</td><td>KV 是新的脆弱面</td></tr>
+<tr><td>KV cache</td><td>K2V4 vs K4V2 消融</td><td>8.06 vs 5.75</td><td>Key 远比 Value 敏感</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn"><span class="callout-title">⚠️ 看似矛盾的证据</span>
+<p>有实验给 LLaMA-3.1-8B 的权重注入 6.7% 高斯噪声，多个零样本任务掉点超过 40 个百分点（GSM8K 从 67.63% 掉到 37.98%）——这跟"transformer 耐噪"不是打架吗？调和的关键在两个差异：BERT 是经过噪声感知训练的 encoder 模型，而 LLaMA 是自由长链生成的 decoder-only 模型；自回归会把单点误差逐字放大成路径漂移。换句话说，耐噪的是"经过训练的权重通路"，不是"裸奔的长链生成"。</p>
+</div>
+
+<h3>4.3 评估方式本身会"骗人"：长链推理先崩</h3>
+<p>还有一个更隐蔽的坑：用什么指标验收，结论可能反过来。自回归生成有两副面孔——好的一面是"自纠错"：只要概率最高的词和第二名之间的差距没被噪声翻转，输出就不变；坏的一面是"漂移放大"：模型每一步都踩在自己上一步的输出上，误差像传话游戏一样逐级累积。实测规律是<strong>"长链推理比 PPL 先崩"</strong>：4-bit 权重在 R1-Distill 上近乎无损，3-bit 就在 LiveCodeBench 上掉超 7%，且退化在长回答的困难任务上最显著。机制上，量化模型与原始模型的分歧集中在模型"拿不准"的高熵位置——分歧度与 next-token 熵的相关系数高达 0.92，噪声在这些岔路口把模型推向"Wait/But"式的过度思考。基准层面同样如此：PPL 几乎不变时下游能力已显著下降；4-bit 量化下 workflow 类任务只掉 1–3%，真实 agentic 场景却掉 10–15%。</p>
+
+<div class="callout keypoint"><span class="callout-title">📌 对硬件验收的直接含义</span>
+<p>只用 teacher-forced 的 PPL 验收硬件噪声，会系统性低估损伤。验收集必须包含自由生成的长链推理任务（GSM8K、AIME、长上下文检索），因为这些任务掉点远比知识问答狠——LLaMA-3.1-8B 的模拟噪声实验里，GSM8K 掉了近 30 个百分点，远超过知识问答类任务。</p>
+</div>
+
+<h3>4.4 NAND 的噪声到底有多大？怎么防？</h3>
+<p>器件级的核心证据来自 Shim（JSTS 2022）对 3D NAND 的仿真：即使选中的存储单元阈值完全一致，相邻字线的随机编程图样仍会引起开态电流 2–3.5 nA 的波动，使 CIFAR-10 推理精度掉约 5 个百分点；温度也是变量——400K 时电子迁移率比室温高 30%，不做温度补偿，310K 以上精度显著下降。注意这个实验用的还是相对耐噪的 CNN：连 CNN 都被 nA 级波动打掉 5 个点，足见器件噪声不可小觑。产品级证据在 2025–2026 年补齐：对产品级 3D NAND CIM 芯片的行为级仿真（GPT-2 规模）表明，维持系统级可靠性要求开态电流分布 σ&lt;2.5 nA；且 INT8 模式下"量化误差本身就是主要瓶颈"——留给模拟噪声的余量已经很小。老化方面，WISER 实测 16K 次擦写、10 万次读扰动、10⁸ 秒保持时间分别让 VGG-16 掉 17.09%/5.96%/10.15%，做位翻转避错后全条件压到 0.79% 以内。</p>
+
+<p>好在每类误差都有对应的"解药"，而且必须组合使用：</p>
+<table>
+<thead><tr><th>作用层</th><th>手段</th><th>实测效果</th></tr></thead>
+<tbody>
+<tr><td>训练</td><td>噪声感知训练</td><td>VANT：CIFAR-10 噪声下 72.3%→97.3%；IBM：11 个负载归一化精度全部 &gt;96%</td></tr>
+<tr><td>适配</td><td>LoRA 低秩补偿</td><td>只练 0.5–6.6% 参数，把噪声下的 LLaMA-3.1-8B 从崩盘拉回（GSM8K 37.98→70.74）</td></tr>
+<tr><td>推理</td><td>outlier FP16 冗余</td><td>约 0.1% outlier 通道走 FP16 即无损；KV 每向量隔离 1%，3-bit 退化 &lt;0.1 PPL</td></tr>
+<tr><td>训练配方</td><td>旋转/分布整形</td><td>QuaRot/SpinQuant 稳住 W4A4；训练期直接消除 outlier</td></tr>
+<tr><td>电路/系统</td><td>ECC / 温补 / 写验证</td><td>WISER 把老化掉点从 17.09% 压到 &lt;0.79%；无温补时 310K 以上显著掉点</td></tr>
+</tbody>
+</table>
+
+<details class="deep"><summary>深入细节：为什么必须"组合用药"？</summary>
+<p>因为三类误差源性格不同。<strong>随机噪声</strong>（每次读都不一样）可以被输入映射方案和噪声感知训练吸收；<strong>系统性 drift</strong>（温度漂移、保持时间劣化）是缓慢单向的，需要温补、ECC 和 LoRA 动态重适配来追踪；<strong>outlier 放大</strong>（误差集中在少数大通道）则要靠 FP16 冗余或分布整形兜底。任何单一手段都只能覆盖其中一两类——这是 NAND CIM 精度设计必须组合出招的根本原因。同组系统级研究还给出定心丸：随机电流变化可经输入映射吸收，系统性 drift 才是主要威胁；其 3D NAND CIM 在 8-bit 推理下芯片面积仅为 SRAM/RRAM 方案的 17–24%，能效 1.9–2.7 倍。</p>
+</details>
+
+<div class="callout verdict"><span class="callout-title">🧭 专家判定</span>
+<p>"LLM 比图像分类模型误差容忍度更高"——<strong>笼统说法不成立，必须分通路回答</strong>。权重通路上预设成立（容忍度不低于甚至高于 CNN）；激活/KV 通路上方向反转（显著更脆弱）；且结论依赖评估指标，单看 PPL 会误判。综合置信度：中——权重通路证据充分，"激活比 CNN 更敏感"有大量量化证据但缺严格同噪声模型的头对头实验。对 NAND 存内计算（compute-in-memory, CIM）这反而是结构性利好：模拟乘加噪声主要落在容忍度最高的权重通路，真正脆弱的激活和 KV 本就不经过 CIM 阵列。设计重点是"outlier FP16 冗余＋噪声感知训练/LoRA 补偿＋ECC/温补"的组合，而非整体回避模拟计算；验收口径以长链推理任务为准。另需警惕趋势：训练越充分的未来模型对低比特和噪声越敏感。</p>
+</div>
+
+<div class="callout takeaway"><span class="callout-title">✅ 要点速记</span>
+<ul>
+<li>敏感度排序：激活 outlier ＞ KV cache（Key＞Value）＞ 权重；首末层和注意力先受伤。</li>
+<li>同一位宽不同命：8-bit 给权重几乎无损，给激活能把 175B 模型打回随机水平（71.6%→32.3%）。</li>
+<li>"LLM 更抗噪"只在权重通路成立；KV cache 是 CNN 没有的软肋，2-bit Key 直接崩。</li>
+<li>长链推理比 PPL 先崩——验收硬件噪声必须用自由生成任务，不能只看 PPL。</li>
+<li>NAND 噪声落在最耐噪的权重通路：σ&lt;2.5 nA 是产品级红线，靠"训练＋冗余＋ECC"组合防护。</li>
+</ul>
+</div>
+</section>

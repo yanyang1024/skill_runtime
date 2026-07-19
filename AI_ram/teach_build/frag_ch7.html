@@ -1,0 +1,144 @@
+<section id="ch7" class="chapter">
+<h2>第 7 章 · 拆开闪存看：延迟、映射表与 HBF 的真本事</h2>
+
+<div class="callout analogy">
+<span class="callout-title">本章一句话类比</span>
+<p>把 NAND 闪存想成一座巨大的地下仓库：货品（数据）堆得又满又便宜，但每取一件货，拣货员都要花几十微秒走到货架前。本章回答四个朴素的问题：取货到底要等多久（tR）？多雇几个拣货员轮班能不能遮住这段等待（并行掩盖）？仓库门口的调度室里要不要配一台能算账的电脑（逻辑 die 算力）？索引卡片柜和暂存台够不够用（映射表与 SRAM）？</p>
+</div>
+
+<h3>7.1 取货要等多久：tR 的三档分层</h3>
+
+<p>闪存读数据分两步：先把数据从存储单元"感应"进片上缓冲（这段等待叫 tR），再把它搬出芯片。tR 是物理决定的：一个单元里塞的比特越多，要分辨的电压档位越细，感应次数就越多。单级单元（Single-Level Cell, SLC）只感应 1 次，三级单元（Triple-Level Cell, TLC）最多 3 次，四级单元（Quad-Level Cell, QLC）更多——所以 QLC 天生比 SLC 慢 3–6 倍。</p>
+
+<table>
+<thead><tr><th>单元类型</th><th>每单元比特</th><th>tR 典型范围</th><th>类比</th></tr></thead>
+<tbody>
+<tr><td>SLC</td><td>1 bit</td><td>约 25–30 µs</td><td>货架只有两档，一眼看清</td></tr>
+<tr><td>TLC</td><td>3 bit</td><td>约 40–100 µs</td><td>八档电压，得凑近看</td></tr>
+<tr><td>QLC</td><td>4 bit</td><td>约 85–170 µs</td><td>十六档，要拿放大镜看</td></tr>
+</tbody>
+</table>
+
+<div class="callout keypoint">
+<span class="callout-title">为什么 HBF 只敢接"读"的活</span>
+<p>在闪存里，读是相对便宜的操作：tR 比写入时间（tPROG）小一个数量级以上，比整块擦除（tBERS）小约两个数量级。写和擦才是真正的短板。这正是高带宽闪存（High Bandwidth Flash, HBF）只敢承载"读多写少"的模型权重与慢变上下文、不敢承接逐 token 刷新的 KV 缓存的器件级原因。</p>
+</div>
+
+<div class="callout warn">
+<span class="callout-title">冲突区 C1：HBF 延迟到底几微秒？三方各说各话</span>
+<p>公开资料里并存三组数字：器件文献的裸 TLC tR 40–100 µs；围绕送审规格的学术建模 tR≈4 µs；分析师口径约 10 µs（约为 HBM 的 100 倍）。其实三方量的不是同一层：裸 tR 由单元物理决定，封装再先进也缩不短；4–10 µs 是"数据已被预取进缓冲之后"的有效延迟，属于厂商目标值口径。本报告统一口径：<strong>裸 tR 不变，个位数微秒只是目标值</strong>。</p>
+</div>
+
+<details class="deep">
+<summary>深入细节：tR 的微观账单与一次读的全流程</summary>
+<p>tR 的微架构表达式是"感应次数 × 单次感应的三个阶段（预充、求值、放电）"：TLC 要 3 轮，QLC 更多。落到控制器级，一次读的总延迟约为命令开销＋tR＋数据传输＋纠错译码，典型值约 136 µs——单页 16 KiB 只对应约 120 MB/s。市售 SSD 标称的 3.5 GB/s 与这之间的巨大差距，完全靠内部并行与缓冲填平。另一个被低估的事实：同一颗 TLC die 内部三类页（LSB/CSB/MSB）的 tR 相差近 2 倍（58→107 µs），"按页类型布局数据"本身就是一种延迟优化手段。</p>
+</details>
+
+<h3>7.2 多雇拣货员有用吗：并行掩盖与它的天花板</h3>
+
+<p>既然单次读这么慢，能不能靠并行遮住？工程师想了四招，都已经成熟：缓存读（cache read）让搬运和纠错与下一次感应重叠；多平面（multi-plane）在同一 die 内并发操作；die 交织（die interleaving）在一个 die 忙时改指挥另一个；通道并行让多路同时开工。</p>
+
+<p>类比一下：这就像多雇几个拣货员轮班，可全仓库只有一部出货电梯——拣货可以并行，出货却要排队。实测数据很扎心：die 数、平面数、页大小分别翻倍，读吞吐的提升各只有约 <strong>10.9%</strong>（写倒有约 91.2%）。瓶颈在 I/O 总线：读的总线活动占整个执行周期的至少 50.5%，写只有约 7%——高级并行命令开多了，反而加剧电梯口的拥堵。</p>
+
+<div class="callout keypoint">
+<span class="callout-title">并行救不了单次慢读</span>
+<p>并行可以放大带宽、摊薄平均延迟，但不能缩短任何一次 tR。结论只有一个：<strong>单次慢读必须靠预取从关键路径上移除</strong>。这也是 HBF 采用"1024-bit 超宽接口＋大量 sub-array 并行＋SRAM 预取"组合、而不是单靠堆叠 die 换带宽的根本原因。</p>
+</div>
+
+<h3>7.3 HBF 的调度室里有没有"计算核"</h3>
+
+<p>HBF 的既定架构是：16 颗 NAND die 经硅通孔（Through-Silicon Via, TSV）垂直堆叠，底部键合一颗 CBA（CMOS 直接键合阵列）逻辑 die；1024-bit 接口对齐 HBM4 的封装规格，单堆目标容量 512 GB、读带宽 1.6 TB/s（厂商目标值）。这颗逻辑 die 的官方职责只有四项：调度各 die 内可独立并行读的 sub-array、驱动宽接口把数据送给 GPU、NAND 控制、物理层接口。</p>
+
+<div class="callout warn">
+<span class="callout-title">冲突区 C6：逻辑 die 上有通用 AI 算力吗</span>
+<p>提问者预设"逻辑 die 上有计算核，高并发下够不够用"。但截至 2026-07，无论官方资料还是学界模型，<strong>均未宣称逻辑 die 集成可编程计算单元或 AI 引擎</strong>——它做的是近存调度与缓冲，不是近存计算。官方也没把话说死（未来可能预留），所以这一条按"暂无公开证据"标注边界。</p>
+</div>
+
+<p>"不放算力"是保守还是明智？看看放了算力的同行交过的学费：</p>
+
+<table>
+<thead><tr><th>方案</th><th>算力配置</th><th>高并发下的代价</th></tr></thead>
+<tbody>
+<tr><td>HBM-PIM</td><td>每个 bank 内嵌一个计算单元，约 1.2 TFLOPS</td><td>计算时阻塞正常访存：一次大 GEMV 卡 13 µs，期间正常请求全部挨饿</td></tr>
+<tr><td>SmartSSD</td><td>SSD 里塞 FPGA</td><td>持续写负载下热节流，吞吐掉 50–60%</td></tr>
+<tr><td>HBF 逻辑 die</td><td>无通用算力，只做调度＋缓冲</td><td>绕开 bank 阻塞与热节流两条已暴雷的路</td></tr>
+</tbody>
+</table>
+
+<div class="callout verdict">
+<span class="callout-title">判定：问题问错了方向</span>
+<p>HBF 与存内计算（Processing-in-Memory, PIM）是两条本质不同的赌注：PIM 赌"就地算"，HBF 赌"预知＋预取"。前者的风险（bank 阻塞、热节流）已被实测暴露；后者的真正敏感点是 <strong>SRAM 容量、sub-array 调度均衡与功耗预算</strong>，而不是算力数字。评估 HBF 不该问"逻辑 die 算力多少"，而该问"缓冲和调度撑不撑得起预取流水"。</p>
+</div>
+
+<h3>7.4 索引卡片柜与暂存台：映射表和 SRAM 的容量账</h3>
+
+<p>SSD 靠一张"逻辑地址→物理地址"的映射表找数据，就像仓库的索引卡片柜。页级映射粒度细、随机写性能好，是主流选择，但表随容量线性增长：经验法则是 <strong>1 TB SSD 约需 1 GB DRAM</strong> 存放全量映射表（约容量的 0.1%）。</p>
+
+<p>卡片柜放不下全表怎么办？按需映射路线（以 DFTL 为代表）把全表存在闪存里、片上只缓存常用条目。省是省了，可一旦负载局部性差，每次读数据都退化成"先读映射页、再读数据页"两次闪存访问——实测性能悬崖最高可达 <strong>57%</strong>。优化也确实有效：PrefetchFTL 只用 512 KB SRAM 做映射缓存，靠局部性预取把命中率提升了 39.4%、整体 I/O 延迟降了 23.4%。</p>
+
+<p>把这笔账算到 HBF 单堆（512 GB、1.6 TB/s）头上，张力立刻显现：</p>
+
+<table>
+<thead><tr><th>项目</th><th>估算值</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>4 KB 页级全量映射表</td><td>约 512 MB</td><td>容量的 0.1%，片上 SRAM 根本放不下</td></tr>
+<tr><td>约 19 MB 超页级映射表</td><td>约 0.11 MB</td><td>粒度放大几千倍后，可常驻 SRAM</td></tr>
+<tr><td>读缓冲双缓冲下限</td><td>约 13–80 MB</td><td>按"2×带宽×读延迟"配置，取决于采信哪种延迟口径</td></tr>
+</tbody>
+</table>
+
+<div class="callout verdict">
+<span class="callout-title">判定：有条件的"够用"</span>
+<p>页级映射的约 512 MB 比读缓冲需求高一个数量级，两者绝无可能在片上 SRAM 共存。破局点有两个：一是改用约 19 MB 的超页映射，让映射表缩到约 0.11 MB、常驻 SRAM；二是利用 LLM 权重与慢变 KV"顺序、可预知、强局部"的读取特性，让映射项随权重布局静态常驻。<strong>若退回"小 SRAM 兼两职＋细粒度映射＋弱局部性负载"的组合，性能崩塌不是风险而是确定性事件。</strong></p>
+</div>
+
+<details class="deep">
+<summary>深入细节：按需映射为什么会摔下悬崖</summary>
+<p>DFTL 把全量页映射表存在闪存的翻译块里，片上 SRAM 只放缓存映射表与全局目录，按时间局部性选择性换入。负载局部性好时，它比前代方案响应快 78%；但局部性差时，映射缺失意味着每次数据读退化为"翻译页读＋数据读"两次访问，tR 被成倍放大——这正是 7.1 的慢读问题在地址翻译层的重演。后续工作的共识是"按局部性自适应粒度"：强局部性负载用大块整页装载，弱局部性反而要保守。这与预取的结论互为镜像：闪存世界的一切优化，最后都押在"访问可预知"上。</p>
+</details>
+
+<h3>7.5 什么时候按下"读"的按钮</h3>
+
+<p>LLM 推理的 decode 阶段逐层、顺序地消费权重和 KV，节奏稳定、可离线剖析——这是"提前发起慢读"的理想负载。各家系统在粒度与时机上的选择惊人地一致：</p>
+
+<table>
+<thead><tr><th>系统</th><th>粒度</th><th>时机/机制</th><th>效果</th></tr></thead>
+<tbody>
+<tr><td>Tutti</td><td>每层 K/V 对象（约 100 KB 级）</td><td>slack 感知调度，见缝插针</td><td>首 token 时延 −78.3%</td></tr>
+<tr><td>HCache</td><td>64-token 大块</td><td>传下一层与算当前层并行</td><td>比 KV offload 快 1.93×</td></tr>
+<tr><td>FlexGen</td><td>逐层流式</td><td>逐层预取流入 GPU</td><td>吞吐提升约 100×</td></tr>
+<tr><td>三星/LMCache</td><td>256-token 块（约 33 MB）</td><td>会话迁移时顺序读回</td><td>读写比 92:8</td></tr>
+</tbody>
+</table>
+
+<p>共识可以总结成一句话：<strong>粒度取中（约 100 KB–数 MB，或 64–256 token 一块），时机至少提前一层</strong>——用当前层的计算时间掩盖下一层的读延迟加传输时间。4 KB 太小（请求数爆炸、带宽利用率低），整层太大（内部碎片），中粒度块恰好是传输效率与管理粒度的折中。</p>
+
+<div class="callout warn">
+<span class="callout-title">反例：别把 DRAM 的经验照搬给 SSD</span>
+<p>Tutti 做过一个反面对照：把 DRAM 场景有效的逐层流水线生硬套到 SSD 上，I/O 粒度被切碎、请求数暴增，GPU 空转（气泡）反而升到约 80%，即便开了 GPU 直访存储也仍高于 70%。粒度与时机必须联合设备特性（tR、总线、队列深度）一起设计，不能抄作业。</p>
+</div>
+
+<h3>7.6 硬件四问判定汇总</h3>
+
+<div class="callout verdict">
+<span class="callout-title">四问四条判定</span>
+<ul>
+<li><strong>问 1（tR 与掩盖）：成立。</strong>tR 由单元物理分层（SLC/TLC/QLC 约 25–30/40–100/85–170 µs），并行只放大带宽、不缩短单次读，单次慢读只能靠预取移出关键路径。</li>
+<li><strong>问 2（逻辑 die 算力）：需修正。</strong>预设的"计算核"暂无公开证据；真正的敏感点在 SRAM、调度与功耗。</li>
+<li><strong>问 3（SRAM 够不够）：成立，附条件。</strong>必须改用超页映射并把 SRAM 留给读缓冲，否则最高 57% 的悬崖是确定性事件。</li>
+<li><strong>问 4（读何时触发）：成立，附条件。</strong>"提前一层＋中粒度块"是多系统共识，但照搬 DRAM 流水线会适得其反。</li>
+</ul>
+</div>
+
+<div class="callout takeaway">
+<span class="callout-title">要点速记</span>
+<ul>
+<li>tR 是物理量：SLC≈25–30 µs、TLC≈40–100 µs、QLC≈85–170 µs，封装改变不了它。</li>
+<li>读并行收益仅约 10.9%，瓶颈在 I/O 总线（占用 ≥50.5%）——并行救带宽，救不了单次慢读。</li>
+<li>截至 2026-07，HBF 逻辑 die 未见通用 AI 算力；PIM 同行的学费（13 µs bank 阻塞、热节流掉 50–60%）说明这不一定是坏事。</li>
+<li>1 TB SSD 的页级映射表约需 1 GB 内存；HBF 的出路是超页映射＋把 SRAM 尽量留给读缓冲。</li>
+<li>预取共识：中粒度块（约 100 KB–数 MB / 64–256 token）＋至少提前一层。HBF 的一切美好数字都押在"负载可预知"上。</li>
+</ul>
+</div>
+
+</section>

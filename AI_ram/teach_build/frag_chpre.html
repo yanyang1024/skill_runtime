@@ -1,0 +1,108 @@
+<section id="chpre" class="chapter">
+<h2>预备章 · 半导体存储扫盲：从 SRAM 到 HBF</h2>
+
+<div class="callout analogy">
+<span class="callout-title">💡 本章类比</span>
+<p>把大模型推理想成一位顶级厨师炒菜：GPU 是厨师，手速极快。手边的<strong>便利贴</strong>是 SRAM，记两笔随用随扔；灶台（案板）是 HBM，正在做的菜全摆在这；厨房储物架是 DRAM 内存；地下仓库是 SSD，东西多但来回很慢。本章讲这栋"厨房大楼"每层的脾气，以及两位新选手：一台挨着灶台的大冰箱（HBF），一个会自己切菜的仓库（NAND 存内计算）。</p>
+</div>
+
+<h3>预备.1 为什么存储是一座"金字塔"</h3>
+<p>一个无奈的事实：工程师造不出"又快、又大、又便宜"的存储，半导体物理逼你三选二——快的必然贵、必然小。于是计算机把存储搭成金字塔：塔尖放极少极快的，塔底放海量极慢的，数据按"最近用不用得上"在各层间搬运。</p><p>这座塔跨约<strong>六个数量级</strong>：塔尖的 SRAM 访问一次约 1 纳秒（ns），塔底的对象存储要几十到几百毫秒（ms）——相当于"抬手拿便利贴"和"坐飞机取货"的差距。成本则正好反过来。</p>
+<table><thead>
+<tr><th>层级</th><th>厨房类比</th><th>速度量级</th><th>容量量级</th><th>成本 / 掉电</th></tr>
+</thead>
+<tbody>
+<tr><td>SRAM（CPU/GPU 缓存）</td><td>手边便利贴</td><td>约 1 ns</td><td>MB 级</td><td>最贵 / 掉电即丢</td></tr>
+<tr><td>DRAM / HBM（主存、显存）</td><td>储物架 / 灶台</td><td>约 100 ns</td><td>数十 GB–TB 级</td><td>贵 / 掉电即丢</td></tr>
+<tr><td>NAND SSD（本地盘）</td><td>地下仓库</td><td>约 50–100 µs</td><td>TB–数十 TB 级</td><td>便宜 / 掉电不丢</td></tr>
+<tr><td>对象存储（云端 S3 类）</td><td>外地物流中心</td><td>数十–数百 ms</td><td>近乎无限</td><td>最便宜 / 掉电不丢</td></tr>
+</tbody>
+</table>
+<div class="callout keypoint">
+<span class="callout-title">📌 一句话记住金字塔</span>
+<p>越快越贵越小，越慢越便宜越大。存储系统的艺术，就是让厨师觉得"食材恰好都在手边"。</p>
+</div>
+
+<h3>预备.2 SRAM：手边的便利贴</h3>
+<p>SRAM（静态随机存储器，Static Random-Access Memory）是金字塔尖。它用 <strong>6 个晶体管</strong>搭成双稳态电路存 1 个 bit——像一盏通电就永远保持"开"或"关"的灯，读取就是看灯，所以快得飞起（约 1 ns）。</p>
+<p>代价显而易见：6 个晶体管才存 1 bit，占硅面积太大，贵到只能少量使用。CPU 的 L1/L2/L3 缓存、GPU 的片上缓存用的都是它，容量只有 KB 到几十 MB 级。它就是手边的便利贴：随手记、随手看，但贴不了几张。</p>
+
+<h3>预备.3 DRAM 与 HBM：储物架与灶台</h3>
+<p>DRAM（动态随机存储器，Dynamic Random-Access Memory）把 1 个 bit 压缩到"<strong>1 个晶体管 + 1 个电容</strong>"：电容有电是 1，没电是 0。面积比 SRAM 小一个数量级，于是便宜得多、容量大得多——你的内存条、服务器的主存都是它。</p>
+<p>"动态"二字来自一个麻烦：电容会漏电，几十毫秒就漏得失真，所以必须<strong>周期性整片刷新</strong>（refresh），把每个单元读出来再写回去。访问延迟约 100 ns，DDR5 单通道带宽约 50 GB/s 量级，服务器多通道聚合可达数百 GB/s。</p>
+<p>HBM（高带宽内存，High Bandwidth Memory）则是 DRAM 的"特种兵版本"：把 8–12 片 DRAM 裸片用<strong>硅通孔（Through-Silicon Via, TSV）</strong>——打穿硅片的垂直导线——垂直摞起来，接上 1024 bit 量级的超宽接口，用先进封装紧贴 GPU 摆放。距离近 + 接口宽，换来单堆栈约 1 TB/s（HBM3E 量级）的带宽；代价是贵且容量受限（单卡几十到上百 GB）。它就是案板：伸手可及、上菜飞快，但台面就那么大。</p>
+<details class="deep">
+<summary>深入细节：6 管 SRAM 与 1T1C DRAM 的物理差别</summary>
+<p>SRAM 的 6 个晶体管构成两个交叉耦合的反相器加 2 个存取管，互相锁存，通电即稳态，故称"静态"；读取无需对大电容充放电，所以快。DRAM 的 1T1C 里电容只有几十飞法（fF），读本身会破坏电荷，读完必须回写，加上漏电需定期刷新，"动态"由此得名。</p>
+
+</details>
+
+<h3>预备.4 NAND Flash：地下仓库的货架</h3>
+<p>NAND 闪存解决的是另一个问题：<strong>掉电不丢</strong>。它的单元是一个特殊晶体管，栅极里封着"电荷仓库"（早期的浮栅 Floating Gate，或主流的电荷俘获层 Charge Trap）：注入电子后开启电压改变，无电也能保持十年量级。擦写靠量子隧穿把电子"推"进"拉"出，会磨损绝缘层——所以闪存有寿命问题。</p>
+<p>省面积的办法是一个单元存多个 bit：把电荷量分成更多档位，代价是档位挨得近、易读错、写入更小心：</p>
+<table>
+<thead>
+<tr><th>单元类型</th><th>每单元 bit</th><th>读延迟 tR（约）</th><th>P/E 寿命（约）</th><th>相对成本</th></tr>
+</thead>
+<tbody>
+<tr><td>SLC（单级单元）</td><td>1</td><td>25–35 µs</td><td>约 10 万次</td><td>最贵</td></tr>
+<tr><td>MLC（多级单元）</td><td>2</td><td>约 50 µs</td><td>约 3 千–1 万次</td><td>高</td></tr>
+<tr><td>TLC（三级单元）</td><td>3</td><td>40–100 µs</td><td>约 1–3 千次</td><td>中（主流）</td></tr>
+<tr><td>QLC（四级单元）</td><td>4</td><td>85–170 µs</td><td>约数百次</td><td>最便宜</td></tr>
+</tbody>
+</table>
+<p>表里有两个新名词。<strong>tR（读延迟）</strong>是把数据从单元读进片上页缓冲的时间：读闪存要用<strong>感应放大器（Sense Amplifier）</strong>给单元加参考电压、测是否导通；单元存的 bit 越多，要分辨的电压档越多、感应轮数越多，所以 QLC 比 SLC 慢数倍——tR 是器件物理决定的硬约束。<strong>P/E 次数（编程/擦除次数，Program/Erase cycles）</strong>是寿命：TLC 约 1–3 千次就磨损失效。</p>
+<p>闪存还有一对著名的"不对称"：<strong>读按页（page，约 16 KB），擦除却必须按块（block，数百页、几 MB）整块进行</strong>，且不能原地改写。就像仓库货架：取一件商品很快，重摆一格却要清空整排。写慢、寿命有限是 NAND 的天性，后文会看到，这直接决定了 HBF 只敢承接"读多写少"的数据。</p>
+<p>幕后管家是 <strong>FTL（闪存转换层，Flash Translation Layer）</strong>：写请求被重定向到新位置，FTL 维护"逻辑地址 → 物理地址"映射表，外加磨损均衡（轮流用各块）和垃圾回收（搬走有效数据后整块擦除）。映射表查询频繁，必须缓存在 SRAM/DRAM 里，否则每次读都要先去闪存查一次表——第 7 章会讨论这张表该放多大。</p>
+<details class="deep">
+<summary>深入细节：为什么多 bit 单元更慢、更不耐用</summary>
+<p>一个单元能存的电荷总量有限。SLC 只分两档，余量巨大，感应一次即可判定；TLC 要切 8 档、QLC 切 16 档，相邻档位电压间隔压到几十毫伏，电荷泄漏、温度漂移、相邻单元干扰都可能让档位"越界"。因此多 bit 单元写入要小步多次逼近，读取要逐档试探（更长的 tR），磨损后余量也更早耗尽（更低的 P/E）。</p>
+</details>
+
+<h3>预备.5 SSD：把地下仓库打包成产品</h3>
+<p>你插进服务器的 SSD（固态硬盘，Solid State Drive）是上面一切的"组合装"：若干颗 NAND 颗粒 + 主控芯片（跑 FTL、做纠错 ECC）+ 一小片 DRAM/SRAM 缓存（放映射表和读写缓冲），靠多通道、多颗粒并行把带宽堆上去。</p>
+<p>接口层面，现代 SSD 走 NVMe（非易失性内存高速协议，Non-Volatile Memory Express）+ PCIe（外围组件互连高速标准，Peripheral Component Interconnect Express）总线：延迟约 50–100 µs，顺序读带宽 Gen4 约 7 GB/s、Gen5 约 14 GB/s。但离 HBM 仍差约两到三个数量级——地下仓库再升级电梯，也变不成灶台。</p>
+
+<h3>预备.6 HBF：给灶台配一台近身大冰箱</h3>
+<p>理解了 HBM，HBF（高带宽闪存，High Bandwidth Flash）一句话就能说清：<strong>把 HBM 的堆叠玩法用在 NAND 上</strong>。SanDisk/Kioxia 公布的方案：16 层 NAND 裸片用 TSV 垂直堆叠，底部键合一颗 CBA（CMOS directly Bonded to Array，CMOS 直接键合阵列）逻辑裸片——存储阵列与外围电路分开制造再贴合，各用最优工艺；逻辑裸片负责调度海量子阵列并行读、驱动向 HBM4 看齐的超宽接口，可直接摆在 GPU 旁边。</p>
+<p>目标很诱人：单堆栈容量约 512 GB（同代 HBM 的 8–16 倍），读带宽约 1.6 TB/s——容量对标 SSD，带宽对标 HBM，正好插进 DRAM 与 SSD 之间的空档。它就是紧挨灶台的大冰箱：比案板能装，比地下仓库近，适合放"经常会用、但不每秒都碰"的——比如长对话的历史 KV 缓存、MoE 模型里冷门的专家权重。</p>
+<div class="callout warn">
+<span class="callout-title">⚠️ 这些数字现在全是"目标值"</span>
+<p>HBF 是 2025 年才提出的概念，首批样品计划 2026 年下半年才出。上文所有性能数字（512 GB、1.6 TB/s、延迟）目前都是<strong>厂商目标值或学术建模口径</strong>，没有第三方实测；其读延迟预计仍是 HBM 的 10–100 倍，写与擦的短板也原样继承自 NAND。请把它当"有图纸、未交房"的期房来读。</p>
+</div>
+
+<h3>预备.7 CIM/PIM：让仓库自己切菜</h3>
+<p>最后一个概念换个角度。前面都在解决"怎么搬数据"，而存内计算（Compute-in-Memory, CIM）和近存计算（Processing-in-Memory, PIM）问的是：<strong>能不能不搬？</strong>芯片里搬运数据消耗的能量和时间往往超过计算本身，CIM/PIM 于是把乘加（Multiply-Accumulate, MAC）搬到存储阵列旁边（近存）甚至直接利用阵列内部的物理效应完成（存内）——相当于仓库自己把菜洗好切好，只把成品送上楼。</p>
+<p>具体到 NAND：字线加电压（输入）、单元电导代表权重、位线电流相加即求和——阵列天然就是一次大规模乘加。省掉搬运，又快又省电；代价是这是<strong>模拟计算</strong>：电流受噪声、温度、单元差异影响，精度打折扣。折扣多大、大模型哪些部分受得了，正是第 3、4 章的正题。</p>
+<details class="deep">
+<summary>深入细节：数字近存 vs 模拟存内</summary>
+<p>数字 PIM（如三星 HBM-PIM）在 DRAM 裸片里嵌入可编程小计算核，算的仍是精确数字逻辑，难点在功耗和阻塞正常访存；模拟 CIM 直接利用阵列的欧姆定律与基尔霍夫电流定律做乘加，阵列本身即计算器，能效上限更高，但要面对器件非理想性和模数转换开销。NAND CIM 多走后一条路。</p>
+</details>
+
+<h3>预备.8 速查总表</h3>
+<p>六位选手放在一起对比（均为量级口径）：</p>
+<table>
+<thead>
+<tr><th>介质（是什么）</th><th>延迟量级</th><th>带宽量级</th><th>容量 / 相对成本</th><th>易失性</th></tr>
+</thead>
+<tbody>
+<tr><td>SRAM：6 管单元，片上缓存</td><td>约 1 ns</td><td>极高（片上）</td><td>KB–百 MB / 最贵</td><td>掉电即丢</td></tr>
+<tr><td>DRAM：1T1C 需刷新，主存</td><td>约 100 ns</td><td>单通道数十 GB/s</td><td>GB–TB / 高</td><td>掉电即丢</td></tr>
+<tr><td>HBM：TSV 堆叠 DRAM，贴 GPU</td><td>约 100 ns 级</td><td>约 1 TB/s/堆栈</td><td>数十–上百 GB / 很贵</td><td>掉电即丢</td></tr>
+<tr><td>NAND：浮栅/电荷俘获单元</td><td>tR 数十–上百 µs</td><td>单颗粒约百 MB/s</td><td>单颗粒数十–上百 GB / 低</td><td>掉电不丢</td></tr>
+<tr><td>SSD：NAND＋主控＋FTL＋缓存</td><td>约 50–100 µs</td><td>约 7–14 GB/s</td><td>数 TB–数十 TB / 低</td><td>掉电不丢</td></tr>
+<tr><td>HBF：TSV 堆叠 NAND＋逻辑裸片</td><td>µs 级（目标值）</td><td>约 1.6 TB/s/堆栈（目标值）</td><td>约 512 GB/堆栈（目标值）</td><td>掉电不丢</td></tr>
+</tbody>
+</table>
+
+<div class="callout takeaway">
+<span class="callout-title">✅ 要点速记</span>
+<ul>
+<li>存储金字塔：越快越贵越小，越慢越便宜越大——SRAM→DRAM/HBM→SSD→对象存储，速度与成本各跨约六个数量级。</li>
+<li>SRAM 用 6 管换稳定高速（约 1 ns）；DRAM 用 1 管＋1 电容换密度（约 100 ns），代价是必须刷新；HBM 靠 TSV 堆叠＋超宽接口做到约 1 TB/s/堆栈。</li>
+<li>NAND 掉电不丢，但 tR 由器件物理焊死（TLC 约 40–100 µs），"页读块擦、不能改写"，TLC 寿命仅约 1–3 千次 P/E——读多写少才是它的主场。</li>
+<li>SSD = NAND 颗粒＋主控＋FTL 映射表＋DRAM 缓存；NVMe/PCIe 提供 µs 级延迟和 GB/s 级带宽，离 HBM 仍差约两到三个数量级。</li>
+<li>HBF 把 HBM 的堆叠思路搬到 NAND（16 层 TSV＋CBA 逻辑片），目标"容量对标 SSD、带宽对标 HBM"，但目前全是厂商目标值；CIM 把乘加搬进阵列，精度问题留给第 3、4 章。</li>
+</ul>
+</div>
+</section>

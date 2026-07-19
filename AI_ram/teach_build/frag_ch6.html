@@ -1,0 +1,99 @@
+<section id="ch6" class="chapter">
+<h2>第 6 章 · 搭系统的权衡术与"回放破案法"</h2>
+
+<div class="callout analogy"><span class="callout-title">💡 本章类比</span>
+<p>搭一套 AI 推理系统，有点像开快递公司：先按业务量算出要多少仓库和货车（从需求反推配置），再在"近而贵的前置仓"和"远而便宜的郊区仓"之间做权衡（存力阶梯）。系统跑起来变慢了怎么办？像办案一样调监控录像——把系统运行的"快照"录下来慢慢回放，看谁在那个时间点卡住了。本章就讲这两件事：怎么算配置，怎么破案。</p>
+</div>
+
+<h3>6.1 从需求反推配置：先算账，再买卡</h3>
+<p>推理系统设计已经被公式化：以第 5 章的服务等级目标（SLO）八件套为输入，走"显存公式→roofline 分相→SLO 反推并行→互联与存储分层"的六步流程即可完成初配。第一步是显存预算，两条公式背下来就够：<strong>权重显存＝参数量×每参数字节数</strong>（BF16 是 2 字节、FP8 是 1 字节、INT4 是 0.5 字节）；<strong>KV cache 每 token＝2×层数×KV 头数×头维×字节数</strong>，再乘上下文长度和并发数——它随两者<strong>线性</strong>增长，是容量规划的中心变量。感受一下量级：Llama-3.1-70B 每 token 的 KV 约 0.31 MB（多亏分组查询注意力（Grouped-Query Attention, GQA），比老式多头注意力省约 8 倍），单请求 128K 上下文就是约 40 GB，4 个并发要 160 GB——超过单张 H200 的全部 141 GB 显存；对老式 MHA 架构的 7B 模型，上下文约 26.7K token 时 KV 占用就超过权重本身。</p>
+
+<p>算完容量算性能，靠的是 roofline（屋顶线）模型的分相洞察：<strong>prefill（预填充，处理输入）是计算受限，decode（解码，逐字生成）是访存受限</strong>。实测证据很直观：A100 上输入超过 4K token 后，prefill 的 HBM 带宽利用率不足 10%，16K 时不足 1%——它几乎不碰带宽。由此得到一个重要的归因结构：<strong>TTFT 由算力决定，TPOT（token 间隔）由 HBM 带宽决定</strong>，存力取舍的主战场在 decode 相和 KV 搬运链路。这就是业界流行"PD 分离"（prefill/decode 分开部署）的原因：DistServe 实测 13B 模型单 A100 的每卡 goodput 只有 1.6 rps，拆成 2 张专做 prefill＋1 张专做 decode 后整体达 10 rps（每卡 3.3，提升 2.1 倍），评测最高 7.4 倍 goodput。</p>
+
+<details class="deep"><summary>深入细节：并行与互联的硬约束</summary>
+<p>并行策略受互联带宽封顶：NVLink 4 是 900 GB/s（H100/H200）、NVLink 5 是 1.8 TB/s（B200），而 PCIe Gen5 双向合计只有约 128 GB/s——所以张量并行（Tensor Parallelism, TP）要尽量留在 NVLink 域内，跨节点传 KV 走 IB/RDMA。好消息是 KV 传输本身很轻：25 Gb 链路下 DistServe 的 KV 传输耗时占比不到 0.1%。GPU 代际存力阶梯可作选型锚点：H100 80 GB/3.35 TB/s → H200 141 GB/4.8 TB/s（同 die 纯存力升级，70B 推理提速 1.9 倍）→ B200 192 GB/8 TB/s。生产环境还有两条经验值：显存利用率参数常设 0.85–0.92，并给激活开销（约 5–10%）和碎片（10–15%）留余量。</p>
+</details>
+
+<h3>6.2 存力阶梯：近的快但贵，远的便宜但慢</h3>
+<p>第六步是存储分层：高带宽内存（High Bandwidth Memory, HBM）放热 KV 和权重，DRAM 放温 KV，NVMe SSD 放冷 KV 和模型权重备份（SGLang HiCache 的 L1/L2/L3、NVIDIA Dynamo 的 G1–G4 都是这个思路）。各层 2025–2026 年的量级如下表——注意带宽和时延都差了不止一个数量级。</p>
+
+<table>
+<thead><tr><th>层级</th><th>带宽</th><th>时延</th><th>单价（$/GB）</th><th>角色</th></tr></thead>
+<tbody>
+<tr><td>HBM3e</td><td>约 1.2 TB/s（每堆）</td><td>10–100 ns</td><td>8–25</td><td>热数据：权重、热 KV</td></tr>
+<tr><td>DDR5 DRAM</td><td>约 38–51 GB/s（每条）</td><td>约 80 ns</td><td>3–12</td><td>温数据：温 KV</td></tr>
+<tr><td>CXL 内存</td><td>池化扩展</td><td>200–500 ns</td><td>4–7</td><td>容量扩展池</td></tr>
+<tr><td>NVMe SSD</td><td>Gen5 约 12–14.5 GB/s</td><td>50–100 µs</td><td>0.10–0.21</td><td>冷数据：冷 KV、权重备份</td></tr>
+</tbody>
+</table>
+
+<!--IMG:sec06_fig1-->
+<figure><figcaption>图说：带宽–时延坐标下的存力阶梯（单堆/单条/单盘口径）。左上的 NVMe 容量廉价但带宽不足 15 GB/s、时延高达百微秒级；右下的 HBM/SRAM 带宽达 TB/s 级但单价高两个数量级以上；中间阴影是"TB 级容量×TB/s 级带宽"的缺位区——这个层级目前不存在，正是 HBF（High Bandwidth Flash，高带宽闪存，目标约 1.6 TB/s、有效延迟 4–10 µs）、CXL 内存池与 KV 分层存储共同瞄准的空位。</figcaption></figure>
+
+<p>对存储行业更有操作意义的是<strong>单位带宽成本</strong>的换算：HBM 折合每 GB/s 带宽约 $0.24–1.0，而 15.36 TB 企业级 NVMe Gen5 盘（约 $3,250、顺序读 14.5 GB/s）折合每 GB/s 约 $224——也就是说，SSD 的容量单价便宜约 40–120 倍，<strong>带宽单价反而贵 2–2.5 个数量级</strong>。这个不对称是"读不如重算"拐点的经济学根源，也解释了为什么"把 KV 放到便宜介质"必须和预取、大块聚合 I/O、逐层流水等带宽补偿机制绑定设计。</p>
+
+<div class="callout warn"><span class="callout-title">⚠️ 口径风险提示</span>
+<p>上表中的 HBM/DDR5 单价均为分析师三角估计，没有公开价格指数，存在约 ±2 倍的不确定性；DRAM 在 2026 年还处在涨价周期。做采购决策时请把单价当"量级锚点"而非精确报价。</p>
+</div>
+
+<h3>6.3 核心权衡：容量换吞吐，但存在拐点</h3>
+<p>扩容为什么能换吞吐？因为 decode 的算术强度约等于 batch size：batch 越大，每一步读取全部权重和 KV 的开销被摊得越薄，吞吐近似线性上升，直到 HBM 带宽饱和。代价同样线性：KV 占用随 batch 上涨，挤占可服务并发、推高排队时延——所以在 SLO 约束下，目标函数必须是 goodput 而不是裸吞吐。极限案例是 FlexGen：单张 16 GB 的 T4 显卡，offload 到 208 GB DRAM＋1.5 TB SSD 上跑 1750 亿参数的 OPT，有效 batch 达 144–256，同样延迟预算下吞吐比基线高 40 多倍——但定位很明确：这是"以时延换吞吐"，只适合离线批处理。容量放哪一层比放多少更关键：DRAM 层的搬运可以通过逐层流水藏在注意力计算后面，而 SSD 层实测 GPU 气泡高达 70–80%，逐层流水反而更糟。</p>
+
+<p>成本侧有三大降本杠杆，按幅度排序。<strong>利用率</strong>：同一块 H100、同一模型，请求率从 1 rps 拉到饱和，每百万输出 token 成本从 $15.25 降到 $0.21（2.5–24 倍差距），而公开计算器普遍按 100% 利用率估算，恰好系统性低估真实成本。<strong>批大小</strong>：batch 1→64，吞吐约 1000→5000 tok/s、成本 $3→$0.6/百万 token，推荐 batch 32–128。<strong>量化</strong>：FP8 对 MoE 模型吞吐提升 69–74%，KV cache 量化到 FP8/INT8 占用减半、等效并发或上下文翻倍。</p>
+
+<div class="callout verdict"><span class="callout-title">🧭 专家判定：扩容不是越大越好</span>
+<p>边际收益递减已有系统级实证。阿里与浙大的 Kareto 把 KV 分层配置建成多目标优化问题（决策变量是 DRAM 容量、磁盘 TTL 与介质档位），靠历史 trace 回放仿真逼近 Pareto 前沿：相对静态 1024 GB DRAM 基线，实现吞吐＋9.3%、平均 TTFT −58.3%、总成本 −20.2%。其关键观察是：<strong>超过某个拐点后，存储成本会超过节省下来的算力成本</strong>；算力充裕时扩容几乎没有吞吐收益，有些负载的复用集中在少数前缀子树上、反而应该减配省钱。SGLang HiCache 官方文档独立确认同一规律：命中率与容量是非线性关系，多数可复用 KV 被缓存后，继续扩容收益边际。可操作的答案是：以"SLO 约束下的 goodput×成本"为目标函数，用自己的生产 trace 回放实测拐点位置，而不是按"越大越好"拍脑袋扩容。</p>
+</div>
+
+<h3>6.4 快照回放：像办案一样找瓶颈</h3>
+<p>系统慢了，瓶颈在算力、带宽、I/O 还是调度？别猜，调"监控录像"。回放方法论分三层。<strong>采集层</strong>：vLLM/SGLang 内置 profiler 抓请求级火焰图；nsys 给出全栈系统时间线，逐事件归因每个 CUDA kernel、内存拷贝和通信，是定位"GPU 气泡"的主工具；Chakra ET 是 MLCommons 标准快照格式，把计算/访存/通信算子及其依赖关系录成可移植的"卷宗"，由 Meta、NVIDIA 等共建；DCGM 负责导出指标时序。<strong>回放层</strong>：用 bench 工具和公开生产 trace（Azure、BurstGPT、Mooncake）复现真实负载——真实负载有明显的日/周周期性，可以拿上周同时段的 trace 回放数百种"容量×策略×硬件"配置，指导下一周期供给。<strong>仿真层</strong>：不烧 GPU 做 what-if 分析——微软 Vidur 预测 TTFT 误差 5–10%、吞吐误差 10–15%，DistServe 模拟器复现 SLO 达成误差 ≤2%，Kareto 模拟器则专门建模 KV 分层与 I/O 停顿。</p>
+
+<p>归因层的核心是一棵可操作的决策树：先固定可复现负载（固定并发与输入/输出长度），再用 DCGM 双指标分类，最后用 nsys 时间线确认证据链。</p>
+
+<table>
+<thead><tr><th>观测量</th><th>瓶颈类别</th><th>首选处置</th></tr></thead>
+<tbody>
+<tr><td>MBU&gt;80–90% 且 SM&lt;60%</td><td>访存受限（存力域）</td><td>换大带宽 GPU、KV 量化、KV 分层下沉</td></tr>
+<tr><td>SM&gt;80% 且 MBU&lt;60%</td><td>计算受限</td><td>加 GPU/调 TP、算子融合与 kernel 优化</td></tr>
+<tr><td>双指标均低＋时间线有空隙</td><td>I/O 或网络受限</td><td>查 offload I/O 路径、NIC 带宽、调度开销</td></tr>
+<tr><td>双指标均低＋队列积压</td><td>容量/调度瓶颈</td><td>扩 KV 池、提命中率、cache-aware 调度</td></tr>
+</tbody>
+</table>
+
+<p>这里 MBU 是内存带宽利用率（Memory Bandwidth Utilization），SM 是 GPU 计算单元活跃度，两者都由 DCGM 直接导出。使用决策树有个关键提醒：<strong>阈值必须分相解读</strong>——prefill 本来就几乎不用 HBM 带宽（MBU&lt;10% 是正常态而非异常），对全流程套同一阈值会把 prefill 误判成 I/O 瓶颈，所以 profile 应按 prefill/decode 分别抓取。四条路径里有两条落在存力域，对存储团队来说，瓶颈判定过程本身就是存储选型（档位、带宽、I/O 路径）的验证闭环。此前业界两则看似矛盾的实测——一个报告 SSD 恢复 KV 时 GPU 气泡超 70%，一个报告存储加速后 130K 提示 TTFT 快 56 倍、吞吐高 22 倍——根源就在 I/O 粒度与预取/流水机制的差异，这类争议可以被回放实验直接裁决：仿真保真的关键不在介质模型，而在 I/O 路径建模。</p>
+
+<h3>6.5 存力监测清单：破案要看哪些仪表盘</h3>
+<table>
+<thead><tr><th>指标</th><th>工具</th><th>怎么看</th></tr></thead>
+<tbody>
+<tr><td>HBM 带宽利用率 MBU</td><td>DCGM→Prometheus</td><td>持续 &gt;80–90% ＝访存受限；须与 SM 活跃度配对判读</td></tr>
+<tr><td>显存占用</td><td>DCGM</td><td>推理副本剩余 &lt;4 GB 告警；预留 5–10% 余量</td></tr>
+<tr><td>KV cache 占用率</td><td>vLLM 指标</td><td>趋近 1 ＝并发被打满；&gt;95% 触发抢占</td></tr>
+<tr><td>Prefix 命中率</td><td>vLLM/SGLang 日志</td><td>下降＝容量不足或复用差；agentic 负载应 &gt;95%</td></tr>
+<tr><td>GPU 气泡率</td><td>nsys</td><td>SSD 恢复 KV 时 70–80% 是实测上界；DRAM 层应被流水隐藏</td></tr>
+<tr><td>PCIe / NVLink 流量</td><td>DCGM</td><td>offload 走 PCIe 时是第一嫌疑；骤降提示链路故障</td></tr>
+<tr><td>SSD 带宽 / IOPS / 时延</td><td>iostat、盘厂计数器</td><td>Gen5 企业盘参考读速约 14.5 GB/s</td></tr>
+<tr><td>引擎队列</td><td>vLLM 指标</td><td>等待队列持续 &gt;0 ＝容量不足；TTFT p95 超 1.5×SLO 告警</td></tr>
+</tbody>
+</table>
+
+<p>落地顺序是"先分相、再下钻"：先用 MBU×SM 完成四分类，再在存力域内沿"KV 占用→命中率→offload 流量与气泡→链路（PCIe/NVLink/SSD）"逐层下钻。例如 MBU 高但命中率低，指向容量不足；命中率正常但气泡率高，指向 I/O 路径工程（粒度、队列深度、是否用 GDS）而非介质本身。对存储团队而言，清单里的主责域是五行：SSD IOPS/带宽、offload 流量与时延、GPU 气泡、PCIe/NVLink 链路、分层命中——正好对应介质选型、I/O 路径工程与容量拐点三个决策变量。</p>
+
+<details class="deep"><summary>深入细节：两个口径警告与健康指标</summary>
+<p>其一，vLLM 与 SGLang 的命中率口径不同（仅 GPU 层 vs "缓存 token/提示长度"的跨层口径），跨系统比较前必须先对齐。其二，社区监测仍碎片化：SGLang 社区明确指出缺 per-request 的 TTFT 分解与 HiCache 分层命中指标（"HiCache tier performance is invisible"），L2/L3 的搬运时间需要自建埋点。另外 host 侧 page cache 命中率在推理文献中极少作为 KPI——主流引擎用 GDS/O_DIRECT 或自管缓冲绕过它，只建议作为文件后端 KV 场景的低置信度补充。健康类指标也别忽略：HBM 温度超 95°C、die 超 83°C 与降频会直接压低有效带宽；Tensor Core 利用率低于 30% 则提示算子没跑在 Tensor Core 上。</p>
+</details>
+
+<div class="callout verdict"><span class="callout-title">🧭 专家判定</span>
+<p>"系统搭建可公式化、瓶颈可用回放识别"——<strong>两条预设均成立</strong>。六步流程（SLO 输入→显存公式→roofline 分相→并行与互联→存储分层）可落地；存力 trade-off 可在 goodput×成本目标函数下定量求解；回放已形成"采集→回放→仿真→归因"的完整方法栈，瓶颈识别可操作、可复现。需要修正的预期有两个：一是"容量越大越好"（拐点后存储成本反超算力节省），二是"SSD 层一定能提速"（收益强依赖 I/O 路径工程）。方法栈的边界是仿真保真度（Vidur 的 TTFT 误差 5–10%，关键决策要以实机 profile 复核）与监测口径碎片化（跨系统比较先对齐指标口径）。</p>
+</div>
+
+<div class="callout takeaway"><span class="callout-title">✅ 要点速记</span>
+<ul>
+<li>两条公式起步：权重显存＝参数×字节数；KV/token＝2×层数×KV 头×头维×字节，随上下文与并发线性增长（128K×4 并发就能吃掉一张 H200）。</li>
+<li>prefill 吃算力、decode 吃带宽：TTFT 由算力决定，TPOT 由 HBM 带宽决定——存力取舍主战场在 decode 与 KV 搬运。</li>
+<li>存力阶梯存在"TB 容量×TB/s 带宽"缺位区（HBF 的目标空位）；SSD 容量便宜 40–120 倍，带宽反而贵 2–2.5 个数量级。</li>
+<li>扩容有拐点（Kareto）：超拐点存储成本反超算力节省；用自己的 trace 回放找拐点，别按"越大越好"扩。</li>
+<li>破案三板斧：DCGM 双指标（MBU×SM）分类 → nsys 时间线确认 → 沿"KV 占用→命中率→气泡→链路"下钻。</li>
+</ul>
+</div>
+</section>

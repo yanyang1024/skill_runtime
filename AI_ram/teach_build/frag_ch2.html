@@ -1,0 +1,166 @@
+<section id="ch2" class="chapter">
+<h2>第 2 章 · 给 GPU 配一个"近身大冰箱"：HBF 登场后的架构</h2>
+
+<div class="callout analogy">
+<span class="callout-title">💡 本章一句话类比</span>
+<p>把 GPU 想象成一位厨师：HBM 是他手边的灶台，快但小，只放得下正在炒的几盘菜；SSD 是地下仓库，大但慢，取趟货要几分钟。高带宽闪存（High Bandwidth Flash，HBF）就是给厨房新添的一台"近身大冰箱"——容量是灶台的一二十倍，伸手几秒钟就能拿到食材。本章要讲的是：这台冰箱放进厨房之后，整个上菜流程会发生什么变化。</p>
+</div>
+
+<h3>2.1 先看需求：GPU 到底缺不缺这台冰箱？</h3>
+
+<p>大模型推理时，每一段对话历史都要存一份"记忆"，叫 KV 缓存（KV cache）。下次对话接着上文聊，这份记忆可以直接复用，省去重新计算。问题是：这份记忆有多大、会被复用多少次、放在哪一层最划算？</p>
+
+<p>生产环境的实测数据给出了两个关键事实：</p>
+
+<ul>
+<li><strong>复用窗口又短又集中。</strong>阿里云的生产追踪（ATC'25）显示：80% 的 KV 复用发生在 10 分钟以内（聊天场景）甚至 10 秒以内（API 场景）；一个 KV 块的 99 分位寿命只有 97 秒；10% 的"热门块"贡献了 77% 的复用。也就是说，只要容量够撑过这十来分钟，命中率就能接近理想值——测算下来大约是 HBM 容量的 2 到 4 倍。</li>
+<li><strong>读多写少到夸张的程度。</strong>FlexGen 的实测 trace 里，KV 读带宽 2.0 GiB/s、写带宽只有 11 MiB/s，读写比约 186:1。这正是闪存最喜欢的活儿：闪存怕写（写入伤寿命）、不怕读。</li>
+</ul>
+
+<p>可现实很尴尬：现有服务器约 2 TB 的主机内存（DRAM）只能留住约 5 分钟的 KV，而 10 分钟的复用窗口需要更大的容量——命中率就被这道"容量闸门"硬生生截断了。分层缓存系统 CachedAttention 的实证很直观：只用 HBM 时命中率约 0%，加了 SSD 层后升到 56–89%。HBF 单封装约 4 TB（8 个堆栈、每堆栈 512 GB），容量是 HBM 的 8–16 倍，正好把这道闸门抬上去。SK hynix 的模拟显示，用"HBM + HBF"组合跑 1M/10M token 超长上下文，吞吐分别提升 1.25 倍和 6.14 倍，能效提升 2.69 倍。</p>
+
+<h3>2.2 命中率如何变成用户能感受到的速度</h3>
+
+<p>"命中率提高"是后台指标，用户关心的是两件事：第一个字多久出来（首 token 时延，TTFT），以及整体服务能扛多少请求（吞吐）。真实系统的数据告诉我们，这条传导链非常直接：</p>
+
+<table>
+<thead><tr><th>系统/来源</th><th>做了什么</th><th>用户体验到的效果</th></tr></thead>
+<tbody>
+<tr><td>Marconi（2024）</td><td>更聪明的缓存准入与驱逐</td><td>TTFT 降 71.1%</td></tr>
+<tr><td>RTP-LLM（阿里生产）</td><td>分层 KV + 前缀缓存复用 +215%</td><td>TTFT P95 降约 35–37%</td></tr>
+<tr><td>LMCache + VAST</td><td>预计算 KV 直接命中</td><td>128K 上下文 TTFT 从 >11 s 压到 1.5 s</td></tr>
+<tr><td>HCache（EuroSys'25）</td><td>混合恢复方案</td><td>逐字间隔（TBT）劣化 ≤4%，代价可控</td></tr>
+</tbody>
+</table>
+
+<p>注意表里隐藏的一条暗线：<strong>命中之后的"取回速度"同样重要</strong>。VAST 那个 7 倍多的 TTFT 压缩，依赖的是 400 Gbps 的高端网络；而在普通 10 Gbps 云链路上，KV 传输能吃掉端到端时间的一半以上。学界把这条线叫"读-算拐点"：取回慢于重算，缓存就白搭，拐点大约在 10–80 Gbps 链路带宽或 24–37 GB/s 存储带宽。HBF 单堆栈读带宽 1.6 TB/s，超过拐点 40–65 倍——取回一份 128K token、70B 模型的 KV（约 42 GB），NVMe 固态盘要约 3 秒，HBF 只要约 26 毫秒，从"根本等不起"变成"可以和计算重叠掉"。</p>
+
+<div class="callout keypoint">
+<span class="callout-title">📌 评价指标要换</span>
+<p>越过读-算拐点之后，衡量 HBF 价值的第一指标就不再是 SSD 时代的"命中率"，而是"有效延迟预算 × 聚合带宽利用率"——反正 miss 的代价已经可控，预取从"必须命中"降级为"锦上添花"的延迟掩盖手段。</p>
+</div>
+
+<h3>2.3 HBF 到底有多快？三个数字打架了</h3>
+
+<p>如果你去查 HBF 的读延迟，会查到三个互相矛盾的数字，而且每个都有出处。这不是谁错了，而是大家在不同的"楼层"量体温：</p>
+
+<table>
+<thead><tr><th>口径</th><th>数值</th><th>在哪一层测的</th></tr></thead>
+<tbody>
+<tr><td>厂商/分析师</td><td>约 10 µs（约为 HBM 的 100 倍）</td><td>系统级有效访问，含控制器与接口</td></tr>
+<tr><td>OCP 送审/学术建模</td><td>tR ≈ 4 µs（首批数据到达）</td><td>堆栈级，经并行与缓冲后的流水线延迟</td></tr>
+<tr><td>裸 NAND 器件</td><td>TLC 40–100 µs，QLC 85–170 µs</td><td>存储单元到页缓冲的裸读</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<span class="callout-title">⚠️ 争议区 C1：延迟数字怎么信？</span>
+<p>裸闪存的读取由物理感知次数决定，堆叠再多 TSV 也不会变快；所谓"个位数微秒"是 SLC 模式加内部 96 个子阵列并行、再加 SRAM 双缓冲预取之后的<strong>流水线化目标值</strong>，且 HBF 样品要到 2026 年下半年才出样，目前全部是目标值或建模值，没有第三方实测。工程上的含义很硬核：一次 4 µs 的读会让一次 4 µs 的矩阵-向量运算变慢 50%，必须靠预取流水藏起来。所以一切把 HBF 放进逐 token 生成回路的架构，前提都是"访问模式可预知"——KV 是逐层顺序消费的，满足；随机细粒度读，不满足。</p>
+</div>
+
+<h3>2.4 MoE：和 HBF 天生一对</h3>
+
+<p>混合专家模型（Mixture-of-Experts, MoE）每次只叫醒几位"专家"干活，其余专家睡觉。这和"大容量慢介质"简直是绝配：睡着的专家放冰箱里，要用了再拿。Mixtral-8x22B 光专家参数就超过 256 GB，是同等计算量稠密模型的 4–5 倍——灶台肯定放不下。</p>
+
+<p>但"放冰箱"路线有个老难题：你怎么预测下一个要叫醒谁？2023–2026 年的系统给出的预测命中率跨度极大——从 17% 到 99%：</p>
+
+<table>
+<thead><tr><th>系统</th><th>策略</th><th>预测/命中率</th><th>性能</th></tr></thead>
+<tbody>
+<tr><td>MoE-Lightning（2024）</td><td>不靠预测，纯 I/O 流水线</td><td>—（吞吐型）</td><td>单张 16 GB 显卡跑 Mixtral，最高 10.3 倍</td></tr>
+<tr><td>Fate（2025）</td><td>跨层门控预测 + 前 4 层全缓存</td><td>命中 99.08%</td><td>decode 提速 4.1 倍</td></tr>
+<tr><td>ExpertFlow（2024）</td><td>预测调度 + 自适应缓存</td><td>命中 91.96%</td><td>显存省 93.7%</td></tr>
+<tr><td>MoE-Beyond（2025）</td><td>轻量 Transformer 预测器</td><td>命中 17%→72%</td><td>缓存命中 +55%</td></tr>
+</tbody>
+</table>
+
+<p>命中率为什么差这么多？两个变量：能不能改模型（改门控、加哈希预测可以上 90%，但损失通用性），以及层深（浅层路由分散、猜不准；深层路由集中、好猜）。更扎心的是研究者的自我批评："预测收益有限，因为专家加载成本远大于计算成本"——在 32 GB/s 的 PCIe 链路上搬权重，比片上计算慢约 50 倍。</p>
+
+<p>这恰恰暴露了问题的本质：<strong>"缓存 + 预取"这套复杂把戏的根因，是慢介质带宽太低、猜错代价太高。</strong>HBF 把慢介质带宽抬高约两个数量级（1.6 TB/s 对 NVMe 的约 7–14 GB/s），和 HBM 的带宽差缩到约 3 倍——"预取失效"是低带宽时代的病，HBF 是治本：猜错了也无所谓，现场读一个专家的代价落在可接受区间。连"负载均衡训练抹平热点"这个原本的副作用，也变得无害了。</p>
+
+<div class="callout verdict">
+<span class="callout-title">🧭 专家判定：HBF 不但不杀 MoE，反而奖励它</span>
+<p>MoE 的核心价值是"容量与每 token 计算解耦"（671B 参数的质量、37B 的计算成本），这与内存介质无关；而 HBF 的"稀疏读 + 推理期只读 + 容量巨大"三重特性恰好匹配。吞吐型负载会发生质变；边界条件也有两条：极致低延迟的单请求（batch=1）场景只是改良不是质变；专家数继续膨胀（256→384→512）后，单封装未必永远装得下整模型，届时会演化为"HBF 内全专家 + 少量跨封装专家并行"的混合拓扑。对照证据来自边缘侧：iPhone 上用 NVMe（4–6 GB/s）流式跑 397B 的 MoE 只有 0.6 token/s，瓶颈明明白白是 SSD 带宽——HBF 恰好把这块短板抬高两个数量级。</p>
+</div>
+
+<h3>2.5 decode 是"搬字节"的体力活：batch 与 KV 容量公式</h3>
+
+<p>生成阶段（decode）每吐一个字，都要把全部权重读一遍，但每个字节只做约 2 次浮点运算——算术强度仅 1–2 FLOP/B，比 GPU 的盈亏平衡点低两个数量级，Tensor Core 空闲率高达 99.7%。这就是为什么<strong>"带宽即吞吐"</strong>：H200 相对 H100 算力没变、带宽多 43%，decode 吞吐就直接多 43%。</p>
+
+<p>想让 GPU 不闲着，办法是把多个请求凑成一批（batch）：权重读一次、服务 B 个请求。实测红利惊人——Llama-3.1-70B 在 H100 上 batch 从 1 加到 64，吞吐从约 550 涨到约 12,000 token/s（22 倍）。代价是首 token 变慢（80 ms → 700 ms），而且 batch 上限被两道闸门卡住：HBM 容量（KV 得放得下）和延迟预算。</p>
+
+<p>容量闸门有多紧？看 KV 公式就明白。每 token 的 KV 占用由注意力结构决定：</p>
+
+<table>
+<thead><tr><th>模型</th><th>注意力结构</th><th>KV/token</th><th>128K 上下文占用</th></tr></thead>
+<tbody>
+<tr><td>Llama-3-70B</td><td>GQA-8，80 层</td><td>320 KB</td><td>约 40 GiB/请求</td></tr>
+<tr><td>Llama-3-405B</td><td>GQA-8，126 层</td><td>504 KB</td><td>约 62 GiB/请求</td></tr>
+<tr><td>DeepSeek-V3</td><td>MLA，61 层</td><td>约 70 KB</td><td>约 8.4 GiB/请求</td></tr>
+</tbody>
+</table>
+
+<p>注意力结构是一阶变量：DeepSeek 的 MLA（Multi-head Latent Attention，多头潜在注意力）比传统 MHA 省 57 倍。同一台 H200（141 GB）跑 70B 模型：8K 上下文能塞约 27 个并发，128K 只剩约 2 个，1M 一个都放不下。加上 4 TB HBF 后，128K 的 batch 上限能从约 51 抬到约 500——容量闸门被抬升 1–2 个数量级。还要注意一个新现象：长上下文下 KV 流量会反超权重流量（128K 的 GQA 请求每步要 0.84 TB/s，MLA 只要 0.18 TB/s），两三个并发就越过交叉点，这正是"HBM 之后必须加一层大容量闪存"的根本动因。</p>
+
+<details class="deep">
+<summary>深入细节：容量公式、交叉点与预取判据</summary>
+<p>batch 上限公式：<code>B_max = (M_HBM − W_model) / (KV_token × S)</code>，S 为上下文长度。KV 流量与权重流量相等的交叉并发：<code>B* = W_active / (S × KV_token)</code>，代入得 70B FP8 @128K 的 B*≈1.7，DeepSeek-V3 @128K 的 B*≈4.1。预取能否掩盖取回延迟的判据为 <code>T_load·L_hist ≤ T_pref·L_new + S_buf/BW_eff</code>：HBF 把 T_load 压缩约两个数量级，不等式显著放松；但 agent 类负载每轮只追加约 429 个 token（L_new 极小），掩盖窗口最紧，仍需调度器提前看路。另一个常被忽视的收口约束是写入耐久：DeepSeek 生产口径每 GPU 每天写 KV 约 23–27 TB，1 TB SLC 模式 HBF 约可承 55 TB/天；按 100 万次 P/E 核算 5 年有 7.6 倍余量，但按 10 万次 P/E 口径就不够——可行性对 P/E 假设一阶敏感。</p>
+</details>
+
+<h3>2.6 新厨房布局：灶台、冰箱、地下仓库各司其职</h3>
+
+<p>把所有证据拼起来，HBF 时代的推理内存层级收敛成下面这张分工表（参照 NVIDIA Dynamo KVBM 的 G1–G4 口径）：</p>
+
+<table>
+<thead><tr><th>层级</th><th>介质</th><th>时延/带宽</th><th>容量</th><th>分工与能否进 decode 回路</th></tr></thead>
+<tbody>
+<tr><td>G1 热层（灶台）</td><td>HBM，封装内</td><td>约 100 ns；3.35–8 TB/s</td><td>80–288 GB</td><td>活跃 KV、激活、共享专家；原生在回路内</td></tr>
+<tr><td>G2 温层</td><td>主机 DRAM，PCIe/CXL</td><td>约 10–100 µs；约 63 GB/s</td><td>约 TB 级/节点</td><td>温 KV、卸载缓冲；边缘可用</td></tr>
+<tr><td>G2.5 容量层（近身冰箱）</td><td>HBF，封装内</td><td>有效约 4–10 µs（目标值）；1.6 TB/s×N 堆栈</td><td>约 4 TB/GPU</td><td>全量专家、权重、温/冷 KV；须 SRAM 预取配合可进回路</td></tr>
+<tr><td>G3.5 网络层（地下仓库）</td><td>ICMS：DPU 挂载闪存</td><td>约 10 ms；800 Gb/s/DPU</td><td>PB 级/pod</td><td>跨节点 KV 复用池；只做预驻，不进回路</td></tr>
+<tr><td>G4 归档层</td><td>对象存储</td><td>约 100 ms</td><td>弹性</td><td>冷数据归档；不进回路</td></tr>
+</tbody>
+</table>
+
+<p>分水岭只有一条：<strong>能不能进逐 token 生成的 decode 回路</strong>。HBF 是封装内近存，6 堆栈聚合带宽约 9.6 TB/s，已是单卡 HBM 的两倍，SanDisk 官方仿真显示用 HBF 承载 405B 模型权重，decode 性能与"无限容量 HBM"基线相差不到 2.2%；而 ICMS（Inference Context Memory Storage，推理上下文内存存储）走的是以太网挂载的 pod 级共享路线，约 10 ms 时延决定它只能做跨节点 KV 预驻——NVIDIA 目前押注的正是这条 ICMS 路线，尚未采用封装内 HBF。两条路线互补而非互斥。</p>
+
+<h3>2.7 仿真工具要补什么课，以及 SSD 到底该不该用</h3>
+
+<p>想提前评估 HBF 系统，靠拍脑袋不行，得靠仿真。现有工具链（Vidur、LLMServingSim、FlashAccel 等）要适配"HBM + HBF 两级近存"，除了容量带宽参数，还必须新增这些模型侧因素：</p>
+
+<ol>
+<li><strong>注意力形态</strong>：MHA/GQA/MLA/稀疏注意力直接决定 KV 字节数（差 57 倍）与单请求带宽（0.18–0.84 TB/s，差约 4.7 倍）；</li>
+<li><strong>结构参数</strong>：层数、隐藏维、KV 头数；MoE 的专家数/top-k/共享专家；</li>
+<li><strong>精度配置</strong>：权重 FP8、KV FP8（字节再减半）；</li>
+<li><strong>负载画像</strong>：上下文长度分布 × 并发 × 到达过程；</li>
+<li><strong>HBF 微架构与布局调度</strong>：堆栈/plane 数、超页大小、P/E 与 retention、KV 块到 plane 的均衡（布局不良带宽损失可达 52%）、预取深度；</li>
+<li><strong>层级策略与 SLO</strong>：G1–G4 的放置/晋升/降级、TPOT/TTFT 预算、抢占重算代价。</li>
+</ol>
+
+<div class="callout keypoint">
+<span class="callout-title">📌 微调的关键不在介质模型，而在 I/O 路径</span>
+<p>仿真适配 HBF 最容易做错的地方，是把 I/O 栈简化成单一带宽数字。GPU 直访还是 CPU 拷贝、队列深度、对象粒度——这些才决定 HBF 的带宽红利能不能兑现。下面的 SSD 之争，分歧根源正在于此。</p>
+</div>
+
+<div class="callout warn">
+<span class="callout-title">⚠️ 争议区 C2：SSD 层到底该不该进 KV 层级？</span>
+<p>反方（Tutti, 2026）实测：朴素三级缓存下从 SSD 恢复 KV，GPU 空转占总时延 70–80%，结论"不再有益"——根因不是 SSD 带宽，而是分页 KV 布局碎片化：128K token 的 KV 相当于约 25 万个散落的 80 KB 小对象，要上千次随机访问。正方（LMCache 社区、VAST、NetApp）则报告 3–10 倍时延下降、最高 15 倍吞吐，VAST 靠 400 Gbps RDMA 把 128K TTFT 从 >11 秒压到 1.5 秒。两边都为真，差别在系统怎么做。</p>
+</div>
+
+<div class="callout verdict">
+<span class="callout-title">🧭 专家判定：分水岭是三个工程条件</span>
+<p>SSD（以及 HBF）层能不能用，取决于：(i) GPU 侧直接发起 I/O，消除 CPU 中心化启动；(ii) 粗粒度对象化，聚合成 ≥256 token 的大块批量读写，避免数十万碎片；(iii) 按延迟余量调度，大块提前取而非逐层碎取。Tutti 自己满足这三条后，SSD 后端逼近 DRAM 后端：严格 SLO 下 TTFT 降 78.3%、可承载请求率翻倍、成本降 27%。对 HBF 的启示是前置性的：1.6 TB/s 的高带宽同样需要 GPU 直连 I/O 与粗粒度布局来兑现，否则带宽红利会被软件栈吞没。这不是"SSD 要不要"的争论，而是 HBF 系统设计必须继承的教训。</p>
+</div>
+
+<div class="callout takeaway">
+<span class="callout-title">✅ 本章要点速记</span>
+<ul>
+<li>KV 复用窗口短（80% 在 10 分钟内）且读写比约 186:1，天然适合"放闪存、读为主"；DRAM 只能留住约 5 分钟，容量落差是命中率损失的结构性来源。</li>
+<li>读-算拐点约 10–80 Gbps；HBF 单堆栈 1.6 TB/s 超拐点 40–65 倍，取回 128K KV 从约 3 秒缩到约 26 毫秒，评价指标从"命中率"转向"有效延迟 × 聚合带宽利用率"。</li>
+<li>HBF 延迟有 ~10 µs / tR≈4 µs / 裸 NAND 40–100 µs 三种口径，分别对应系统级、流水线级、器件级；2026 年出样前全是目标值。进 decode 回路的前提是访问可预知 + SRAM 预取流水。</li>
+<li>HBF 治本"预取失效"，MoE 被奖励而非淘汰；decode 的算术强度仅 1–2 FLOP/B，"带宽即吞吐"，batch 是杠杆但受容量与 SLO 两道闸门约束；MLA 比 MHA 省 57 倍 KV。</li>
+<li>新三级分工：HBM 热层（灶台）+ HBF 容量层（近身冰箱，约 4 TB）+ ICMS 网络层（地下仓库，只做预驻）；SSD/HBF 层能否入列，分水岭是 GPU 直连 I/O、粗粒度对象化、余量感知调度三条件。</li>
+</ul>
+</div>
+
+</section>
