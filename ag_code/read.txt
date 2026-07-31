@@ -1,0 +1,81 @@
+   一、组件分工（当前实现 vs 参考方案）
+
+   ┌──────────────────────┬─────────────────────────────────────────────────────────────────────────────┬────────────────────────────────────────────────────────────┐
+   │ 组件                 │ 职责                                                                        │ 路径                                                       │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ LoopController       │ 编排器：单例，每会话一个 _LoopState，主循环 task 驱动                       │ backend/app/loop_controller.py                             │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ Recommender          │ 旁路 LLM（deepseek-chat）：读 opencode 历史 + workspace 快照 → 输出 JSON 建 │ backend/app/recommender.py                                 │
+   │                      │ 议 + stop_decision                                                          │                                                            │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ EventBus             │ 每会话一条到 opencode /event 的持久 SSE，解析后 fan-out 给多个              │ backend/app/event_bus.py                                   │
+   │                      │ asyncio.Queue                                                               │                                                            │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ Loop API             │ start/pause/stop/status 四个端点                                            │ backend/app/routers/loop.py                                │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ SSE 双通道           │ POST /stream/chat/{id}（用户消息，done 结束）+ GET /stream/subscribe/{id}（ │ backend/app/routers/stream.py                              │
+   │                      │ 持久订阅，loop 事件全走这里）                                               │                                                            │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ 前端状态/事件路由    │ subscribe 事件 switch、isUserChatActiveRef 防重复累积                       │ frontend/src/App.jsx:108-183                               │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ Loop 面板            │ 模式选择（ai/queue）、goal/max_rounds、起停                                 │ frontend/src/components/LoopPanel.jsx                      │
+   ├──────────────────────┼─────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────┤
+   │ 倒计时横幅 + 推荐气  │ ChatView 内的渲染                                                           │ frontend/src/ChatView.jsx 实际在                           │
+   │ 泡                   │                                                                             │ frontend/src/components/ChatView.jsx:134-161               │
+   └──────────────────────┴─────────────────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────┘
+
+   二、运行时交互逻辑（一个 ai 模式 loop 的完整生命周期）
+
+   1. 启动 — POST /loop/{id}/start（loop.py:36）
+   • 懒绑定 opencode session（ensure_opencode_session），确保 event bus 订阅存在
+   • 构建 ctx（oc client、session id、workspace、会话级 model/agent、broadcast 回调注入 event bus）
+   • loop.start() 创建 _LoopState 并 asyncio.create_task(_run) 后台跑
+
+   2. 每轮循环 — _run（loop_controller.py:171-235）：
+
+   ```
+     取 prompt ──→ 停滞/停止决策检查 ──→ 5s 倒计时 ──→ 发送 ──→ 等 idle(120s) ──→ 下一轮
+   ```
+
+   • queue 模式：从 deque 出队一条；ai 模式：读 oc.get_messages() + 文件快照 diff（snapshot_files/diff_snapshots），广播 recommendation_started → 调
+     generate_recommendation() → 广播 recommendations，取 suggestions[0] 作为本轮 prompt，同时拿到 stop_decision
+   • 防失控五层（与参考方案一致，但参数不同）：5s 倒计时逐秒广播 loop_countdown → signal_user_message 用户接管 → ai 模式尊重
+     stop_decision（CONTINUE/PAUSE_INPUT/TERMINATE_SUCCEEDED/TERMINATE_STALLED）→ 连续 3 轮无文件变更暂停（参考方案是 10 轮）→ 等 idle 120s 超时暂停（同参考）
+   • 发送：广播 loop_prompt + loop_status → oc.send_prompt_async() → idle_event.wait()
+
+   3. idle 回流 — event_bus.py:166-183
+   • opencode 推 session.idle → _handle_event 广播 done → _on_session_idle()
+   • 关键分支：loop.is_active() 为真 → 只 notify_idle() 唤醒 loop task（不走推荐）；为假 → 走 build_recommendations()（recommender 优先，todos 启发式兜底）广播
+     recommendations。这与参考方案的 _loop_active 标志目的相同——防止 loop 运行时前端误判会话结束
+
+   4. 用户接管 — signal_user_message（loop_controller.py:103）
+   • 与参考方案的差异：参考方案在 set event 的同时直接把 loop 置为 manual/stopped；当前实现只 set 两个 event，loop 在轮首/倒计时后/idle 后三处检查 user_event 再
+     stop(reason="用户已接管")——效果等价但状态收敛在 _run 一处，更干净
+
+   5. 前端渲染（App.jsx:108-183）
+   • loop_prompt → 插入带 via:'loop' 的用户气泡；随后该轮回复的 text/tool 事件经 subscribe 通道累积（用户自己的消息走 streamChat 通道，用 isUserChatActiveRef 互斥防双
+     通道重复累积）
+   • loop_status.active=false → 停止原因落成 role:'system' 的分隔消息留在聊天流里
+   • done（非用户聊天时）→ flushStreamToMessage() 把本轮流式内容落成 assistant 消息
+
+   三、与参考方案的主要差异（已在之前优化中吸收/取舍过的）
+
+   ┌───────────────┬────────────────────────────────────────┬────────────────────────────────────────────┐
+   │ 点            │ 参考方案                               │ 当前实现                                   │
+   ├───────────────┼────────────────────────────────────────┼────────────────────────────────────────────┤
+   │ 模式          │ infinite / ai                          │ queue / ai（queue 是参考没有的确定性模式） │
+   ├───────────────┼────────────────────────────────────────┼────────────────────────────────────────────┤
+   │ 状态持久化    │ workspace/.loop/STATE.md（重启可恢复） │ 内存态，后端重启即失（已知未做项）         │
+   ├───────────────┼────────────────────────────────────────┼────────────────────────────────────────────┤
+   │ 停滞阈值      │ 10 轮                                  │ 3 轮（更保守）                             │
+   ├───────────────┼────────────────────────────────────────┼────────────────────────────────────────────┤
+   │ 意图/阶段感知 │ 8 种意图 + skill-dev 8 阶段            │ 仅 intent 一句话，无阶段机                 │
+   ├───────────────┼────────────────────────────────────────┼────────────────────────────────────────────┤
+   │ pause 语义    │ 置 paused 标志保留状态                 │ pause() 实际走 stop 路径，状态不保留       │
+   └───────────────┴────────────────────────────────────────┴────────────────────────────────────────────┘
+
+   四、如果要继续优化，最值得做的三件（按价值排序）
+
+   1. loop 状态持久化——照参考方案的 STATE.md frontmatter JSON 落到 workspace/.loop/，后端重启后 status 可查/可恢复（现在重启后端 loop 就静默消失，前端还显示 active）
+   2. pause 真暂停——现在 pause ≈ stop，可改为保留 state、支持 resume（参考方案有对应语义）
+   3. recommender 上下文增强——把会话勾选的项目级 resources（.opencode/skills 清单）传入 resources 参数（loop.py:31 现在硬编码 {}，recommender 已支持但收不到数据）
