@@ -1,0 +1,156 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 痛点 05 · 验收标准不明确
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 验收不明：双收益评分卡定优先级，验收标准卡定通过线
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: score-head
+    elementType: text
+    bounds: [64, 118, 440, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: 优先级评分卡（立项时双方共同打分）
+  - elementId: score-table
+    elementType: table
+    bounds: [64, 142, 440, 216]
+    columnWidths: [0.22, 0.62, 0.16]
+    rowHeights: [0.13, 0.145, 0.145, 0.145, 0.145, 0.145, 0.145]
+    style: "$default"
+    rows:
+      - - text: 收益类别
+        - text: 评分维度
+        - text: 分值
+      - - text: |
+            <p><strong>算法方收益</strong></p>
+            <p><span style="font-size:9px; color:$faint;">技术资产视角</span></p>
+          rowSpan: 3
+        - text: 能力通用性：能否打通某一类业务能力
+        - text: 0-5
+          align: [center, middle]
+      - - text: 场景复用性：能复用到多少其他场景
+        - text: 0-5
+          align: [center, middle]
+      - - text: 技术沉淀：组件 / 接口 / 数据资产沉淀
+        - text: 0-5
+          align: [center, middle]
+      - - text: |
+            <p><strong>业务收益</strong></p>
+            <p><span style="font-size:9px; color:$faint;">业务价值视角</span></p>
+          rowSpan: 3
+        - text: 可量化收益：降本 / 增收 / 提效预估
+        - text: 0-5
+          align: [center, middle]
+      - - text: 影响范围：覆盖多少用户 / 订单 / 坐席
+        - text: 0-5
+          align: [center, middle]
+      - - text: 紧迫程度：明确 deadline 或合规要求
+        - text: 0-5
+          align: [center, middle]
+  - elementId: prio-line
+    elementType: text
+    bounds: [64, 370, 440, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:#3A423C;"><strong>优先级 = 算法方收益分 + 业务收益分</strong></span></p>
+        <p style="margin-top:3px"><span style="font-size:11px; color:#3A423C;">≥20 <span style="color:$accent;"><strong>P0</strong></span> · 15-19 <strong>P1</strong> · 10-14 <strong>P2</strong> · &lt;10 暂缓</span></p>
+  - elementId: acc-head
+    elementType: text
+    bounds: [540, 118, 356, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: 验收标准卡（立项必填，验收逐项核对）
+  - elementId: acc-table
+    elementType: table
+    bounds: [540, 142, 356, 216]
+    columnWidths: [0.28, 0.72]
+    rowHeights: [0.13, 0.145, 0.145, 0.145, 0.145, 0.145, 0.145]
+    style: "$default"
+    rows:
+      - - text: 字段
+        - text: 示例
+      - - text: 验收指标
+        - text: 售后退款金额预测 MAPE
+      - - text: 指标口径
+        - text: 统计公式 + 数据源，见映射资料 §3.1
+      - - text: 达标阈值
+        - text: MAPE ≤ 10%
+      - - text: 统计窗口
+        - text: 上线后连续 4 周
+      - - text: 对照基线
+        - text: 对比现行规则策略
+      - - text: 兜底约定
+        - text: 不达标回退旧策略，进迭代池
+  - elementId: acc-note
+    elementType: text
+    bounds: [540, 370, 356, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:#3A423C;">排期前双方签字确认；中途变更需重新评估优先级</span></p>
+        <p style="margin-top:3px"><span style="font-size:11px; color:#3A423C;">验收只看卡上指标，「感觉不好」不构成不通过理由</span></p>
+  - elementId: sample-band
+    elementType: shape
+    bounds: [64, 448, 832, 36]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: sample-bar
+    elementType: shape
+    bounds: [64, 448, 3, 36]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: sample-t
+    elementType: text
+    bounds: [84, 448, 800, 36]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:11px; color:#3A423C;"><strong>样例资产</strong>：samples/05_验收标准与优先级评估模板.md —— 评分卡、验收卡与三条约定，每季度复盘预估 vs 实际收益校准打分</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 08 / 13

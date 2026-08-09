@@ -1,0 +1,114 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 总览 · OVERVIEW
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 六大痛点归为三类根因，方案围绕「知识沉淀 + Agent 化」展开
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: overview-table
+    elementType: table
+    bounds: [64, 124, 832, 316]
+    columnWidths: [0.13, 0.25, 0.13, 0.29, 0.20]
+    rowHeights: [0.12, 0.147, 0.147, 0.147, 0.147, 0.147, 0.145]
+    style: "$default"
+    rows:
+      - - text: 痛点
+        - text: 表面现象
+        - text: 根因
+        - text: 方案方向
+        - text: 配套样例
+      - - text: |
+            <p><strong>01 认知差距</strong></p>
+        - text: 业务口径与技术实现对不上，反复确认
+        - text: 知识断层
+        - text: 三层业务-技术映射资料（通用 / 业务 / 实例）
+        - text: 映射资料模板
+      - - text: |
+            <p><strong>02 排期长</strong></p>
+        - text: 事务咨询挤占核心开发，一人 loading 大
+        - text: 流程缺失
+        - text: 问答 Agent 分层分流，人力回到核心开发
+        - text: 分流建设 SOP
+      - - text: |
+            <p><strong>03 需求模糊</strong></p>
+        - text: 问题定义不清，需求来回拉扯
+        - text: 流程缺失
+        - text: grille-me 澄清评估智能体（联动 ihub 初探）
+        - text: SKILL.md 示例
+      - - text: |
+            <p><strong>04 频繁变更</strong></p>
+        - text: 调阈值、换名单这类小改也要排期改代码
+        - text: 工程结构
+        - text: 成熟代码接口化，变更走 Agent 对话入口
+        - text: 接口化 SOP
+      - - text: |
+            <p><strong>05 验收不明</strong></p>
+        - text: 验收靠感觉，优先级拍脑袋
+        - text: 流程缺失
+        - text: 双收益评分卡定优先级 + 验收标准卡定通过线
+        - text: 评分 / 验收模板
+      - - text: |
+            <p><strong>06 运维不足</strong></p>
+        - text: WebUI 之外的重跑、查数都要找人
+        - text: 工程结构
+        - text: 接口 Agent 化，高频运维变自助对话
+        - text: 接口化 SOP
+  - elementId: rootcause-label
+    elementType: text
+    bounds: [64, 456, 120, 20]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$ink"
+      wrap: false
+      text: 三类根因：
+  - elementId: rootcause
+    elementType: text
+    bounds: [150, 456, 746, 20]
+    content:
+      fontSize: 12
+      color: "#3A423C"
+      wrap: false
+      text: |
+        <p><span style="color:$accent;"><strong>知识断层</strong></span>（01） · <span style="color:$accent;"><strong>流程缺失</strong></span>（02 / 03 / 05） · <span style="color:$accent;"><strong>工程结构</strong></span>（04 / 06）——方案一一对应，不指望一个工具包打天下</p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 02 / 13

@@ -1,0 +1,153 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 痛点 06 · 运维不足
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 运维不足：接口 Agent 化，让高频运维变成自助对话
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: agent-head
+    elementType: text
+    bounds: [64, 122, 400, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: 接口 → Agent 接入清单
+  - elementId: agent-body
+    elementType: text
+    bounds: [64, 144, 400, 120]
+    content:
+      style: "$body"
+      fontSize: 11
+      align: [left, top]
+      text: |
+        <p>1. 注册工具：接口名称 / 参数 / 返回注册为 Agent 可调用的 tool</p>
+        <p style="margin-top:5px">2. 对话模板：为高频需求配置参数收集话术（「要查哪个时间窗？」）</p>
+        <p style="margin-top:5px">3. 结果解释：接口返回翻译为业务语言，并附口径引用</p>
+        <p style="margin-top:5px">4. 兜底策略：参数缺失先追问；超出接口能力自动生成人工工单</p>
+  - elementId: ops-head
+    elementType: text
+    bounds: [64, 282, 400, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$accent"
+      wrap: false
+      text: 运维约定
+  - elementId: ops-body
+    elementType: text
+    bounds: [64, 304, 400, 108]
+    content:
+      style: "$body"
+      fontSize: 11
+      align: [left, top]
+      text: |
+        <p>· WebUI 之外，重跑、查数、调参等高频运维都要有 Agent 对话入口</p>
+        <p style="margin-top:6px">· 新需求交付时，先回答「能否接口化」，再回答「要不要进 Agent」</p>
+        <p style="margin-top:6px">· 接口调用量、Agent 解决率、人工工单量纳入月度运维报告</p>
+  - elementId: case-head
+    elementType: text
+    bounds: [510, 122, 386, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: 业务方自助场景示例
+  - elementId: case1-bg
+    elementType: shape
+    bounds: [510, 146, 386, 120]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: case1-bar
+    elementType: shape
+    bounds: [510, 146, 3, 120]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: case1-t
+    elementType: text
+    bounds: [528, 156, 354, 100]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$ink;"><em>「把高风险工单阈值从 0.8 调到 0.85，看看效果」</em></span></p>
+        <p style="margin-top:8px"><span style="font-size:10px; color:$gray;">Agent 收集参数 → 调用规则引擎沙箱接口 → 返回新旧阈值对比报告</span></p>
+        <p style="margin-top:4px"><span style="font-size:10px; color:$primary;"><strong>无需改代码、无需排期，分钟级完成</strong></span></p>
+  - elementId: case2-bg
+    elementType: shape
+    bounds: [510, 282, 386, 120]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: case2-bar
+    elementType: shape
+    bounds: [510, 282, 3, 120]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: case2-t
+    elementType: text
+    bounds: [528, 292, 354, 100]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$ink;"><em>「按我上传的这份名单，跑一遍模型打分」</em></span></p>
+        <p style="margin-top:8px"><span style="font-size:10px; color:$gray;">Agent 接收文件 → 调用批量推理接口 → 返回结果下载链接</span></p>
+        <p style="margin-top:4px"><span style="font-size:10px; color:$primary;"><strong>业务方按需自助，算法侧零介入</strong></span></p>
+  - elementId: sample-band
+    elementType: shape
+    bounds: [64, 448, 832, 36]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: sample-bar
+    elementType: shape
+    bounds: [64, 448, 3, 36]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: sample-t
+    elementType: text
+    bounds: [84, 448, 800, 36]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:11px; color:#3A423C;"><strong>样例资产</strong>：samples/04_06_接口化与Agent化SOP.md —— 与痛点 04 共用同一份 SOP：变更走对话入口，运维也走对话入口</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 09 / 13

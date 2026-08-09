@@ -1,0 +1,92 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 交付物 · 样例资产
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 五份样例资产：可直接拷贝使用的模板、SOP 与 Skill
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: assets-table
+    elementType: table
+    bounds: [64, 126, 832, 280]
+    columnWidths: [0.34, 0.10, 0.32, 0.24]
+    rowHeights: [0.13, 0.174, 0.174, 0.174, 0.174, 0.174]
+    style: "$default"
+    rows:
+      - - text: 样例文件
+        - text: 痛点
+        - text: 内容
+        - text: 怎么用
+      - - text: samples/01_业务技术映射资料模板.md
+        - text: "01"
+          align: [center, middle]
+        - text: 三层映射表（通用 / 业务 / 实例）+ 维护约定
+        - text: 业务方填口径，算法方确认技术映射
+      - - text: samples/02_问答Agent建设与分流SOP.md
+        - text: "02"
+          align: [center, middle]
+        - text: 三层分流模型、知识库构成、两周落地步骤
+        - text: 照着做，两周跑通问答 Agent 最小闭环
+      - - text: samples/grille-me-skill/SKILL.md
+        - text: "03"
+          align: [center, middle]
+        - text: 结构化追问清单 + ihub 初探 + 评估卡模板
+        - text: 可直接作为 Skill 加载，需求立项前调用
+      - - text: samples/05_验收标准与优先级评估模板.md
+        - text: "05"
+          align: [center, middle]
+        - text: 双收益评分卡 + 验收标准卡 + 三条约定
+        - text: 立项必填，验收逐项核对
+      - - text: samples/04_06_接口化与Agent化SOP.md
+        - text: 04·06
+          align: [center, middle]
+        - text: 三层架构 + 接口化检查项 + Agent 接入清单
+        - text: 需求交付时的工程检查表
+  - elementId: note
+    elementType: text
+    bounds: [64, 424, 832, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:#3A423C;">以上文件已生成在工作目录 <strong>D:\ppt_build\samples\</strong> 下，均为 Markdown，可直接拷贝进团队知识库或改造成内部模板。</span></p>
+        <p style="margin-top:4px"><span style="font-size:10px; color:$faint;">模板中的阈值（如 MAPE ≤ 10%、分流率 60%）为示例值，请按业务实际替换。</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 12 / 13

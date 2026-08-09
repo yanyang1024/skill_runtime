@@ -1,0 +1,262 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 全景 · BIG PICTURE
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 把六个痛点放回需求生命周期：每个环节都有对应的解法
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: axis-pain
+    elementType: text
+    bounds: [64, 122, 200, 16]
+    content:
+      fontSize: 10
+      bold: true
+      color: "$accent"
+      wrap: false
+      text: ↑ 该环节的痛点
+  - elementId: pain1
+    elementType: text
+    bounds: [64, 146, 140, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$accent;"><strong>03</strong></span><span style="font-size:11px; color:#3A423C;"> 需求模糊</span></p>
+  - elementId: pain2
+    elementType: text
+    bounds: [237, 146, 140, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$accent;"><strong>02</strong></span><span style="font-size:11px; color:#3A423C;"> 单人负载大</span></p>
+        <p style="margin-top:2px"><span style="font-size:11px; color:$accent;"><strong>05</strong></span><span style="font-size:11px; color:#3A423C;"> 优先级模糊</span></p>
+  - elementId: pain3
+    elementType: text
+    bounds: [410, 146, 140, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$accent;"><strong>01</strong></span><span style="font-size:11px; color:#3A423C;"> 认知差距</span></p>
+  - elementId: pain4
+    elementType: text
+    bounds: [583, 146, 140, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$accent;"><strong>05</strong></span><span style="font-size:11px; color:#3A423C;"> 验收标准不明</span></p>
+  - elementId: pain5
+    elementType: text
+    bounds: [756, 146, 140, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$accent;"><strong>04</strong></span><span style="font-size:11px; color:#3A423C;"> 频繁变更</span></p>
+        <p style="margin-top:2px"><span style="font-size:11px; color:$accent;"><strong>06</strong></span><span style="font-size:11px; color:#3A423C;"> 运维不足</span></p>
+  - elementId: node1
+    elementType: shape
+    bounds: [64, 232, 140, 56]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: node1-t
+    elementType: text
+    bounds: [64, 232, 140, 56]
+    content:
+      align: [center, middle]
+      text: |
+        <p><span style="font-size:10px; color:$faint;">STEP 1</span></p>
+        <p style="margin-top:2px"><span style="font-size:13px; color:$ink;"><strong>提出需求</strong></span></p>
+  - elementId: arr1
+    elementType: line
+    bounds: [208, 258, 25, 4]
+    viewBox: [25, 4]
+    points: "0,2 25,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: node2
+    elementType: shape
+    bounds: [237, 232, 140, 56]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: node2-t
+    elementType: text
+    bounds: [237, 232, 140, 56]
+    content:
+      align: [center, middle]
+      text: |
+        <p><span style="font-size:10px; color:$faint;">STEP 2</span></p>
+        <p style="margin-top:2px"><span style="font-size:13px; color:$ink;"><strong>澄清与排期</strong></span></p>
+  - elementId: arr2
+    elementType: line
+    bounds: [381, 258, 25, 4]
+    viewBox: [25, 4]
+    points: "0,2 25,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: node3
+    elementType: shape
+    bounds: [410, 232, 140, 56]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: node3-t
+    elementType: text
+    bounds: [410, 232, 140, 56]
+    content:
+      align: [center, middle]
+      text: |
+        <p><span style="font-size:10px; color:$faint;">STEP 3</span></p>
+        <p style="margin-top:2px"><span style="font-size:13px; color:$ink;"><strong>开发实施</strong></span></p>
+  - elementId: arr3
+    elementType: line
+    bounds: [554, 258, 25, 4]
+    viewBox: [25, 4]
+    points: "0,2 25,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: node4
+    elementType: shape
+    bounds: [583, 232, 140, 56]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: node4-t
+    elementType: text
+    bounds: [583, 232, 140, 56]
+    content:
+      align: [center, middle]
+      text: |
+        <p><span style="font-size:10px; color:$faint;">STEP 4</span></p>
+        <p style="margin-top:2px"><span style="font-size:13px; color:$ink;"><strong>验收交付</strong></span></p>
+  - elementId: arr4
+    elementType: line
+    bounds: [727, 258, 25, 4]
+    viewBox: [25, 4]
+    points: "0,2 25,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: node5
+    elementType: shape
+    bounds: [756, 232, 140, 56]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: node5-t
+    elementType: text
+    bounds: [756, 232, 140, 56]
+    content:
+      align: [center, middle]
+      text: |
+        <p><span style="font-size:10px; color:$faint;">STEP 5</span></p>
+        <p style="margin-top:2px"><span style="font-size:13px; color:$ink;"><strong>运维迭代</strong></span></p>
+  - elementId: sol1
+    elementType: text
+    bounds: [64, 316, 140, 64]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$primary;"><strong>grille-me 智能体</strong></span></p>
+        <p style="margin-top:2px"><span style="font-size:10px; color:$gray;">结构化追问澄清，合格需求才进排期池</span></p>
+  - elementId: sol2
+    elementType: text
+    bounds: [237, 316, 140, 64]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$primary;"><strong>问答 Agent 分流</strong></span></p>
+        <p style="margin-top:2px"><span style="font-size:10px; color:$gray;">双收益评分卡决定排期优先级</span></p>
+  - elementId: sol3
+    elementType: text
+    bounds: [410, 316, 140, 64]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$primary;"><strong>三层映射资料</strong></span></p>
+        <p style="margin-top:2px"><span style="font-size:10px; color:$gray;">业务口径与技术实体一一对应</span></p>
+  - elementId: sol4
+    elementType: text
+    bounds: [583, 316, 140, 64]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$primary;"><strong>验收标准卡</strong></span></p>
+        <p style="margin-top:2px"><span style="font-size:10px; color:$gray;">指标、阈值、统计窗口事先签字确认</span></p>
+  - elementId: sol5
+    elementType: text
+    bounds: [756, 316, 140, 64]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$primary;"><strong>接口化 + Agent 化</strong></span></p>
+        <p style="margin-top:2px"><span style="font-size:10px; color:$gray;">变更与运维走对话入口，自助完成</span></p>
+  - elementId: axis-sol
+    elementType: text
+    bounds: [64, 300, 200, 14]
+    content:
+      fontSize: 10
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: ↓ 对应的解法
+  - elementId: base-band
+    elementType: shape
+    bounds: [64, 416, 832, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: base-band-bar
+    elementType: shape
+    bounds: [64, 416, 3, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: base-band-t
+    elementType: text
+    bounds: [84, 416, 800, 40]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:12px; color:$ink;"><strong>知识底座</strong>：业务-技术映射资料贯穿全程（痛点 01）——澄清、开发、验收、运维各环节产生的口径与经验持续回流沉淀</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 03 / 13

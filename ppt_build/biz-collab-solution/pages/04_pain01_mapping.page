@@ -1,0 +1,183 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 痛点 01 · 认知差距
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 认知差距：用三层映射资料把「业务口径」翻译成「技术实体」
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: prob-head
+    elementType: text
+    bounds: [64, 122, 300, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$accent"
+      wrap: false
+      text: 问题表现
+  - elementId: prob-body
+    elementType: text
+    bounds: [64, 144, 300, 110]
+    content:
+      style: "$body"
+      fontSize: 12
+      align: [left, top]
+      text: |
+        <p>· 业务术语与技术字段各说各话，同一个词两种理解</p>
+        <p style="margin-top:6px">· 口径靠口口相传，人一走就断层</p>
+        <p style="margin-top:6px">· 算法反复确认口径，需求还没做就耗掉一周</p>
+  - elementId: rule-head
+    elementType: text
+    bounds: [64, 276, 300, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: 维护约定（写进模板）
+  - elementId: rule-body
+    elementType: text
+    bounds: [64, 298, 300, 130]
+    content:
+      style: "$body"
+      fontSize: 12
+      align: [left, top]
+      text: |
+        <p>1. 立项时业务方先更新映射，算法方确认「技术映射」列</p>
+        <p style="margin-top:6px">2. 口径变更必须改文档并 @ 双 owner，禁止只在群里同步</p>
+        <p style="margin-top:6px">3. 每季度 review 通用层，沉淀跨业务可复用条目</p>
+  - elementId: layer1-bar
+    elementType: shape
+    bounds: [404, 128, 3, 64]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: layer1-bg
+    elementType: shape
+    bounds: [407, 128, 489, 64]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: layer1-t
+    elementType: text
+    bounds: [424, 128, 456, 64]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:13px; color:$ink;"><strong>通用层</strong></span><span style="font-size:11px; color:$faint;">　跨业务复用</span></p>
+        <p style="margin-top:4px"><span style="font-size:11px; color:#3A423C;">公司统一口径：用户 / 订单 / 支付……与全公司数据字典对齐，季度 review</span></p>
+  - elementId: layer-arr1
+    elementType: line
+    bounds: [640, 196, 4, 18]
+    viewBox: [4, 18]
+    points: "2,0 2,18"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: layer2-bar
+    elementType: shape
+    bounds: [404, 218, 3, 64]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: layer2-bg
+    elementType: shape
+    bounds: [407, 218, 489, 64]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: layer2-t
+    elementType: text
+    bounds: [424, 218, 456, 64]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:13px; color:$ink;"><strong>业务层</strong></span><span style="font-size:11px; color:$faint;">　本业务域特有</span></p>
+        <p style="margin-top:4px"><span style="font-size:11px; color:#3A423C;">业务术语 → 表 / 字段 / 接口一一映射，专门标注「典型口径陷阱」</span></p>
+  - elementId: layer-arr2
+    elementType: line
+    bounds: [640, 286, 4, 18]
+    viewBox: [4, 18]
+    points: "2,0 2,18"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: layer3-bar
+    elementType: shape
+    bounds: [404, 308, 3, 64]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: layer3-bg
+    elementType: shape
+    bounds: [407, 308, 489, 64]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: layer3-t
+    elementType: text
+    bounds: [424, 308, 456, 64]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:13px; color:$ink;"><strong>本实例层</strong></span><span style="font-size:11px; color:$faint;">　本次需求 / 模型特有</span></p>
+        <p style="margin-top:4px"><span style="font-size:11px; color:#3A423C;">模型版本、名单规则、特征口径与负责人，随需求立项创建、随迭代更新</span></p>
+  - elementId: layer-axis
+    elementType: text
+    bounds: [404, 384, 489, 16]
+    content:
+      fontSize: 10
+      color: "$faint"
+      wrap: false
+      text: 分层思路参考 OKF：通用口径在下沉，实例规则在上浮，逐层实例化
+  - elementId: sample-band
+    elementType: shape
+    bounds: [64, 444, 832, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: sample-bar
+    elementType: shape
+    bounds: [64, 444, 3, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: sample-t
+    elementType: text
+    bounds: [84, 444, 800, 40]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:11px; color:#3A423C;"><strong>样例资产</strong>：samples/01_业务技术映射资料模板.md —— 含元信息、三层映射表与维护约定，业务方填口径、算法方确认映射</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 04 / 13

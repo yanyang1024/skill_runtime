@@ -1,0 +1,172 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 痛点 03 · 需求模糊
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 需求模糊：grille-me 先澄清、再初评，合格的需求才进排期池
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: s1-head-bg
+    elementType: shape
+    bounds: [64, 126, 256, 30]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: s1-head
+    elementType: text
+    bounds: [76, 126, 240, 30]
+    content:
+      align: [left, middle]
+      wrap: false
+      text: |
+        <p><span style="font-size:12px; color:#FFFFFF;"><strong>① 结构化追问</strong></span></p>
+  - elementId: s1-body
+    elementType: text
+    bounds: [64, 166, 256, 220]
+    content:
+      style: "$body"
+      fontSize: 11
+      align: [left, top]
+      text: |
+        <p>缺一项、追问一项，直到问题定义闭环：</p>
+        <p style="margin-top:8px">1. 业务场景：谁在什么环节遇到什么问题</p>
+        <p style="margin-top:5px">2. 现状与基线：现在怎么解决，量化基线</p>
+        <p style="margin-top:5px">3. 目标与度量：改善哪个指标、目标值</p>
+        <p style="margin-top:5px">4. 数据可用性：涉及哪些数据、有无埋点</p>
+        <p style="margin-top:5px">5. 时效与约束：上线时间、合规与算力</p>
+        <p style="margin-top:5px">6. 失败代价：模型犯错的容忍度与兜底</p>
+  - elementId: arr1
+    elementType: line
+    bounds: [324, 250, 24, 4]
+    viewBox: [24, 4]
+    points: "0,2 24,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: s2-head-bg
+    elementType: shape
+    bounds: [352, 126, 256, 30]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: s2-head
+    elementType: text
+    bounds: [364, 126, 240, 30]
+    content:
+      align: [left, middle]
+      wrap: false
+      text: |
+        <p><span style="font-size:12px; color:#FFFFFF;"><strong>② ihub 数据初探</strong></span></p>
+  - elementId: s2-body
+    elementType: text
+    bounds: [352, 166, 256, 220]
+    content:
+      style: "$body"
+      fontSize: 11
+      align: [left, top]
+      text: |
+        <p>用自然语言在 ihub 中速查：</p>
+        <p style="margin-top:8px">· 相关表结构与字段口径</p>
+        <p style="margin-top:5px">· 样本量、标签分布、时间跨度</p>
+        <p style="margin-top:12px">输出<strong>数据可行性速评</strong>：</p>
+        <p style="margin-top:6px"><span style="color:$primary;">✅ 数据充分，可立项</span></p>
+        <p style="margin-top:4px"><span style="color:$amber;">⚠️ 需先补埋点 / 补数据</span></p>
+        <p style="margin-top:4px"><span style="color:$accent;">❌ 数据缺失，暂不支持</span></p>
+  - elementId: arr2
+    elementType: line
+    bounds: [612, 250, 24, 4]
+    viewBox: [24, 4]
+    points: "0,2 24,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: s3-head-bg
+    elementType: shape
+    bounds: [640, 126, 256, 30]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: s3-head
+    elementType: text
+    bounds: [652, 126, 240, 30]
+    content:
+      align: [left, middle]
+      wrap: false
+      text: |
+        <p><span style="font-size:12px; color:#FFFFFF;"><strong>③ 输出需求评估卡</strong></span></p>
+  - elementId: s3-body
+    elementType: text
+    bounds: [640, 166, 256, 220]
+    content:
+      style: "$body"
+      fontSize: 11
+      align: [left, top]
+      text: |
+        <p>固定模板，双方各存一份：</p>
+        <p style="margin-top:8px">· 一句话问题定义：为谁、在什么场景、解决什么、指标从基线提到目标</p>
+        <p style="margin-top:5px">· 业务价值初评（高 / 中 / 低 + 量化依据）</p>
+        <p style="margin-top:5px">· 技术可行性 + 预估人日</p>
+        <p style="margin-top:5px">· 验收标准草案（口径 / 阈值 / 窗口）</p>
+        <p style="margin-top:5px">· 建议：立项 / 补充再评 / 不做及原因</p>
+  - elementId: red-band
+    elementType: shape
+    bounds: [64, 408, 832, 36]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: red-bar
+    elementType: shape
+    bounds: [64, 408, 3, 36]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: red-t
+    elementType: text
+    bounds: [84, 408, 800, 36]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:11px; color:#3A423C;"><strong>红线</strong>：评估卡没有量化基线与目标，一律打回补充；Agent 只做基于数据的初评，不替业务方做价值承诺</span></p>
+  - elementId: sample-t
+    elementType: text
+    bounds: [64, 456, 832, 20]
+    content:
+      align: [left, middle]
+      wrap: false
+      text: |
+        <p><span style="font-size:11px; color:$gray;"><strong>样例资产</strong>：samples/grille-me-skill/SKILL.md —— 含追问清单、评估卡 JSON 模板与红线，可直接作为 Skill 加载使用</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 06 / 13

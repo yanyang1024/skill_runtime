@@ -1,0 +1,58 @@
+version: v2
+title: 业务对接痛点与解决方案
+size: [960, 540]
+theme:
+  colors:
+    ink: "#1F2A24"
+    primary: "#0D6E5F"
+    accent: "#C2410C"
+    amber: "#B45309"
+    gray: "#6B7280"
+    faint: "#9AA39D"
+    hair: "#E3E0D8"
+    panel: "#F4F2EC"
+    bg: "#FBFAF7"
+  textStyles:
+    h1:
+      fontSize: 24
+      bold: true
+      color: "$ink"
+    kicker:
+      fontSize: 11
+      bold: true
+      color: "$primary"
+      letterSpacing: 2
+    body:
+      fontSize: 13
+      color: "#3A423C"
+      lineHeight: 1.5
+    small:
+      fontSize: 10
+      color: "$gray"
+      lineHeight: 1.4
+  tableStyles:
+    default:
+      cellStyle:
+        fontSize: 11
+        color: "#3A423C"
+        align: [left, middle]
+        border: [null, null, {style: solid, width: 1, color: "$hair"}, null]
+      firstRowStyle:
+        bold: true
+        color: "$ink"
+        fill: {type: solid, color: "$panel"}
+        border: [null, null, {style: solid, width: 2, color: "$primary"}, null]
+pages:
+  - pages/01_cover.page
+  - pages/02_overview.page
+  - pages/03_lifecycle.page
+  - pages/04_pain01_mapping.page
+  - pages/05_pain02_qa_agent.page
+  - pages/06_pain03_grilleme.page
+  - pages/07_pain04_change.page
+  - pages/08_pain05_acceptance.page
+  - pages/09_pain06_ops.page
+  - pages/10_loop.page
+  - pages/11_roadmap.page
+  - pages/12_assets.page
+  - pages/13_next.page

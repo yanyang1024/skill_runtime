@@ -1,0 +1,228 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 全景 · 协作闭环
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 六件事不是六个孤立工具，而是一个互相喂料的协作闭环
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: caption
+    elementType: text
+    bounds: [64, 122, 832, 20]
+    content:
+      style: "$body"
+      fontSize: 12
+      wrap: false
+      text: 一个需求从提出到运维的完整旅程中，每个环节的产出都是下一个环节的输入
+  - elementId: tag1
+    elementType: text
+    bounds: [64, 170, 118, 16]
+    content: {fontSize: 10, bold: true, color: "$accent", wrap: false, text: 痛点 03}
+  - elementId: tag2
+    elementType: text
+    bounds: [206, 170, 118, 16]
+    content: {fontSize: 10, bold: true, color: "$accent", wrap: false, text: 痛点 05}
+  - elementId: tag3
+    elementType: text
+    bounds: [348, 170, 118, 16]
+    content: {fontSize: 10, bold: true, color: "$accent", wrap: false, text: 痛点 01}
+  - elementId: tag4
+    elementType: text
+    bounds: [490, 170, 118, 16]
+    content: {fontSize: 10, bold: true, color: "$accent", wrap: false, text: 痛点 04}
+  - elementId: tag5
+    elementType: text
+    bounds: [632, 170, 118, 16]
+    content: {fontSize: 10, bold: true, color: "$accent", wrap: false, text: 痛点 05}
+  - elementId: tag6
+    elementType: text
+    bounds: [774, 170, 118, 16]
+    content: {fontSize: 10, bold: true, color: "$accent", wrap: false, text: 痛点 02 · 06}
+  - elementId: nd1
+    elementType: shape
+    bounds: [64, 192, 118, 84]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: nd1-t
+    elementType: text
+    bounds: [72, 198, 102, 72]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:$ink;"><strong>需求守门</strong></span></p>
+        <p style="margin-top:4px"><span style="font-size:9px; color:$gray;">grille-me 澄清 + ihub 初探，输出评估卡</span></p>
+  - elementId: a1
+    elementType: line
+    bounds: [184, 232, 20, 4]
+    viewBox: [20, 4]
+    points: "0,2 20,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: nd2
+    elementType: shape
+    bounds: [206, 192, 118, 84]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: nd2-t
+    elementType: text
+    bounds: [214, 198, 102, 72]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:$ink;"><strong>定优先级</strong></span></p>
+        <p style="margin-top:4px"><span style="font-size:9px; color:$gray;">双收益评分卡：算法收益 + 业务收益</span></p>
+  - elementId: a2
+    elementType: line
+    bounds: [326, 232, 20, 4]
+    viewBox: [20, 4]
+    points: "0,2 20,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: nd3
+    elementType: shape
+    bounds: [348, 192, 118, 84]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: nd3-t
+    elementType: text
+    bounds: [356, 198, 102, 72]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:$ink;"><strong>支撑开发</strong></span></p>
+        <p style="margin-top:4px"><span style="font-size:9px; color:$gray;">三层映射资料，口径即查即用</span></p>
+  - elementId: a3
+    elementType: line
+    bounds: [468, 232, 20, 4]
+    viewBox: [20, 4]
+    points: "0,2 20,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: nd4
+    elementType: shape
+    bounds: [490, 192, 118, 84]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: nd4-t
+    elementType: text
+    bounds: [498, 198, 102, 72]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:$ink;"><strong>交付形态</strong></span></p>
+        <p style="margin-top:4px"><span style="font-size:9px; color:$gray;">能力接口化，变更走 Agent 对话入口</span></p>
+  - elementId: a4
+    elementType: line
+    bounds: [610, 232, 20, 4]
+    viewBox: [20, 4]
+    points: "0,2 20,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: nd5
+    elementType: shape
+    bounds: [632, 192, 118, 84]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: nd5-t
+    elementType: text
+    bounds: [640, 198, 102, 72]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:$ink;"><strong>验收收口</strong></span></p>
+        <p style="margin-top:4px"><span style="font-size:9px; color:$gray;">按验收标准卡逐项核对，不留模糊</span></p>
+  - elementId: a5
+    elementType: line
+    bounds: [752, 232, 20, 4]
+    viewBox: [20, 4]
+    points: "0,2 20,2"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: solid, width: 1.5, color: "$gray"}
+  - elementId: nd6
+    elementType: shape
+    bounds: [774, 192, 118, 84]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: nd6-t
+    elementType: text
+    bounds: [782, 198, 102, 72]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:$ink;"><strong>自助运维</strong></span></p>
+        <p style="margin-top:4px"><span style="font-size:9px; color:$gray;">运维 Agent 承接咨询与高频操作</span></p>
+  - elementId: loop-line
+    elementType: line
+    bounds: [123, 292, 710, 52]
+    viewBox: [710, 52]
+    points: "710,0 710,52 0,52 0,6"
+    curve: sharp
+    arrow: [null, "arrow"]
+    border: {style: dash, width: 1.5, color: "$accent"}
+  - elementId: loop-label
+    elementType: text
+    bounds: [240, 324, 480, 18]
+    content:
+      align: [center, middle]
+      wrap: false
+      text: |
+        <p><span style="font-size:11px; color:$accent;"><strong>经验、口径与失败 case 回流</strong></span><span style="font-size:11px; color:$gray;">——知识库与映射资料持续更新</span></p>
+  - elementId: bottom-note
+    elementType: text
+    bounds: [64, 420, 832, 40]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:12px; color:#3A423C;">闭环的价值在于<strong>复用</strong>：每个需求都会让映射资料更全、FAQ 更厚、评估卡的打分尺度更准——</span></p>
+        <p style="margin-top:4px"><span style="font-size:12px; color:#3A423C;">下一个需求的对接成本，因此比上一个更低。</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 10 / 13

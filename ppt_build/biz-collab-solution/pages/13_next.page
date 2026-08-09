@@ -1,0 +1,149 @@
+pageType: final
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 36, 500, 16]
+    content:
+      style: "$kicker"
+      wrap: false
+      text: 收尾 · 预期收益与下一步
+  - elementId: title
+    elementType: text
+    bounds: [64, 56, 832, 32]
+    content:
+      style: "$h1"
+      wrap: false
+      text: 把人从重复劳动里释放出来，把知识留在团队里
+  - elementId: title-line
+    elementType: shape
+    bounds: [64, 96, 44, 3]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: goal-head
+    elementType: text
+    bounds: [64, 122, 400, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: 四个可检验的目标（假设值，待基线校准）
+  - elementId: g1-num
+    elementType: text
+    bounds: [64, 156, 190, 40]
+    content: {fontSize: 28, bold: true, color: "$accent", wrap: false, text: ≥60%}
+  - elementId: g1-label
+    elementType: text
+    bounds: [64, 200, 190, 36]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$ink;"><strong>咨询分流率</strong></span></p>
+        <p><span style="font-size:10px; color:$gray;">问答 Agent 独立解决占比</span></p>
+  - elementId: g2-num
+    elementType: text
+    bounds: [278, 156, 190, 40]
+    content: {fontSize: 28, bold: true, color: "$accent", wrap: false, text: "100%"}
+  - elementId: g2-label
+    elementType: text
+    bounds: [278, 200, 190, 36]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$ink;"><strong>评估卡覆盖率</strong></span></p>
+        <p><span style="font-size:10px; color:$gray;">新需求先澄清再排期</span></p>
+  - elementId: g3-num
+    elementType: text
+    bounds: [64, 260, 190, 40]
+    content: {fontSize: 28, bold: true, color: "$accent", wrap: false, text: "100%"}
+  - elementId: g3-label
+    elementType: text
+    bounds: [64, 304, 190, 36]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$ink;"><strong>验收卡覆盖率</strong></span></p>
+        <p><span style="font-size:10px; color:$gray;">验收只对照事先确认的指标</span></p>
+  - elementId: g4-num
+    elementType: text
+    bounds: [278, 260, 190, 40]
+    content: {fontSize: 28, bold: true, color: "$accent", wrap: false, text: ≥50%}
+  - elementId: g4-label
+    elementType: text
+    bounds: [278, 304, 190, 36]
+    content:
+      align: [left, top]
+      text: |
+        <p><span style="font-size:11px; color:$ink;"><strong>高频变更自助化</strong></span></p>
+        <p><span style="font-size:10px; color:$gray;">参数级变更不再占用排期</span></p>
+  - elementId: v-divider
+    elementType: line
+    bounds: [520, 130, 1, 240]
+    viewBox: [1, 240]
+    points: "0,0 0,240"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: next-head
+    elementType: text
+    bounds: [552, 122, 344, 18]
+    content:
+      fontSize: 12
+      bold: true
+      color: "$primary"
+      wrap: false
+      text: 下一步三件事
+  - elementId: next-body
+    elementType: text
+    bounds: [552, 150, 344, 130]
+    content:
+      style: "$body"
+      fontSize: 12
+      align: [left, top]
+      text: |
+        <p><span style="color:$accent;"><strong>本周</strong></span>　与业务方确认映射资料双 owner，启动映射资料 v1</p>
+        <p style="margin-top:14px"><span style="color:$accent;"><strong>下周</strong></span>　完成历史咨询 FAQ 聚类，问答 Agent 开工搭建</p>
+        <p style="margin-top:14px"><span style="color:$accent;"><strong>本月</strong></span>　grille-me 内测；评分卡 + 验收卡在新需求试运行</p>
+  - elementId: end-band
+    elementType: shape
+    bounds: [64, 416, 832, 44]
+    shapeName: rect
+    fill: {type: solid, color: "$panel"}
+  - elementId: end-bar
+    elementType: shape
+    bounds: [64, 416, 3, 44]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: end-t
+    elementType: text
+    bounds: [84, 416, 800, 44]
+    content:
+      align: [left, middle]
+      text: |
+        <p><span style="font-size:15px; color:$ink;"><strong>从「人对接人」到「知识对接系统」</strong></span><span style="font-size:12px; color:$gray;">　——对接成本随需求数递减，而不是递增</span></p>
+  - elementId: footer-line
+    elementType: line
+    bounds: [64, 508, 832, 1]
+    viewBox: [832, 1]
+    points: "0,0 832,0"
+    curve: sharp
+    border: {style: solid, width: 1, color: "$hair"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [64, 514, 420, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      wrap: false
+      text: 业务对接痛点与解决方案 · 2026-08
+  - elementId: footer-right
+    elementType: text
+    bounds: [796, 514, 100, 16]
+    content:
+      style: "$small"
+      fontSize: 9
+      align: [right, top]
+      wrap: false
+      text: 13 / 13
