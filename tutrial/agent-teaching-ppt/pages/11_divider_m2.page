@@ -1,0 +1,52 @@
+pageType: chapter
+background:
+  type: solid
+  color: "$paper"
+notes: 模块二开场：以 OpenCode 为例，从自然语言到机器资源逐层下钻；强调安全层是贯穿系统的控制面，不是最下面的一段提示词。
+elements:
+  - elementId: big-num
+    elementType: text
+    bounds: [64, 90, 300, 160]
+    content:
+      fontSize: 120
+      color: "$primaryLight"
+      bold: true
+      wrap: false
+      text: "02"
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 268, 700, 18]
+    content:
+      style: "$kicker"
+      text: 模块二 · 第三部分
+  - elementId: title
+    elementType: text
+    bounds: [64, 292, 832, 44]
+    content:
+      fontSize: 30
+      color: "$ink"
+      bold: true
+      text: 以 OpenCode 为例理解 Agent 平台分层
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 352, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: parts
+    elementType: text
+    bounds: [64, 374, 832, 110]
+    content:
+      style: "$body"
+      fontSize: 13
+      lineHeight: 1.7
+      text: |
+        <p>对话与任务层 → 规则层（AGENTS.md）→ 流程层（Skill）→ 能力接口层（Tool / MCP）→ 运行与状态层 → 安全与治理控制面</p>
+        <p>层次越向下越接近机器可执行资源、约束越明确；<strong>安全层不是最下面的一段提示词，而是贯穿整个系统的控制面。</strong></p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 模块二 · OpenCode 平台分层}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "11 / 36"}

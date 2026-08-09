@@ -1,0 +1,116 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 示范页。左：AGENTS.md 教学示例——高频、跨任务上下文，不写成百科全书；右：工程上必须区分的六种状态，聊天记录不能替代业务数据库。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第三部分 · 平台分层
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: AGENTS.md 写项目共识，状态交给运行时
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: code-bg
+    elementType: shape
+    bounds: [64, 112, 440, 320]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: code
+    elementType: text
+    bounds: [82, 126, 410, 296]
+    content:
+      style: "$code"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p># Project Guide</p>
+        <p></p>
+        <p>## Goal</p>
+        <p>多租户数据分析服务。任何修改都不能</p>
+        <p>破坏租户隔离。</p>
+        <p></p>
+        <p>## Structure</p>
+        <p>- api/　 对外接口</p>
+        <p>- core/　 业务逻辑</p>
+        <p>- tests/　单元与隔离测试</p>
+        <p></p>
+        <p>## Commands</p>
+        <p>- 单元测试：pytest -q</p>
+        <p>- 隔离测试：pytest -q tests/isolation</p>
+        <p>- 静态检查：ruff check .</p>
+        <p></p>
+        <p>## Rules</p>
+        <p>- 不在源码中写入密钥</p>
+        <p>- 改 Schema 前先生成迁移计划</p>
+        <p>- 完成后报告改动文件、验证命令</p>
+        <p>　和仍未覆盖的风险</p>
+  - elementId: code-note
+    elementType: text
+    bounds: [64, 444, 440, 56]
+    content:
+      style: "$small"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p>AGENTS.md 是<strong>高频、跨任务</strong>的上下文，不应变成百科全书：场景性长流程拆到 Skill，机器硬限制放入权限或沙箱。</p>
+  - elementId: state-head
+    elementType: text
+    bounds: [540, 112, 356, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 工程上要区分六种状态
+  - elementId: state-table
+    elementType: table
+    bounds: [540, 138, 356, 250]
+    columnWidths: [0.38, 0.62]
+    rowHeights: [0.12, 0.147, 0.147, 0.147, 0.147, 0.146, 0.146]
+    style: "$default"
+    rows:
+      - - text: 状态
+        - text: 内容
+      - - text: Conversation
+        - text: 用户与 Agent 说了什么
+      - - text: Task
+        - text: planning / working / blocked / completed
+      - - text: Workspace
+        - text: 文件、代码和中间产物
+      - - text: External
+        - text: 数据库、工单、部署环境
+      - - text: Checkpoint
+        - text: 失败后从哪里恢复
+      - - text: Artifact
+        - text: 最终可交付的产物或变更集
+  - elementId: state-note-bar
+    elementType: shape
+    bounds: [540, 404, 4, 44]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: state-note
+    elementType: text
+    bounds: [556, 404, 340, 90]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.5
+      text: |
+        <p><strong>聊天记录不能替代业务数据库；</strong>模型总结也不能成为生产状态的唯一真相来源。OpenCode 的 TUI 是 Server 的客户端，SDK 可创建会话、发送消息和订阅事件。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第三部分 · OpenCode 平台分层}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "13 / 36"}

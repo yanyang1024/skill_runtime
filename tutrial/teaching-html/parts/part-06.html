@@ -1,0 +1,103 @@
+<section class="chapter" id="part-06">
+  <div class="chapter-tag">第六部分</div>
+  <h2>Skill 命中率测试与优化</h2>
+  <p class="lead">Skill 有两类质量：<strong>会不会被用</strong>，以及<strong>用了有没有帮助</strong>。只测其一都会漏掉另一半问题。</p>
+
+  <h3>6.1 两层评测体系</h3>
+  <table>
+    <thead><tr><th>评测层</th><th>核心问题</th><th>典型指标</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Trigger eval</strong></td><td>该触发时是否触发，不该触发时是否保持安静</td><td>Precision、Recall、FPR、触发稳定率</td></tr>
+      <tr><td><strong>Outcome eval</strong></td><td>Skill 被加载后是否提升任务结果</td><td>断言通过率、Artifact 质量、耗时、Token、失败率</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 触发测试集怎么设计</h3>
+  <p><a href="https://agentskills.io/skill-creation/optimizing-descriptions">description 优化指南</a>建议同时准备 should-trigger 与 should-not-trigger 查询，并多次运行观察非确定性。第一版可用约 <strong>20 条查询 × 每条 3 次</strong>。</p>
+  <table>
+    <thead><tr><th>类别</th><th>示例</th><th>预期</th></tr></thead>
+    <tbody>
+      <tr><td><strong>明确点名</strong></td><td>"使用 <code>$tenant-isolation-review</code> 检查这个 PR"</td><td>必须触发</td></tr>
+      <tr><td><strong>明确业务意图</strong></td><td>"这个改动可能让 A 租户读到 B 租户文件，帮我审查"</td><td>自动型 Skill 应触发</td></tr>
+      <tr><td><strong>隐含但真实相关</strong></td><td>"我们把 workspace 路径从用户级改成应用级，有什么风险？"</td><td>视 Skill 边界触发</td></tr>
+      <tr><td><strong>关键词近邻</strong></td><td>"帮我改一下租户设置页面的颜色"</td><td>不触发</td></tr>
+      <tr><td><strong>同文件、不同意图</strong></td><td>"给 isolation.py 补 docstring"</td><td>通常不触发</td></tr>
+      <tr><td><strong>多意图冲突</strong></td><td>"先修隔离漏洞，再更新发布说明"</td><td>触发主 Skill，并按策略组合或分阶段</td></tr>
+    </tbody>
+  </table>
+  <p class="note">负样例应是"<strong>很像但不该触发</strong>"的近邻场景，而不是天气、笑话等毫无关联的问题。</p>
+
+  <h4>指标定义</h4>
+  <pre><code>Precision = TP / (TP + FP)   # 触发后有多少次是对的
+Recall    = TP / (TP + FN)   # 应触发的请求覆盖了多少
+FPR       = FP / (FP + TN)   # 不该触发的请求中误触发多少</code></pre>
+  <p>还应记录：同一 Prompt 三次运行的触发率；平均激活 Skill 数量；激活后首次有效行动所需轮数；误触发带来的 Token、延迟与错误动作；与无 Skill / 旧版本相比的任务成功增量。</p>
+
+  <h3>6.3 description 如何写得更容易正确命中</h3>
+  <p>description 要同时写"<strong>用户想完成什么</strong>"和"<strong>边界在哪里</strong>"：</p>
+  <div class="cols">
+    <div class="col-box no">
+      <div class="col-title">❌ 不推荐</div>
+      <pre><code>description: Handle security.</code></pre>
+    </div>
+    <div class="col-box ok">
+      <div class="col-title">✅ 推荐</div>
+      <pre><code>description: &gt;
+  Review code or configuration changes
+  that can affect tenant data, filesystem,
+  authentication, database filters, workspace
+  mapping, or cross-tenant isolation.
+  Do not use for UI-only changes, copy edits,
+  or general code style review.</code></pre>
+    </div>
+  </div>
+  <p class="note">优化时不要简单堆积失败样例里的关键词，应找到背后的<strong>意图类别</strong>，否则对训练语句过拟合。触发测试最好固定 train / validation 划分。</p>
+
+  <h3>6.4 如果只允许用户明确指定 Skill（explicit-only）</h3>
+  <h4>软边界：只改 description</h4>
+  <pre><code>---
+name: production-release
+description: &gt;
+  Use only when the user explicitly types $production-release,
+  /production-release, or says "use production-release".
+  Do not infer activation from generic release, deployment,
+  changelog, Git, or production-related requests.
+---</code></pre>
+  <p>能显著降低误触发，但<strong>不能给出 100% 运行时保证</strong>——模型仍看得到 Skill，并自行判断是否加载。</p>
+
+  <h4>强边界：由 Harness 拦截显式指令</h4>
+  <ol>
+    <li>默认不把该 Skill 放入模型可见目录；</li>
+    <li>WebUI 或 Harness 识别 <code>$production-release</code>、slash command 或 Skill 按钮；</li>
+    <li>只有明确点名后才把 Skill 注入本轮上下文；</li>
+    <li>记录 <code>activated_by=user_explicit</code>；</li>
+    <li>对高风险 Skill 再叠加 permission <code>ask</code> 或业务审批。</li>
+  </ol>
+  <pre><code>mentioned = parse_explicit_skill_mentions(user_message)
+visible_catalog = auto_invokable_skills
+
+for skill_name in mentioned:
+    skill = explicit_only_registry.get(skill_name)
+    if skill:
+        inject_skill(skill, activated_by="user_explicit")</code></pre>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 平台差异</div>
+    <p>OpenCode 的 Skill permission 可以 <code>allow / ask / deny</code>，但它不是"只有本轮包含特定文字才允许"的语义条件。需要硬保证时，应在外层应用或自定义 Harness 中拦截，<strong>不能只依赖 description</strong>。</p>
+  </div>
+
+  <h3>6.5 输出质量评测</h3>
+  <p><a href="https://agentskills.io/skill-creation/evaluating-skills">评测指南</a>建议每个用例分别运行 "<strong>with skill</strong>" 和 "<strong>without skill / 旧版本</strong>"，再比较断言、耗时和 Token。一个用例至少包含：</p>
+  <pre><code>{
+  "id": "isolation-001",
+  "prompt": "Review this workspace mapping change for tenant isolation.",
+  "files": ["fixtures/change.diff"],
+  "expected_output": "An invariant-by-invariant review with PASS/FAIL evidence.",
+  "assertions": [
+    "The output identifies the authoritative tenant ID.",
+    "Every filesystem read/write path is traced.",
+    "Each isolation invariant has PASS or FAIL evidence.",
+    "The reviewer does not modify source files."
+  ]
+}</code></pre>
+  <p class="note">机械断言优先用程序验证；主观质量可用盲评和人工评审补充。每次评测使用<strong>干净 Session</strong>，避免开发过程的上下文泄漏到测试。</p>
+</section>

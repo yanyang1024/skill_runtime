@@ -1,0 +1,91 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 对比页。四阶段是能力扩展关系而非替代关系。表格逐列讲解控制者与执行单元的变化；底部 RAG 链路提示 RAG 解决"知道什么"而非"会不会做"。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第一部分 · 应用形态演进
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 四个阶段：能力扩展，而非互相替代
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: stage-table
+    elementType: table
+    bounds: [64, 112, 832, 250]
+    columnWidths: [0.15, 0.16, 0.15, 0.22, 0.20, 0.12]
+    rowHeights: [0.14, 0.215, 0.215, 0.215, 0.215]
+    style: "$default"
+    rows:
+      - - text: 阶段
+        - text: 主要控制者
+        - text: 执行单元
+        - text: 补齐的能力
+        - text: 典型局限
+        - text: 代表工具
+      - - text: "<strong>Chatbot</strong>"
+        - text: 用户与应用
+        - text: 一轮消息
+        - text: 自然语言理解与生成
+        - text: 只能"说"，事实和行动能力弱
+        - text: 各类聊天应用
+      - - text: "<strong>RAG + Chat</strong>"
+        - text: 检索程序
+        - text: 文档片段与回答
+        - text: 外部 / 私有 / 时效知识
+        - text: 检索错误会传导；通常不执行真实任务
+        - text: LangChain、FastGPT
+      - - text: "<strong>Workflow + Chat</strong>"
+        - text: 开发者预定义图
+        - text: 节点、条件、变量
+        - text: 确定性编排、系统集成
+        - text: 长尾需求需要不断加分支
+        - text: Dify、Coze
+      - - text: "<strong>Agent + Workspace</strong>"
+        - text: 模型在 Harness 边界内决策
+        - text: Task、Tool Call、Artifact
+        - text: 动态规划、工具选择、反馈循环、状态延续
+        - text: 概率性、成本、延迟、安全与验证更复杂
+        - text: OpenCode、Pi、OpenClaw
+  - elementId: rag-head
+    elementType: text
+    bounds: [64, 378, 832, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: RAG 的典型链路：解决"模型不知道"，而不是天然解决"模型会不会做"
+  - elementId: rag-flow
+    elementType: text
+    bounds: [64, 404, 832, 26]
+    content:
+      fontSize: 12
+      color: "$ink"
+      text: 用户问题 → 查询改写 → 召回 → 重排/过滤 → 上下文拼装 → 模型回答 → 引用来源
+  - elementId: rag-note
+    elementType: text
+    bounds: [64, 438, 832, 56]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.5
+      text: |
+        <p><strong>生产重点不在"有没有向量库"：</strong>查询是否被正确理解；数据是否有来源、版本、权限和有效期；召回是否覆盖真正需要的证据；模型能否区分"资料中没有"与"自己不知道"；回答能否追溯到原始材料。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第一部分 · 应用形态演进}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "05 / 36"}

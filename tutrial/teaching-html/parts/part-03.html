@@ -1,0 +1,125 @@
+<section class="chapter" id="part-03">
+  <div class="chapter-tag">第三部分</div>
+  <h2>以 OpenCode 为例理解 Agent 平台分层</h2>
+  <p class="lead">从自然语言到机器资源，越向下约束越明确。安全层不是"最下面的一段提示词"，而是<strong>贯穿整个系统的控制面</strong>。</p>
+
+  <h3>3.1 六层架构总览</h3>
+  <table>
+    <thead><tr><th>层次</th><th>OpenCode 中的载体</th><th>主要内容</th><th>装载方式</th><th>约束强度</th></tr></thead>
+    <tbody>
+      <tr><td><strong>对话与任务层</strong></td><td>用户消息、附件、当前 Session</td><td>本次目标、背景、偏好、反馈</td><td>每轮直接进入上下文</td><td>软；可变化</td></tr>
+      <tr><td><strong>资源引导与规则层</strong></td><td><code>AGENTS.md</code>、instructions</td><td>项目结构、构建命令、团队规范</td><td>项目/全局规则进入上下文</td><td>软到中；仍是自然语言</td></tr>
+      <tr><td><strong>应用流程层</strong></td><td><code>SKILL.md</code></td><td>场景流程、资源路由、错误处理、验收</td><td>元数据常驻，正文按需加载</td><td>中；可被模型解释执行</td></tr>
+      <tr><td><strong>能力接口层</strong></td><td>Built-in / Custom Tool、MCP、Script、API</td><td>文件、命令、搜索、数据库、业务动作</td><td>Tool Schema 或命令接口</td><td>中到强；参数有结构</td></tr>
+      <tr><td><strong>运行与状态层</strong></td><td>Session、Task、Event、Workspace、Artifact</td><td>当前进度、工具结果、文件与检查点</td><td>Harness 持续维护</td><td>强；由运行时控制</td></tr>
+      <tr><td><strong>安全与治理控制面</strong></td><td><code>opencode.json</code> permission、OS 沙箱、网络、密钥、审计</td><td>允许、询问、拒绝、隔离和追踪</td><td>每次动作前后检查</td><td><strong>最强；模型不能自行解除</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 各层放什么、不放什么</h3>
+
+  <h4>① 对话层：只描述本次任务</h4>
+  <div class="cols">
+    <div class="col-box ok">
+      <div class="col-title">✅ 适合放</div>
+      <ul><li>为什么做</li><li>这一次处理哪些输入</li><li>用户真正关心的结果</li><li>临时偏好和当前反馈</li></ul>
+    </div>
+    <div class="col-box no">
+      <div class="col-title">❌ 不适合反复放</div>
+      <ul><li>每个会话都相同的项目规范</li><li>很长的 API 文档</li><li>需机器严格执行的权限规则</li><li>与当前任务无关的大量领域资料</li></ul>
+    </div>
+  </div>
+
+  <h4>② AGENTS.md：告诉 Agent"这是怎样的项目"</h4>
+  <p>OpenCode 会把项目级和全局规则加入上下文，官方建议记录构建、测试、项目结构、约定与易踩坑处。示例：</p>
+  <pre><code># Project Guide
+
+## Goal
+这是一个多租户数据分析服务。任何修改都不能破坏租户隔离。
+
+## Structure
+- `api/`: 对外接口
+- `core/`: 业务逻辑
+- `tests/`: 单元与隔离测试
+
+## Commands
+- 单元测试：`pytest -q`
+- 隔离测试：`pytest -q tests/isolation`
+- 静态检查：`ruff check .`
+
+## Rules
+- 不在源码中写入密钥。
+- 修改数据库 Schema 前先生成迁移计划，不直接执行生产迁移。
+- 完成后必须报告改动文件、验证命令和仍未覆盖的风险。</code></pre>
+  <p class="note">AGENTS.md 是<strong>高频、跨任务</strong>的上下文，不应变成百科全书：场景性长流程拆到 Skill，机器硬限制放入权限或沙箱。</p>
+
+  <h4>③ Skill：告诉 Agent"这种任务应该怎样完成"</h4>
+  <pre><code>---
+name: tenant-isolation-review
+description: &gt;
+  Review changes that may affect tenant data or filesystem isolation.
+  Use for authentication, storage, workspace mapping, database queries,
+  or cross-tenant access paths. Do not use for unrelated UI-only edits.
+---
+
+# Tenant Isolation Review
+
+1. Identify the tenant boundary and authoritative tenant ID.
+2. Trace all read/write paths affected by the change.
+3. Run `scripts/check-isolation.sh`.
+4. Read `references/isolation-invariants.md` only if a boundary changes.
+5. Report PASS/FAIL for each invariant with file or test evidence.
+6. Do not modify production credentials or execute production migrations.</code></pre>
+
+  <h4>④ Tool 与 API：告诉 Agent"环境允许做什么"</h4>
+  <p>OpenCode 内置文件、搜索和命令等工具，也可接入自定义 Tool 或 MCP Server。原则：Tool 应提供<strong>稳定、窄而清楚</strong>的输入输出，而不是把整个业务系统变成一个模糊的"万能接口"。</p>
+
+  <h4>⑤ Session 与 Workspace：让任务不只存在于一条回复里</h4>
+  <p>OpenCode 的 TUI 本身是 Server 的客户端；<code>opencode serve</code> 提供 OpenAPI 接口，SDK 可创建会话、发送消息和订阅事件。工程上要区分六种状态：</p>
+  <table>
+    <thead><tr><th>状态类型</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Conversation state</strong></td><td>用户与 Agent 说了什么</td></tr>
+      <tr><td><strong>Task state</strong></td><td>任务处于 planning / working / blocked / completed</td></tr>
+      <tr><td><strong>Workspace state</strong></td><td>文件、代码和中间产物是什么</td></tr>
+      <tr><td><strong>External state</strong></td><td>数据库、工单、部署环境当前是什么</td></tr>
+      <tr><td><strong>Checkpoint</strong></td><td>失败后从哪里恢复</td></tr>
+      <tr><td><strong>Artifact</strong></td><td>最终可交付的文件、结构化数据或变更集</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 关键原则</div>
+    <p>聊天记录不能替代业务数据库；模型总结也不能成为生产状态的唯一真相来源。</p>
+  </div>
+
+  <h3>3.3 安全层：自然语言规则不是硬隔离</h3>
+  <p>OpenCode 的 permission 配置可对工具、命令、Skill、Subagent、外部目录和重复循环设置 <code>allow / ask / deny</code>，规则采用模式匹配（具体规则放在通配规则之后）：</p>
+  <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "edit": "ask",
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "rm *": "deny",
+      "sudo *": "deny"
+    },
+    "external_directory": "deny",
+    "webfetch": "ask",
+    "skill": { "*": "ask", "trusted-*": "allow" },
+    "task": { "*": "deny", "reviewer": "allow" },
+    "doom_loop": "ask"
+  }
+}</code></pre>
+  <div class="callout key">
+    <div class="callout-title">🔐 五条安全要点</div>
+    <ul>
+      <li>Permission 是 Harness 的<strong>动作门</strong>，不等于完整 OS 沙箱；</li>
+      <li><code>AGENTS.md</code> 里写"禁止删除"<strong>不能替代</strong>真正的 <code>deny</code>；</li>
+      <li>对不可信代码，应增加容器 / bwrap 隔离、只读挂载、网络出口控制和独立凭据；</li>
+      <li>密钥由运行环境或凭据代理注入，<strong>不能写入 Prompt、Skill 或仓库</strong>；</li>
+      <li>高风险写操作应具备 dry-run、幂等键、显式确认、审计和回滚方案。</li>
+    </ul>
+  </div>
+</section>

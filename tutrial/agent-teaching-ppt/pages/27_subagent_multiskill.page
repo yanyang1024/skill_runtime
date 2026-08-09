@@ -1,0 +1,117 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页。Subagent 的充分理由只有三类：上下文隔离、真并行、独立验证。多 Skill 默认单选；组合前检查 conflicts；防递归靠 Harness 去重、深度限制与 loop guard。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第七部分 · 组合机制
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: Subagent 与多 Skill：隔离与组合的红线
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: role-table
+    elementType: table
+    bounds: [64, 112, 460, 190]
+    columnWidths: [0.24, 0.40, 0.36]
+    rowHeights: [0.16, 0.21, 0.21, 0.21, 0.21]
+    style: "$default"
+    rows:
+      - - text: 角色
+        - text: 应负责
+        - text: 不应负责
+      - - text: "<strong>Primary</strong>"
+        - text: 理解目标、拆分任务、管理状态、确认、最终验收交付
+        - text: 把原始上下文无差别复制给每个 Subagent
+      - - text: "<strong>Explore</strong>"
+        - text: 只读条件下查找代码、资料和候选方案
+        - text: 直接修改主工作区
+      - - text: "<strong>Builder</strong>"
+        - text: 实现边界清楚的独立子任务
+        - text: 替 Primary 改变需求或接受风险
+      - - text: "<strong>Reviewer</strong>"
+        - text: 独立上下文中检查 Diff、证据和规则
+        - text: 继承实现者的自我辩护并默认通过
+  - elementId: sub-note-bar
+    elementType: shape
+    bounds: [64, 320, 4, 60]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: sub-note
+    elementType: text
+    bounds: [84, 320, 440, 170]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.55
+      text: |
+        <p><strong>使用 Subagent 的充分理由只有三类：</strong>需要隔离大量上下文；子任务彼此独立、确实可以并行；需要不同信息条件下的独立验证。</p>
+        <p style="margin-top:6px"><strong>角色扮演本身不是充分理由。</strong>共享同一错误前提的多个角色，只会增加自洽文本。</p>
+  - elementId: mix-head
+    elementType: text
+    bounds: [560, 112, 336, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 多 Skill 融合：优先单选
+  - elementId: mix-table
+    elementType: table
+    bounds: [560, 138, 336, 170]
+    columnWidths: [0.34, 0.38, 0.28]
+    rowHeights: [0.16, 0.168, 0.168, 0.168, 0.168, 0.168]
+    style: "$default"
+    rows:
+      - - text: 组合模式
+        - text: 做法
+        - text: 主要风险
+      - - text: 单 Skill
+        - text: 只激活命中最高者
+        - text: 覆盖不足
+      - - text: 主 + 辅助
+        - text: 主 Skill 持所有权，辅助返回局部结果
+        - text: 指令优先级冲突
+      - - text: 顺序管道
+        - text: 显式 A → Artifact → B
+        - text: 错误传导
+      - - text: 分阶段切换
+        - text: 验收 A 后再激活 B
+        - text: 会话过长
+      - - text: Subagent 隔离
+        - text: 独立上下文，只回传摘要
+        - text: 协调成本
+  - elementId: loop-head
+    elementType: text
+    bounds: [560, 322, 336, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 防语义递归的最低防护
+  - elementId: loop-list
+    elementType: text
+    bounds: [560, 346, 336, 150]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.55
+      text: |
+        <p>坏循环：A 要求调用 B → B 判断仍属 A → 再加载 A → 上下文膨胀 / doom loop。</p>
+        <p style="margin-top:6px">防护：已激活 Skill 去重；activation_chain 最大深度；依赖由 Router/Primary 解析；组合前查 conflicts_with；重复调用触发 loop guard；每个 Skill 返回 completed / blocked / handoff_required。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第七部分 · 组合机制与 Multi-Agent}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "27 / 36"}

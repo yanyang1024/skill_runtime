@@ -1,0 +1,96 @@
+version: v2
+title: Agent 平台架构、Skill 与 Vibe Coding
+theme:
+  colors:
+    paper: "#FBFAF6"
+    ink: "#23272E"
+    muted: "#6E7480"
+    primary: "#14524B"
+    primaryLight: "#DCE7E2"
+    accent: "#C4532A"
+    line: "#DDD9CE"
+    soft: "#F1EEE5"
+    codebg: "#202825"
+    codeink: "#E9E6DC"
+    white: "#FFFFFF"
+  textStyles:
+    kicker:
+      fontSize: 11
+      color: $primary
+      bold: true
+      letterSpacing: 2
+    title:
+      fontSize: 24
+      color: $ink
+      bold: true
+    h3:
+      fontSize: 15
+      color: $primary
+      bold: true
+    body:
+      fontSize: 12.5
+      color: $ink
+      lineHeight: 1.55
+    small:
+      fontSize: 10.5
+      color: $muted
+      lineHeight: 1.4
+    code:
+      fontSize: 10.5
+      color: $codeink
+      lineHeight: 1.5
+  tableStyles:
+    default:
+      cellStyle:
+        fontSize: 11
+        color: $ink
+        lineHeight: 1.35
+        align: [left, middle]
+        border: [{style: solid, width: 1, color: "#DDD9CE"}, null]
+      firstRowStyle:
+        fill: {type: solid, color: $primary}
+        color: "#FFFFFF"
+        bold: true
+        fontSize: 11
+      bodyStyles:
+        - fill: {type: solid, color: "#FFFFFF"}
+        - fill: {type: solid, color: $soft}
+size: [960, 540]
+pages:
+  - pages/01_cover.page
+  - pages/02_route.page
+  - pages/03_divider_m1.page
+  - pages/04_brain_in_vat.page
+  - pages/05_four_stages.page
+  - pages/06_division_of_labor.page
+  - pages/07_agent_formula.page
+  - pages/08_runtime_loop.page
+  - pages/09_stop_conditions.page
+  - pages/10_skill_definition.page
+  - pages/11_divider_m2.page
+  - pages/12_six_layers.page
+  - pages/13_agents_md_state.page
+  - pages/14_skill_example_tool.page
+  - pages/15_permission_security.page
+  - pages/16_divider_m3.page
+  - pages/17_vibe_two_modes.page
+  - pages/18_eight_steps.page
+  - pages/19_divider_m4.page
+  - pages/20_tool_principles.page
+  - pages/21_cli_contract.page
+  - pages/22_persistence_memory.page
+  - pages/23_skill_eval.page
+  - pages/24_description_explicit.page
+  - pages/25_divider_m5.page
+  - pages/26_six_mechanisms.page
+  - pages/27_subagent_multiskill.page
+  - pages/28_divider_m6.page
+  - pages/29_migration_arch.page
+  - pages/30_ui_mapping.page
+  - pages/31_nine_steps.page
+  - pages/p-ffWKog.page
+  - pages/32_reference_arch.page
+  - pages/33_exercises.page
+  - pages/34_eight_myths.page
+  - pages/35_ten_sentences.page
+  - pages/36_final.page

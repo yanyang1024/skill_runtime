@@ -1,0 +1,82 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 练习页。三个练习分别对应机制选型、Skill 触发边界、WebUI Agent 化。练习一参考答案放在讲师备注：1 Tool/API；2 Skill+Tools+permission；3 Workflow；4 MCP；5 Subagent；6 A2A。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第十部分 · 课堂练习
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 三个练习：选型、边界、Agent 化改造
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: ex1-head
+    elementType: text
+    bounds: [64, 112, 832, 20]
+    content:
+      style: "$h3"
+      fontSize: 13.5
+      text: 练习一（10 分钟）判断应该使用什么机制
+  - elementId: ex1-body
+    elementType: text
+    bounds: [64, 138, 832, 100]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.6
+      text: |
+        <p>针对每个需求选择 Tool、Skill、Workflow、MCP、Subagent 或 A2A，并说明理由：</p>
+        <p>① 查询订单实时状态　② 按团队规范完成一次生产发布　③ 每晚固定抽数、生成报表并发到指定系统</p>
+        <p>④ 让多个客户端统一访问企业知识与查询能力　⑤ 让独立上下文的 Reviewer 检查实现 Agent 的 Diff　⑥ 委托远程法务 Agent 完成数小时的有状态审查</p>
+  - elementId: ex2-head
+    elementType: text
+    bounds: [64, 248, 832, 20]
+    content:
+      style: "$h3"
+      fontSize: 13.5
+      text: 练习二（15 分钟）为一个 Skill 写触发边界
+  - elementId: ex2-body
+    elementType: text
+    bounds: [64, 274, 832, 90]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.6
+      text: |
+        <p>选择团队中的一个真实 SOP，交付：一段 ≤1024 字符的 description；5 条 should-trigger；5 条 should-not-trigger（至少 3 条近邻场景）；3 条输出质量断言；明确自动激活还是 explicit-only；若有外部写操作，写出确认与停止条件。</p>
+  - elementId: ex3-head
+    elementType: text
+    bounds: [64, 372, 832, 20]
+    content:
+      style: "$h3"
+      fontSize: 13.5
+      text: 练习三（20 分钟）把一个 WebUI 页面 Agent 化
+  - elementId: ex3-body
+    elementType: text
+    bounds: [64, 398, 832, 90]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.6
+      text: |
+        <p>选择现有页面，画出：页面动作背后的 API；Slot Schema；Tool 列表；仍应保留的参数卡、图表和按钮；一条自然语言任务示例；Agent 需要询问的最少问题；成功 Artifact 与验收证据。</p>
+        <p><strong>讨论重点：</strong>哪些不确定部分交给 Agent 后，用户路径真正变短了？</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第十部分 · 课堂练习}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "33 / 36"}

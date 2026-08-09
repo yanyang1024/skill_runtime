@@ -1,0 +1,84 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 概念页。Agent 不是一个 Prompt，也不只是一个模型。用工程公式建立整体认知，再展开 Harness 的七项职责。强调模型越强，Harness 责任越重。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第二部分 · 核心定义
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: Agent 不是一个 Prompt，也不只是一个模型
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: formula-bg
+    elementType: shape
+    bounds: [64, 112, 410, 210]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: formula
+    elementType: text
+    bounds: [84, 126, 380, 190]
+    content:
+      style: "$code"
+      fontSize: 11.5
+      lineHeight: 1.65
+      text: |
+        <p>Agent = Model</p>
+        <p>      + Harness（循环·上下文·工具中介）</p>
+        <p>      + State（会话·任务·检查点）</p>
+        <p>      + Resources（规则·Skill·Tool·API）</p>
+        <p>      + Policy（权限·沙箱·密钥·审计）</p>
+        <p>      + Feedback &amp; Verification</p>
+  - elementId: formula-note
+    elementType: text
+    bounds: [64, 338, 410, 150]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.6
+      text: |
+        <p><strong>Harness 是模型外部的运行脚手架。</strong></p>
+        <p style="margin-top:8px">更强的模型并不会让 Harness 失去意义——模型越能自主行动，Harness 对<strong>安全、状态、观察和验证</strong>的责任反而越重。</p>
+  - elementId: right-head
+    elementType: text
+    bounds: [510, 112, 386, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: Harness 负责的七件事
+  - elementId: right-list
+    elementType: text
+    bounds: [510, 140, 386, 340]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.75
+      text: |
+        <ol>
+        <li>组织消息和上下文</li>
+        <li>把工具以<strong>结构化 Schema</strong> 暴露给模型</li>
+        <li>执行工具调用并把结果送回模型</li>
+        <li>保存 Session、Message、Artifact 和事件</li>
+        <li>管理重试、超时、压缩、取消与恢复</li>
+        <li>在行动前执行<strong>权限检查</strong></li>
+        <li>判断继续循环、请求用户输入还是停止</li>
+        </ol>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第二部分 · Agent / Harness / Skill 的定义}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "07 / 36"}

@@ -1,0 +1,99 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 框架页。六种机制对比表是核心展品；右侧六问选型顺序按确定性从高到低排列。MCP 不是多 Agent 编排器，A2A 才处理远程 Agent 协作。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第七部分 · 组合机制
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 先分清六种组合机制，再谈编排
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: mech-table
+    elementType: table
+    bounds: [64, 112, 540, 290]
+    columnWidths: [0.17, 0.35, 0.24, 0.24]
+    rowHeights: [0.1, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+    style: "$default"
+    rows:
+      - - text: 机制
+        - text: 解决的问题
+        - text: 控制流
+        - text: 新上下文？
+      - - text: "<strong>Tool / API</strong>"
+        - text: 执行一个可定义的能力
+        - text: Agent 调用函数
+        - text: 否
+      - - text: "<strong>Skill</strong>"
+        - text: 告诉 Agent 一类任务怎样做
+        - text: 模型按说明执行
+        - text: 默认否
+      - - text: "<strong>Workflow</strong>"
+        - text: 固定或半固定步骤编排
+        - text: 开发者定义图
+        - text: 通常否
+      - - text: "<strong>MCP</strong>"
+        - text: 标准化 Agent 与 Tool/Data/Prompt 的连接
+        - text: Client–Server 协议
+        - text: 不等于新上下文
+      - - text: "<strong>Subagent</strong>"
+        - text: 把子任务放入独立 Agent 会话
+        - text: Primary 委派
+        - text: 是
+      - - text: "<strong>A2A</strong>"
+        - text: 跨进程或组织委托有状态 Agent 任务
+        - text: Agent Client–Server
+        - text: 是，远端有生命周期
+  - elementId: mech-note
+    elementType: text
+    bounds: [64, 414, 540, 80]
+    content:
+      style: "$small"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p><a href="https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture">MCP</a> 用于以标准方式发现和调用 Server 暴露的能力，<strong>不是天然的多 Agent 编排器</strong>；<a href="https://a2a-protocol.org/latest/specification/">A2A</a> 围绕 Agent Card、Task、状态更新、消息和 Artifact 描述远程 Agent 协作。</p>
+  - elementId: sel-head
+    elementType: text
+    bounds: [640, 112, 256, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 实用选型顺序（六问）
+  - elementId: sel-list
+    elementType: text
+    bounds: [640, 140, 256, 350]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.62
+      text: |
+        <ol>
+        <li>能写成确定性函数？→ <strong>Tool / API</strong></li>
+        <li>缺"如何正确完成"的知识？→ <strong>Skill</strong></li>
+        <li>步骤稳定、需审计？→ <strong>Workflow</strong></li>
+        <li>跨客户端标准接入能力？→ <strong>MCP</strong></li>
+        <li>需上下文隔离或独立验证？→ <strong>Subagent</strong></li>
+        <li>远端是有状态、长任务的 Agent？→ <strong>A2A</strong></li>
+        </ol>
+        <p style="margin-top:10px">不要因为"多 Agent"听起来更先进，就把一个函数拆成三个角色互相聊天。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第七部分 · 组合机制与 Multi-Agent}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "26 / 36"}

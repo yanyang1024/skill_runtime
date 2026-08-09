@@ -1,0 +1,68 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 重要修正页：Agent 的出现不意味着删除 Workflow、表单、规则和程序。逐行讲分工表，最后落到一句话总结。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第一部分 · 应用形态演进
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 重要修正：演进不是"确定性越来越少"
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: labor-table
+    elementType: table
+    bounds: [64, 116, 832, 290]
+    columnWidths: [0.55, 0.45]
+    rowHeights: [0.1, 0.128, 0.128, 0.128, 0.128, 0.128, 0.128, 0.128, 0.104]
+    style: "$default"
+    rows:
+      - - text: 问题类型
+        - text: 更适合的承担者
+      - - text: 理解模糊意图、处理例外、选择策略
+        - text: "<strong>模型 / Agent</strong>"
+      - - text: 计算、格式转换、查询、写入
+        - text: Tool / API / Script
+      - - text: 稳定且高频的固定路径
+        - text: Workflow
+      - - text: 企业共识与项目约定
+        - text: AGENTS.md / Rules
+      - - text: 场景化操作方法
+        - text: Skill
+      - - text: 不可突破的限制
+        - text: Permission / Sandbox / Policy
+      - - text: 成功与否的判断
+        - text: 测试、断言、业务验收、人类评审
+  - elementId: takeaway-bar
+    elementType: shape
+    bounds: [64, 428, 4, 56]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: takeaway
+    elementType: text
+    bounds: [84, 428, 812, 60]
+    content:
+      fontSize: 14
+      color: "$ink"
+      lineHeight: 1.55
+      text: |
+        <p><strong>一句话总结：</strong>把不确定性留给模型，把确定性沉淀到环境；把灵活性放在决策层，把安全和正确性放在<strong>模型无法绕过的边界</strong>上。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第一部分 · 应用形态演进}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "06 / 36"}

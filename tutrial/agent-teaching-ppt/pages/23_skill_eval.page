@@ -1,0 +1,91 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页。Skill 有两类质量：会不会被用、用了有没有帮助。六类测试语句中，负样例必须是"很像但不该触发"的近邻场景。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第六部分 · Skill 命中率测试
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: Skill 评测：会不会被用 × 用了有没有帮助
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: eval-table
+    elementType: table
+    bounds: [64, 112, 832, 100]
+    columnWidths: [0.18, 0.44, 0.38]
+    rowHeights: [0.28, 0.36, 0.36]
+    style: "$default"
+    rows:
+      - - text: 评测层
+        - text: 核心问题
+        - text: 典型指标
+      - - text: "<strong>Trigger eval</strong>"
+        - text: 该触发时是否触发，不该触发时是否保持安静
+        - text: Precision、Recall、FPR、触发稳定率
+      - - text: "<strong>Outcome eval</strong>"
+        - text: Skill 被加载后是否提升任务结果（with vs without）
+        - text: 断言通过率、Artifact 质量、耗时、Token、失败率
+  - elementId: case-head
+    elementType: text
+    bounds: [64, 228, 832, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 触发测试集：六类语句（第一版约 20 条查询 × 每条运行 3 次）
+  - elementId: case-table
+    elementType: table
+    bounds: [64, 252, 832, 200]
+    columnWidths: [0.18, 0.55, 0.27]
+    rowHeights: [0.12, 0.147, 0.147, 0.147, 0.147, 0.146, 0.146]
+    style: "$default"
+    rows:
+      - - text: 类别
+        - text: 示例
+        - text: 预期
+      - - text: 明确点名
+        - text: "使用 $tenant-isolation-review 检查这个 PR"
+        - text: 必须触发
+      - - text: 明确业务意图
+        - text: "这个改动可能让 A 租户读到 B 租户文件，帮我审查"
+        - text: 自动型 Skill 应触发
+      - - text: 隐含但真实相关
+        - text: "我们把 workspace 路径从用户级改成应用级，有什么风险？"
+        - text: 视边界触发
+      - - text: 关键词近邻
+        - text: "帮我改一下租户设置页面的颜色"
+        - text: 不触发
+      - - text: 同文件不同意图
+        - text: "给 isolation.py 补 docstring"
+        - text: 通常不触发
+      - - text: 多意图冲突
+        - text: "先修隔离漏洞，再更新发布说明"
+        - text: 触发主 Skill 并组合/分阶段
+  - elementId: case-note
+    elementType: text
+    bounds: [64, 464, 832, 36]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.5
+      text: |
+        <p><strong>负样例应是"很像但不该触发"的近邻场景</strong>，而不是天气、笑话等毫无关联的问题。指标：Precision = TP/(TP+FP)，Recall = TP/(TP+FN)，FPR = FP/(FP+TN)；并记录同一 Prompt 三次运行的触发率与误触发成本。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第六部分 · Skill 命中率测试}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "23 / 36"}

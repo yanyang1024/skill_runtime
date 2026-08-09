@@ -1,0 +1,165 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 过程页。ReAct 把推理与行动交错：行动得到观察，观察影响后续决策。沿左侧循环图逐节点讲解；右侧给出每环节应保留的可观测信息。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第二部分 · 核心定义
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: Agent 的运行时：带状态的决策循环（ReAct-like）
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: n1
+    elementType: shape
+    bounds: [64, 116, 250, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$primaryLight"}
+  - elementId: n1t
+    elementType: text
+    bounds: [64, 116, 250, 40]
+    content: {fontSize: 12, bold: true, align: [center, middle], text: 用户目标或待办任务}
+  - elementId: a1
+    elementType: text
+    bounds: [64, 158, 250, 16]
+    content: {fontSize: 11, color: "$accent", align: [center, middle], text: "↓"}
+  - elementId: n2
+    elementType: shape
+    bounds: [64, 176, 250, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$primaryLight"}
+  - elementId: n2t
+    elementType: text
+    bounds: [64, 176, 250, 40]
+    content: {fontSize: 12, bold: true, align: [center, middle], text: 装载会话状态与相关资源}
+  - elementId: a2
+    elementType: text
+    bounds: [64, 218, 250, 16]
+    content: {fontSize: 11, color: "$accent", align: [center, middle], text: "↓"}
+  - elementId: n3
+    elementType: shape
+    bounds: [64, 236, 250, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$primaryLight"}
+  - elementId: n3t
+    elementType: text
+    bounds: [64, 236, 250, 40]
+    content: {fontSize: 12, bold: true, align: [center, middle], text: 选择：回答 / 工具 / 委派子任务}
+  - elementId: a3
+    elementType: text
+    bounds: [64, 278, 250, 16]
+    content: {fontSize: 11, color: "$accent", align: [center, middle], text: "↓"}
+  - elementId: n4
+    elementType: shape
+    bounds: [64, 296, 250, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$soft"}
+    border: {style: solid, width: 1, color: "$accent"}
+  - elementId: n4t
+    elementType: text
+    bounds: [64, 296, 250, 40]
+    content: {fontSize: 12, bold: true, align: [center, middle], text: 权限与安全检查}
+  - elementId: a4
+    elementType: text
+    bounds: [64, 338, 250, 16]
+    content: {fontSize: 11, color: "$accent", align: [center, middle], text: "↓ 允许"}
+  - elementId: n5
+    elementType: shape
+    bounds: [64, 356, 250, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$primaryLight"}
+  - elementId: n5t
+    elementType: text
+    bounds: [64, 356, 250, 40]
+    content: {fontSize: 12, bold: true, align: [center, middle], text: 执行并获得真实观察}
+  - elementId: a5
+    elementType: text
+    bounds: [64, 398, 250, 16]
+    content: {fontSize: 11, color: "$accent", align: [center, middle], text: "↓"}
+  - elementId: n6
+    elementType: shape
+    bounds: [64, 416, 250, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$soft"}
+    border: {style: solid, width: 1, color: "$accent"}
+  - elementId: n6t
+    elementType: text
+    bounds: [64, 416, 250, 40]
+    content: {fontSize: 12, bold: true, align: [center, middle], text: 有完成证据吗？}
+  - elementId: a6
+    elementType: text
+    bounds: [64, 458, 250, 16]
+    content: {fontSize: 11, color: "$accent", align: [center, middle], text: "↓ 有"}
+  - elementId: n7
+    elementType: shape
+    bounds: [64, 476, 250, 32]
+    shapeName: rect
+    fill: {type: solid, color: "$primary"}
+  - elementId: n7t
+    elementType: text
+    bounds: [64, 476, 250, 32]
+    content: {fontSize: 12, bold: true, color: "$white", align: [center, middle], text: 交付结果、产物与证据}
+  - elementId: loop-note
+    elementType: text
+    bounds: [330, 296, 150, 140]
+    content:
+      style: "$small"
+      fontSize: 10
+      lineHeight: 1.5
+      text: |
+        <p>拒绝 / 询问 → 请求确认或停止</p>
+        <p style="margin-top:10px">无证据 → 回到"装载状态"继续循环</p>
+  - elementId: obs-head
+    elementType: text
+    bounds: [500, 112, 396, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 每个环节应保留的可观测信息
+  - elementId: obs-table
+    elementType: table
+    bounds: [500, 138, 396, 330]
+    columnWidths: [0.24, 0.76]
+    rowHeights: [0.1, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+    style: "$default"
+    rows:
+      - - text: 环节
+        - text: 应保留的信息
+      - - text: "<strong>观察</strong>"
+        - text: 输入来源、版本、时间、权限范围
+      - - text: "<strong>决策</strong>"
+        - text: 简明计划、选择理由、风险提示（不要求完整思维链）
+      - - text: "<strong>行动</strong>"
+        - text: 工具名、参数摘要、调用身份、幂等键
+      - - text: "<strong>反馈</strong>"
+        - text: 结构化结果、错误类型、证据与 Artifact
+      - - text: "<strong>状态更新</strong>"
+        - text: 状态迁移、差异、可恢复位置
+      - - text: "<strong>停止</strong>"
+        - text: 停止原因、未完成项、下一步建议
+  - elementId: obs-note
+    elementType: text
+    bounds: [500, 476, 396, 32]
+    content:
+      style: "$small"
+      fontSize: 10.5
+      text: 生产 Agent 通常采用 ReAct-like 循环，但不一定逐字暴露模型的内部思维过程。
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第二部分 · Agent / Harness / Skill 的定义}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "08 / 36"}

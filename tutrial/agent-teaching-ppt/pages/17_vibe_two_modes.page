@@ -1,0 +1,76 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 对比页。Vibe Coding 最初是 Karpathy 描述的开发体验；教学中必须区分原型式与生产式。判断标准：能否交付可维护、可验证的结果。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第四部分 · Vibe Coding
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 先分清：原型式 Vibe Coding ≠ 生产式 Agentic Coding
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: mode-table
+    elementType: table
+    bounds: [64, 112, 832, 150]
+    columnWidths: [0.2, 0.22, 0.30, 0.28]
+    rowHeights: [0.24, 0.38, 0.38]
+    style: "$default"
+    rows:
+      - - text: 模式
+        - text: 目标
+        - text: 可接受做法
+        - text: 不可接受做法
+      - - text: "<strong>原型式 Vibe Coding</strong>"
+        - text: 快速验证想法、一次性个人工具
+        - text: 快速生成、边看效果边调整、允许重做
+        - text: 用于生产后仍不理解权限、数据和依赖
+      - - text: "<strong>生产式 Agentic Coding</strong>"
+        - text: 在 Agent 主导执行下交付可维护结果
+        - text: 自然语言定义目标，机器执行测试，人审阅风险与验收证据
+        - text: 「Accept All」、只看 UI 正常、让同一 Agent 无证据地自我宣布完成
+  - elementId: path-head
+    elementType: text
+    bounds: [64, 282, 832, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 生产环境的升级路径：不是取消"Vibe"，而是工程化
+  - elementId: path-steps
+    elementType: text
+    bounds: [64, 310, 832, 110]
+    content:
+      style: "$body"
+      fontSize: 12.5
+      lineHeight: 1.7
+      text: |
+        <p><span style="color:$primary"><strong>①</strong></span> 自然语言意图　<span style="color:$accent">→</span>　<span style="color:$primary"><strong>②</strong></span> 可确认的规格与边界　<span style="color:$accent">→</span>　<span style="color:$primary"><strong>③</strong></span> Agent 在受控工作区执行</p>
+        <p><span style="color:$accent">→</span>　<span style="color:$primary"><strong>④</strong></span> 自动测试与真实反馈　<span style="color:$accent">→</span>　<span style="color:$primary"><strong>⑤</strong></span> 人类体验和风险审阅　<span style="color:$accent">→</span>　<span style="color:$primary"><strong>⑥</strong></span> 检查点、交付和知识沉淀</p>
+  - elementId: src-note
+    elementType: text
+    bounds: [64, 372, 832, 56]
+    content:
+      style: "$small"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p>"Vibe Coding" 原始表述见 <a href="https://x.com/karpathy/status/1886192184808149383">Karpathy 的帖子</a>；GitHub 的 <a href="https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/">Spec-driven development</a> 指出：从一句描述直接跳到代码适合快速原型，严肃项目需要更清楚的规格和验证。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第四部分 · Vibe Coding}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "17 / 36"}

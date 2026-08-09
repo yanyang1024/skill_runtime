@@ -1,0 +1,101 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 框架页。九个最小组件构成参考架构；优先级九步中，Subagent 与 A2A 是"确认有真实需求后再加"，不是默认起点。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第九部分 · 参考架构
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 一版可落地的参考架构：先简单做
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: arch-flow
+    elementType: text
+    bounds: [64, 112, 832, 60]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.6
+      text: |
+        <p>Chat + Files + Cards + Artifacts → <strong>Agent Runtime / Session Manager</strong>（← AGENTS + Skill Catalog + Memory）→ Tools / Workflow / MCP / Subagents → Business APIs / Data / Workspace → Task State / Trace / Artifact Store</p>
+        <p><span style="color:$accent">Permission / Sandbox / Identity / Audit 作为控制面，贯穿 Runtime 与能力层。</span></p>
+  - elementId: comp-head
+    elementType: text
+    bounds: [64, 186, 440, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 最小可用组件（九件）
+  - elementId: comp-table
+    elementType: table
+    bounds: [64, 210, 440, 280]
+    columnWidths: [0.36, 0.64]
+    rowHeights: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    style: "$default"
+    rows:
+      - - text: 组件
+        - text: 职责
+      - - text: Agent Runtime
+        - text: 模型调用、Tool Loop、取消、超时、停止
+      - - text: Session Manager
+        - text: 用户、项目、会话和 Task 的映射
+      - - text: Context Loader
+        - text: AGENTS.md、Skill 目录和按需资源
+      - - text: Tool Gateway
+        - text: 统一 Schema、身份、错误、幂等、限流、审计
+      - - text: Workspace
+        - text: 文件上传、执行、Artifact 与隔离
+      - - text: Policy Layer
+        - text: permission、沙箱、网络和凭据
+      - - text: Observability
+        - text: 事件、Trace、Tool Call、成本和失败原因
+      - - text: Eval Harness
+        - text: 触发、任务、安全和回归测试
+      - - text: Hybrid UI
+        - text: 对话、参数卡、任务状态与 Artifact 预览
+  - elementId: prio-head
+    elementType: text
+    bounds: [540, 186, 356, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 「先简单做」的优先级
+  - elementId: prio-list
+    elementType: text
+    bounds: [540, 210, 356, 280]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.62
+      text: |
+        <ol>
+        <li>一个 Primary Agent</li>
+        <li>3–8 个窄而稳定的 Tools</li>
+        <li>一份简洁 AGENTS.md</li>
+        <li>1–3 个高价值 Skills</li>
+        <li>Session + Workspace + Artifact</li>
+        <li>permission + 系统隔离</li>
+        <li>任务级验收与 Trace</li>
+        </ol>
+        <p style="margin-top:8px"><strong>⑧</strong> 确认存在上下文隔离或独立验证需求后，<strong>再加 Subagent</strong></p>
+        <p><strong>⑨</strong> 确认存在跨系统 Agent 委托后，<strong>再考虑 A2A</strong></p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第九部分 · 参考架构}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "32 / 36"}

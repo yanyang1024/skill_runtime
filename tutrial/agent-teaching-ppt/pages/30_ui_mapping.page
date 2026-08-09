@@ -1,0 +1,88 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 映射页。最实用的 Agent UI 是 Chat + 文件区 + 参数卡 + 任务时间线 + Artifact 预览 + 权限确认，而不是只有 Chat。表格逐行对应原 WebUI 元素的去向。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第八部分 · WebUI 迁移
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: UI 元素如何映射到 Agent 交互
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: ui-table
+    elementType: table
+    bounds: [64, 108, 832, 330]
+    columnWidths: [0.18, 0.34, 0.48]
+    rowHeights: [0.082, 0.0834, 0.0834, 0.0834, 0.0834, 0.0834, 0.0834, 0.0834, 0.0834, 0.0834, 0.0834, 0.083]
+    style: "$default"
+    rows:
+      - - text: 原 WebUI 元素
+        - text: Agent 应用中的映射
+        - text: 设计注意
+      - - text: 文本输入框
+        - text: 对话中的 Slot
+        - text: 能从上下文推断时填充；高影响值必须确认
+      - - text: 下拉框
+        - text: Enum Tool 参数 + 可点击选项卡
+        - text: 不让模型生成不存在的选项
+      - - text: 多选框
+        - text: 数组参数 + 选择卡片
+        - text: 显示当前选择，允许一键修改
+      - - text: 多步 Wizard
+        - text: 分阶段对话或一次性参数卡
+        - text: 不要每个字段都问一轮
+      - - text: 「运行」按钮
+        - text: Tool / Workflow 调用
+        - text: 调用前展示关键参数和副作用
+      - - text: 进度条
+        - text: Task status / Event stream
+        - text: 区分排队、运行、等待输入、完成、失败
+      - - text: Toast 错误
+        - text: 结构化错误 + 恢复建议
+        - text: 保留错误代码和 trace ID
+      - - text: 表格与图表
+        - text: Artifact Preview / 可视化卡片
+        - text: 不强迫模型把大表复述成文本
+      - - text: 下载按钮
+        - text: Artifact 链接
+        - text: 标注类型、大小、版本和来源
+      - - text: 保存 / 提交
+        - text: 外部写操作 + 显式确认
+        - text: 使用幂等键和审计记录
+      - - text: 历史任务
+        - text: Session / Task 列表
+        - text: 任务状态不只存在于聊天消息里
+  - elementId: ui-note-bar
+    elementType: shape
+    bounds: [64, 452, 4, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: ui-note
+    elementType: text
+    bounds: [84, 452, 812, 44]
+    content:
+      fontSize: 13
+      color: "$ink"
+      lineHeight: 1.5
+      text: |
+        <p>最实用的 Agent UI = <strong>Chat + 文件区 + 参数卡 + 任务时间线 + Artifact 预览 + 权限确认</strong>，而不是只有 Chat。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第八部分 · WebUI 迁移}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "30 / 36"}

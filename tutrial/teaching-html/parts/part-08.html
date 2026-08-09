@@ -1,0 +1,112 @@
+<section class="chapter" id="part-08">
+  <div class="chapter-tag">第八部分</div>
+  <h2>把 WebUI 应用迁移为 Agent 对话式应用</h2>
+  <p class="lead">目标不是"把所有按钮删掉，只留一个输入框"。最实用的 Agent UI 往往是：<strong>Chat + 文件区 + 参数卡 + 任务时间线 + Artifact 预览 + 权限确认</strong>。</p>
+
+  <h3>8.1 现有 WebUI 已经沉淀的确定性能力</h3>
+  <p>参数 Schema、业务校验、API 和权限、状态机与错误处理、图表/表格/文件预览、用户已熟悉的快捷操作。迁移时最有价值的做法是<strong>复用这些能力</strong>，让 Agent 负责意图理解、补全条件、选择流程、解释结果和处理长尾——而不是让 Agent 通过浏览器点击来模拟所有操作。</p>
+
+  <h3>8.2 三种迁移架构</h3>
+  <table>
+    <thead><tr><th>方案</th><th>架构</th><th>优点</th><th>缺点</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr><td><strong>浏览器 / DOM 操作</strong></td><td>Agent 像人一样点击原 WebUI</td><td>接入快，不改后端</td><td>脆弱、慢、难审计、UI 改版即失效</td><td>仅作过渡或无 API 时使用</td></tr>
+      <tr><td><strong>API Tool 化</strong></td><td>把原有 API 封装为 Typed Tools</td><td>稳定、快、可测试、可授权</td><td>需要整理 Schema 和错误</td><td><strong>默认推荐</strong></td></tr>
+      <tr><td><strong>Workflow as Tool</strong></td><td>把原有固定流程作为一个 Tool</td><td>最大限度复用确定性流程</td><td>中间过程的交互灵活性有限</td><td>稳定主流程推荐</td></tr>
+      <tr><td><strong>对话 + 结构化 UI</strong></td><td>Agent 编排，卡片/表单/工作区承载精确交互</td><td>灵活且可控，用户体验最好</td><td>前端与状态设计工作较多</td><td><strong>生产目标形态</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.3 UI 元素如何映射到 Agent 交互</h3>
+  <table>
+    <thead><tr><th>原 WebUI 元素</th><th>Agent 应用中的映射</th><th>设计注意</th></tr></thead>
+    <tbody>
+      <tr><td>文本输入框</td><td>对话中的 Slot</td><td>能从上下文推断时填充；高影响值必须确认</td></tr>
+      <tr><td>下拉框</td><td>Enum Tool 参数 + 可点击选项卡</td><td>不让模型生成不存在的选项</td></tr>
+      <tr><td>多选框</td><td>数组参数 + 选择卡片</td><td>显示当前选择，允许一键修改</td></tr>
+      <tr><td>多步 Wizard</td><td>分阶段对话或一次性参数卡</td><td>不要每个字段都问一轮</td></tr>
+      <tr><td>"运行"按钮</td><td>Tool / Workflow 调用</td><td>调用前展示关键参数和副作用</td></tr>
+      <tr><td>进度条</td><td>Task status / Event stream</td><td>区分排队、运行、等待输入、完成、失败</td></tr>
+      <tr><td>Toast 错误</td><td>结构化错误 + 恢复建议</td><td>保留错误代码和 trace ID</td></tr>
+      <tr><td>表格与图表</td><td>Artifact Preview / 可视化卡片</td><td>不强迫模型把大表复述成文本</td></tr>
+      <tr><td>下载按钮</td><td>Artifact 链接</td><td>标注类型、大小、版本和来源</td></tr>
+      <tr><td>保存 / 提交</td><td>外部写操作 + 显式确认</td><td>使用幂等键和审计记录</td></tr>
+      <tr><td>历史任务</td><td>Session / Task 列表</td><td>任务状态不只存在于聊天消息里</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.4 迁移示例：算法实验分析平台</h3>
+  <div class="cols">
+    <div class="col-box">
+      <div class="col-title">🖥️ 原 WebUI：用户需要八步</div>
+      <ol class="compact">
+        <li>上传 CSV</li><li>选择层别</li><li>选择日期范围</li><li>勾选清洗策略</li>
+        <li>选择模型</li><li>设置 Top N</li><li>点击运行</li><li>下载报告</li>
+      </ol>
+    </div>
+    <div class="col-box ok">
+      <div class="col-title">💬 对话式 Agent：用户说一句话</div>
+      <p><em>"用我刚上传的 MCH 数据分析最近三个月的异常，沿用上次的清洗规则，比较常用模型，给我 Top 10 参数组合和一份可下载报告。"</em></p>
+    </div>
+  </div>
+  <div class="callout key">
+    <div class="callout-title">🤖 Agent 的合理行为（八步）</div>
+    <ol>
+      <li>从附件和会话状态解析 dataset、layer、date range、cleaning profile 和 Top N；</li>
+      <li>对"上次规则"读取<strong>已确认且仍有效</strong>的配置，不从模糊记忆猜测；</li>
+      <li>在参数卡中一次性展示解析结果；</li>
+      <li>只询问真正缺失且会改变结果的指标定义或约束；</li>
+      <li>调用原有数据校验 API；</li>
+      <li>把稳定分析 Workflow 作为 Tool 执行；</li>
+      <li>在任务时间线中展示阶段状态；</li>
+      <li>返回摘要、图表和报告 Artifact，并说明数据版本与验证结果。</li>
+    </ol>
+    <p>Agent 消除了用户理解所有表单字段的负担，但<strong>没有删除</strong>底层参数校验、Workflow 和可视化能力。</p>
+  </div>
+
+  <h3>8.5 WebUI 迁移的九步方法</h3>
+  <div class="step"><div class="step-num">第 1 步</div><h4>盘点真实能力，而不是盘点页面</h4><p>把每个页面动作追踪到后端 API、数据库读写、文件操作或第三方系统，形成 capability inventory。</p></div>
+  <div class="step"><div class="step-num">第 2 步</div><h4>给动作分级</h4>
+    <table>
+      <thead><tr><th>等级</th><th>示例</th><th>默认策略</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Read</strong></td><td>查询状态、预览数据</td><td>可自动执行，记录来源</td></tr>
+        <tr><td><strong>Compute</strong></td><td>分析、转换、生成草稿</td><td>可自动执行，限制资源</td></tr>
+        <tr><td><strong>Workspace Write</strong></td><td>写入用户工作区</td><td>执行后展示 Diff / Artifact</td></tr>
+        <tr><td><strong>External Write</strong></td><td>发消息、建工单、更新业务系统</td><td>明确参数并确认</td></tr>
+        <tr><td><strong>Destructive / Financial</strong></td><td>删除、支付、生产发布</td><td>强审批、幂等、审计、回滚</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="step"><div class="step-num">第 3 步</div><h4>把 API 封装成窄而稳定的 Tool</h4><p>不要直接把整个内部 OpenAPI 暴露给模型。按用户意图组合成少量高内聚工具，并设置租户身份、权限和返回上限。</p></div>
+  <div class="step"><div class="step-num">第 4 步</div><h4>把表单 Schema 变成 Slot Schema</h4><p>每个 Slot 标记：类型与合法值、是否必需、默认值来源、能否从上下文推断、是否需要用户确认、过期条件。</p></div>
+  <div class="step"><div class="step-num">第 5 步</div><h4>复用稳定 Workflow</h4><p>固定主流程不要让 Agent 每次自由发明。把 Workflow 暴露为一个 Tool，Agent 负责选择、补参和解释。</p></div>
+  <div class="step"><div class="step-num">第 6 步</div><h4>设计 Session、Task 和 Artifact</h4><p>Session 保存对话与意图；Task 保存真实任务状态；Artifact 保存结果；业务数据库仍是外部状态的权威来源。</p></div>
+  <div class="step"><div class="step-num">第 7 步</div><h4>补齐确认和恢复</h4><p>对副作用操作提供 preview / dry-run；展示即将执行的关键参数；失败后允许重试、修改参数或从检查点恢复。</p></div>
+  <div class="step"><div class="step-num">第 8 步</div><h4>保留结构化 UI</h4><p>高维参数、精确比较、大表格、图像和进度更适合可视化组件。对话负责"为什么、做什么、下一步"，UI 负责"精确选择和观察"。</p></div>
+  <div class="step"><div class="step-num">第 9 步</div><h4>灰度上线并做任务级评测</h4><p>关注：任务完成率、平均澄清轮数、错误 Tool 选择率、参数纠正率、外部写操作撤销率、延迟/Token/API 成本、从请求到可用 Artifact 的时间、与原 WebUI 的成功率和满意度对比。</p></div>
+
+  <h3>8.6 对话式改造的利弊</h3>
+  <table>
+    <thead><tr><th>价值</th><th>代价</th></tr></thead>
+    <tbody>
+      <tr><td>用户按目标表达，不必先理解产品信息架构</td><td>能力发现不如菜单直观，需要建议语句和能力目录</td></tr>
+      <tr><td>能组合多个原本分散的页面与流程</td><td>模型路由错误会调用错误流程</td></tr>
+      <tr><td>更适合模糊需求、异常情况和个性化任务</td><td>多轮澄清可能比直接填表更慢</td></tr>
+      <tr><td>能解释参数、结果和失败原因</td><td>延迟与 Token 成本增加</td></tr>
+      <tr><td>可以在会话中读取文件并持续迭代</td><td>状态、权限和记忆治理更复杂</td></tr>
+      <tr><td>Agent 可把结果交付为 Artifact</td><td>必须建立可观测、验证和恢复机制</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">🚫 不宜完全对话化的场景</div>
+    <ul>
+      <li>用户已非常熟练、每天重复录入大量结构化数据；</li>
+      <li>毫秒级响应或极低成本要求；</li>
+      <li>每个字段都必须逐项人工确认；</li>
+      <li>医疗、金融、生产控制等高风险动作没有完善审批；</li>
+      <li>后端没有稳定 API，只能靠脆弱 UI 自动化；</li>
+      <li>任务不能定义成功证据，也无法安全回滚。</li>
+    </ul>
+  </div>
+</section>

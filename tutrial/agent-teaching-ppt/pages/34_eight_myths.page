@@ -1,0 +1,55 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 反馈页。八个误区两列排布，逐条点名纠正。核心：精度大于数量；硬边界大于自然语言；结构化 UI 与对话组合；Multi-Agent 价值来自隔离与独立验证。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第十一部分 · 常见误区
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 八个需要避免的结论
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: myths-left
+    elementType: text
+    bounds: [64, 112, 410, 380]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.5
+      text: |
+        <p><span style="color:$accent"><strong>误区一</strong></span>　<strong>有系统 Prompt 就是 Agent</strong><br/>Prompt 只定义行为倾向；Agent 还需要循环、工具、状态、反馈和停止机制。</p>
+        <p style="margin-top:10px"><span style="color:$accent"><strong>误区二</strong></span>　<strong>Skill 就是一个 Tool</strong><br/>Tool 是能力接口，Skill 是使用能力的程序性知识；两者可以互不依赖。</p>
+        <p style="margin-top:10px"><span style="color:$accent"><strong>误区三</strong></span>　<strong>MCP 是多 Agent 协议</strong><br/>MCP 连接 Agent 应用与外部能力；A2A 才处理远程 Agent 的发现、任务状态和 Artifact。</p>
+        <p style="margin-top:10px"><span style="color:$accent"><strong>误区四</strong></span>　<strong>工具和 Skill 越多，Agent 越强</strong><br/>过多相似能力增加选择错误、上下文污染、权限面和维护成本；目录精度比数量更重要。</p>
+  - elementId: myths-right
+    elementType: text
+    bounds: [510, 112, 386, 380]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.5
+      text: |
+        <p><span style="color:$accent"><strong>误区五</strong></span>　<strong>在 AGENTS.md 写禁止事项就足够安全</strong><br/>自然语言约束可能被误解或遗忘；高风险边界必须由 permission、sandbox、identity、网络策略和审计实现。</p>
+        <p style="margin-top:10px"><span style="color:$accent"><strong>误区六</strong></span>　<strong>对话式应用应该删除表单和可视化</strong><br/>自然语言适合理解目标与例外；结构化 UI 适合精确输入、比较、审批和观察；两者应组合。</p>
+        <p style="margin-top:10px"><span style="color:$accent"><strong>误区七</strong></span>　<strong>多 Agent 会自动提高正确率</strong><br/>共享同一错误前提的多个角色只会增加自洽文本；价值来自隔离、并行独立性或独立验证。</p>
+        <p style="margin-top:10px"><span style="color:$accent"><strong>误区八</strong></span>　<strong>记忆就是把所有聊天永久保存</strong><br/>日志用于追溯，记忆用于改善决策；长期记忆必须经确认、限定作用域、支持过期和纠错。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第十一部分 · 常见误区}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "34 / 36"}

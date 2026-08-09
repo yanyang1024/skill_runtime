@@ -1,0 +1,84 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页+案例页。三种迁移架构中 API Tool 化是默认推荐，对话+结构化 UI 是生产目标形态。实验平台示例：用户一句话，Agent 八步行为，底层校验与 Workflow 不删除。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第八部分 · WebUI 迁移
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 迁移：复用确定性能力，而不是模拟点击
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: arch-table
+    elementType: table
+    bounds: [64, 112, 832, 170]
+    columnWidths: [0.19, 0.28, 0.24, 0.29]
+    rowHeights: [0.18, 0.205, 0.205, 0.205, 0.205]
+    style: "$default"
+    rows:
+      - - text: 方案
+        - text: 架构
+        - text: 优点 / 缺点
+        - text: 建议
+      - - text: "<strong>浏览器 / DOM 操作</strong>"
+        - text: Agent 像人一样点击原 WebUI
+        - text: 接入快；但脆弱、慢、难审计
+        - text: 仅作过渡或无 API 时使用
+      - - text: "<strong>API Tool 化</strong>"
+        - text: 把原有 API 封装为 Typed Tools
+        - text: 稳定可测；需整理 Schema 和错误
+        - text: 默认推荐
+      - - text: "<strong>Workflow as Tool</strong>"
+        - text: 把固定流程作为一个 Tool
+        - text: 最大复用确定性；中间交互灵活性有限
+        - text: 稳定主流程推荐
+      - - text: "<strong>对话 + 结构化 UI</strong>"
+        - text: Agent 编排，卡片/表单承载精确交互
+        - text: 灵活可控；前端与状态设计工作较多
+        - text: 生产目标形态
+  - elementId: case-head
+    elementType: text
+    bounds: [64, 298, 832, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 迁移示例：算法实验分析平台
+  - elementId: case-user
+    elementType: text
+    bounds: [64, 324, 400, 70]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.55
+      text: |
+        <p><strong>用户说：</strong>"用我刚上传的 MCH 数据分析最近三个月的异常，沿用上次的清洗规则，比较常用模型，给我 Top 10 参数组合和一份可下载报告。"</p>
+  - elementId: case-agent
+    elementType: text
+    bounds: [64, 400, 832, 90]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.55
+      text: |
+        <p><strong>Agent 的合理行为：</strong>从附件和会话状态解析 dataset / 层别 / 日期 / 清洗配置 / Top N → 对"上次规则"读取已确认且仍有效的配置（不从模糊记忆猜测）→ 参数卡一次性展示解析结果 → 只问真正缺失的指标定义 → 调用原有数据校验 API → 把稳定分析 Workflow 作为 Tool 执行 → 任务时间线展示阶段状态 → 返回摘要、图表和报告 Artifact，并说明数据版本与验证结果。</p>
+        <p style="margin-top:4px"><strong>关键：</strong>Agent 消除了用户理解所有表单字段的负担，但没有删除底层参数校验、Workflow 和可视化能力。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第八部分 · WebUI 迁移}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "29 / 36"}

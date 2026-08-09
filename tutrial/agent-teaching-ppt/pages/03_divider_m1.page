@@ -1,0 +1,52 @@
+pageType: chapter
+background:
+  type: solid
+  color: "$paper"
+notes: 模块一开场：先建立"为什么需要 Agent"的直觉，再给 Agent / Harness / Skill 的严格定义。
+elements:
+  - elementId: big-num
+    elementType: text
+    bounds: [64, 90, 300, 160]
+    content:
+      fontSize: 120
+      color: "$primaryLight"
+      bold: true
+      wrap: false
+      text: "01"
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 268, 700, 18]
+    content:
+      style: "$kicker"
+      text: 模块一 · 第一、二部分
+  - elementId: title
+    elementType: text
+    bounds: [64, 292, 832, 44]
+    content:
+      fontSize: 30
+      color: "$ink"
+      bold: true
+      text: 应用形态的演进与核心定义
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 352, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: parts
+    elementType: text
+    bounds: [64, 374, 832, 110]
+    content:
+      style: "$body"
+      fontSize: 13
+      lineHeight: 1.7
+      text: |
+        <p><strong>第一部分</strong>　应用形态为什么从 Chatbot 走向 Agent：缸中之脑、四阶段演进、确定性的重新分工</p>
+        <p><strong>第二部分</strong>　Agent、Harness 与 Skill 的核心定义：工程公式、运行时决策循环、停止条件、Skill 的本质</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 模块一 · 演进与核心定义}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "03 / 36"}

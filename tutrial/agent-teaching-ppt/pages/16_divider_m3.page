@@ -1,0 +1,51 @@
+pageType: chapter
+background:
+  type: solid
+  color: "$paper"
+notes: 模块三开场：Vibe Coding 不是"随便描述一句让 AI 写完"。区分原型式与生产式两种语境，给出八步工作流。
+elements:
+  - elementId: big-num
+    elementType: text
+    bounds: [64, 90, 300, 160]
+    content:
+      fontSize: 120
+      color: "$primaryLight"
+      bold: true
+      wrap: false
+      text: "03"
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 268, 700, 18]
+    content:
+      style: "$kicker"
+      text: 模块三 · 第四部分
+  - elementId: title
+    elementType: text
+    bounds: [64, 292, 832, 44]
+    content:
+      fontSize: 30
+      color: "$ink"
+      bold: true
+      text: Vibe Coding 的正确打开方式
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 352, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: parts
+    elementType: text
+    bounds: [64, 374, 832, 110]
+    content:
+      style: "$body"
+      fontSize: 13
+      lineHeight: 1.7
+      text: |
+        <p>生产环境中的合理升级不是取消"Vibe"，而是把它变成：<strong>自然语言意图 → 可确认的规格与边界 → Agent 在受控工作区执行 → 自动测试与真实反馈 → 人类审阅 → 交付与知识沉淀</strong>。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 模块三 · Vibe Coding 工作流}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "16 / 36"}

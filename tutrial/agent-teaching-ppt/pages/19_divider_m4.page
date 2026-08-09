@@ -1,0 +1,52 @@
+pageType: chapter
+background:
+  type: solid
+  color: "$paper"
+notes: 模块四开场：不要把"接入 API"理解成把文档粘进 Prompt。先讲内容各归其位，再讲 CLI 契约、记忆分层，最后讲 Skill 的两层评测。
+elements:
+  - elementId: big-num
+    elementType: text
+    bounds: [64, 90, 300, 160]
+    content:
+      fontSize: 120
+      color: "$primaryLight"
+      bold: true
+      wrap: false
+      text: "04"
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 268, 700, 18]
+    content:
+      style: "$kicker"
+      text: 模块四 · 第五、六部分
+  - elementId: title
+    elementType: text
+    bounds: [64, 292, 832, 44]
+    content:
+      fontSize: 30
+      color: "$ink"
+      bold: true
+      text: 工具接入、CLI 契约与 Skill 评测
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 352, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: parts
+    elementType: text
+    bounds: [64, 374, 832, 110]
+    content:
+      style: "$body"
+      fontSize: 13
+      lineHeight: 1.7
+      text: |
+        <p><strong>第五部分</strong>　Tool、API、MCP 与 Harness：内容归属、Tool 五原则、stdin/stdout 契约、响应持久化与记忆</p>
+        <p><strong>第六部分</strong>　Skill 命中率测试与优化：Trigger eval 与 Outcome eval、测试集设计、description 写法、explicit-only</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 模块四 · 工具接入与 Skill 评测}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "19 / 36"}

@@ -1,0 +1,52 @@
+pageType: final
+background:
+  type: solid
+  color: "$primary"
+notes: 结束页。提示附录 A 的项目检查表可作为课后落地工具，附录 B 的参考资料核对日期为 2026-08-09，配置以部署版本官方文档为准。
+elements:
+  - elementId: accent-bar
+    elementType: shape
+    bounds: [64, 160, 56, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: title
+    elementType: text
+    bounds: [64, 190, 832, 60]
+    content:
+      fontSize: 34
+      color: "$white"
+      bold: true
+      text: 把确定性沉淀到环境，把验证做成闭环
+  - elementId: sub
+    elementType: text
+    bounds: [64, 268, 800, 60]
+    content:
+      fontSize: 15
+      color: "#D8E4DE"
+      lineHeight: 1.65
+      text: |
+        <p>课后行动：用附录 A 的项目检查表盘点你当前的 Agent 系统——</p>
+        <p>Runtime、Context 与 Skill、Tool 与 API、Multi-Agent、Security、WebUI Agent 化，六个维度逐项过一遍。</p>
+  - elementId: divider-line
+    elementType: shape
+    bounds: [64, 380, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "#3A6E64"}
+  - elementId: refs
+    elementType: text
+    bounds: [64, 400, 832, 80]
+    content:
+      fontSize: 11.5
+      color: "#A8C2B9"
+      lineHeight: 1.7
+      text: |
+        <p>主要参考：OpenCode Docs · Agent Skills（agentskills.io）· MCP Specification · A2A Protocol · ReAct（arXiv:2210.03629）· GitHub Spec-driven development</p>
+        <p>资料核对日期 2026-08-09；Agent 平台和协议变化很快，具体配置以部署版本的官方文档为准。</p>
+  - elementId: thanks
+    elementType: text
+    bounds: [64, 480, 300, 24]
+    content:
+      fontSize: 14
+      color: "$white"
+      bold: true
+      text: 谢谢，欢迎讨论。

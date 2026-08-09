@@ -1,0 +1,101 @@
+<section class="chapter" id="part-01">
+  <div class="chapter-tag">第一部分</div>
+  <h2>应用形态为什么从 Chatbot 走向 Agent</h2>
+  <p class="lead">一个只会"接收文本、返回文本"的大模型，再聪明也像<strong>缸中之脑</strong>。本讲回答：从 Chatbot 到 Agent 的演进，到底补齐了什么。</p>
+
+  <h3>1.1 开场：模型为什么像"缸中之脑"</h3>
+  <div class="callout lecture">
+    <div class="callout-title">🧠 讲师讲解</div>
+    <p>只接收文本再返回文本的大模型，即使很聪明，也存在六个"做不到"：</p>
+    <ul>
+      <li>不知道企业<strong>当前真实数据</strong>是什么；</li>
+      <li>不能直接读取<strong>项目文件、数据库和业务系统</strong>；</li>
+      <li>不能可靠地持续完成一个<strong>长任务</strong>；</li>
+      <li>做完动作后，不一定能看到<strong>真实反馈</strong>；</li>
+      <li>不知道哪些动作<strong>被允许、哪些不可逆</strong>；</li>
+      <li>可能给出<strong>看起来合理、实际没有执行过</strong>的答案。</li>
+    </ul>
+  </div>
+
+  <div class="callout key">
+    <div class="callout-title">🔑 核心框架：演进在补齐五类条件</div>
+    <table>
+      <thead><tr><th>条件</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Grounding</strong></td><td>让模型看到真实知识和真实环境</td></tr>
+        <tr><td><strong>Action</strong></td><td>让模型能调用工具、API、文件系统和程序</td></tr>
+        <tr><td><strong>State</strong></td><td>让任务、会话、文件和中间结果能够延续</td></tr>
+        <tr><td><strong>Feedback</strong></td><td>让模型看到动作的真实结果，并据此调整</td></tr>
+        <tr><td><strong>Governance</strong></td><td>用权限、沙箱、审计和验收限制其行动范围</td></tr>
+      </tbody>
+    </table>
+    <p>从 Chatbot 到 Agent 不是产品名词升级，而是<strong>模型与数字世界之间的接口逐渐完整</strong>。</p>
+  </div>
+
+  <h3>1.2 四个阶段的演进</h3>
+  <div class="flow">
+    <div class="node">Chatbot<br><small>生成回答</small></div>
+    <div class="arrow">→</div>
+    <div class="node">RAG + Chat<br><small>引入知识</small></div>
+    <div class="arrow">→</div>
+    <div class="node">Workflow + Chat<br><small>编排流程</small></div>
+    <div class="arrow">→</div>
+    <div class="node accent">Agent + Workspace<br><small>自主选择行动</small></div>
+  </div>
+  <p class="note">⚠️ 这是<strong>能力扩展关系</strong>，不是严格替代关系：Agent 可以调用 RAG 和 Workflow，Workflow 里也可以包含 Agent 节点。</p>
+
+  <table>
+    <thead><tr><th>阶段</th><th>主要控制者</th><th>执行单元</th><th>补齐的能力</th><th>优势</th><th>典型局限</th><th>代表工具</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Chatbot</strong></td><td>用户与应用</td><td>一轮消息</td><td>自然语言理解与生成</td><td>上手快、交互自然</td><td>只能"说"，事实和行动能力弱</td><td>各类聊天应用</td></tr>
+      <tr><td><strong>RAG + Chat</strong></td><td>检索程序</td><td>文档片段与回答</td><td>外部 / 私有 / 时效知识</td><td>降低知识缺口，便于更新</td><td>检索错误会传导；通常不执行真实任务</td><td>LangChain、FastGPT</td></tr>
+      <tr><td><strong>Workflow + Chat</strong></td><td>开发者预定义图</td><td>节点、条件、变量</td><td>确定性编排、系统集成</td><td>可视化、稳定、易审计</td><td>长尾需求需要不断加分支</td><td>Dify、Coze（扣子）</td></tr>
+      <tr><td><strong>Agent + Workspace</strong></td><td>模型在 Harness 边界内决策</td><td>Task、Tool Call、Artifact</td><td>动态规划、工具选择、反馈循环、状态延续</td><td>能处理开放任务和异常</td><td>概率性、成本、延迟、安全与验证更复杂</td><td>OpenCode、Pi、OpenClaw</td></tr>
+    </tbody>
+  </table>
+
+  <h4>① Chatbot：暴露模型的"说话能力"</h4>
+  <p>中心是 <code>message → model → message</code>。适合解释、翻译、改写、头脑风暴等<strong>低风险、结果由人直接判断</strong>的任务；不适合必须读实时业务状态、需要执行/验证/回滚的长任务、高风险且必须留证据链的操作。</p>
+
+  <h4>② RAG + Chat：给模型接入"可查阅的资料室"</h4>
+  <p>RAG 在推理时检索相关内容作为上下文，解决的是"<strong>模型不知道或记不准</strong>"，而不是天然解决"模型会不会做"。典型链路：</p>
+  <pre><code>用户问题 → 查询改写 → 召回 → 重排/过滤 → 上下文拼装 → 模型回答 → 引用来源</code></pre>
+  <div class="callout key">
+    <div class="callout-title">RAG 的生产重点（不在"有没有向量库"）</div>
+    <ul>
+      <li>查询是否被正确理解；</li>
+      <li>数据是否有来源、版本、权限和有效期；</li>
+      <li>召回结果是否覆盖真正需要的证据；</li>
+      <li>模型能否区分"资料中没有"与"自己不知道"；</li>
+      <li>回答能否追溯到原始材料。</li>
+    </ul>
+  </div>
+
+  <h4>③ Workflow + Chat：把工作过程变成可执行图</h4>
+  <p>把模型、知识库、代码、HTTP 请求、判断条件变成<strong>节点</strong>，由开发者提前决定大部分控制流。适合路径稳定、输入输出明确的业务（审批、批处理、内容流水线）。代价：<strong>长尾问题越多，分支越复杂</strong>，业务变化后需持续改图。</p>
+
+  <h4>④ Agent：把"下一步做什么"的部分决定权交给模型</h4>
+  <div class="callout key">
+    <div class="callout-title">📌 教学定义</div>
+    <p>Agent 是一个在<strong>受控环境</strong>中，根据当前目标、状态和观察结果，<strong>循环选择下一步行动</strong>，直到完成、阻塞或被停止的运行系统。Agent ≠ 完全自治。</p>
+  </div>
+  <p>OpenCode 提供会话、文件与命令工具、规则、Skills、Primary/Subagent、权限以及 Server/SDK；Pi 强调可扩展的终端 Coding Harness；OpenClaw 更接近持续运行的个人助手 Gateway。共同点不是"有聊天框"，而是<strong>给模型一个可持续观察和行动的环境</strong>。</p>
+
+  <h3>1.3 重要修正：演进不是"确定性越来越少"</h3>
+  <table>
+    <thead><tr><th>问题类型</th><th>更适合的承担者</th></tr></thead>
+    <tbody>
+      <tr><td>理解模糊意图、处理例外、选择策略</td><td>模型 / Agent</td></tr>
+      <tr><td>计算、格式转换、查询、写入</td><td>Tool / API / Script</td></tr>
+      <tr><td>稳定且高频的固定路径</td><td>Workflow</td></tr>
+      <tr><td>企业共识与项目约定</td><td>AGENTS.md / Rules</td></tr>
+      <tr><td>场景化操作方法</td><td>Skill</td></tr>
+      <tr><td>不可突破的限制</td><td>Permission / Sandbox / Policy</td></tr>
+      <tr><td>成功与否的判断</td><td>测试、断言、业务验收、人类评审</td></tr>
+    </tbody>
+  </table>
+  <div class="callout takeaway">
+    <div class="callout-title">💡 一句话总结</div>
+    <p>把不确定性留给模型，把确定性沉淀到环境；把灵活性放在决策层，把安全和正确性放在<strong>模型无法绕过的边界</strong>上。</p>
+  </div>
+</section>

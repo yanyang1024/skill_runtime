@@ -1,0 +1,73 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页。九步方法按"盘点→封装→设计→上线"四段讲；右侧列出不宜完全对话化的六类场景作为边界。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第八部分 · WebUI 迁移
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: WebUI 迁移的九步方法与适用边界
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: steps
+    elementType: text
+    bounds: [64, 112, 520, 380]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.62
+      text: |
+        <p><span style="color:$accent"><strong>1</strong></span>　<strong>盘点真实能力，而不是盘点页面</strong>：每个页面动作追踪到 API、数据库、文件或第三方系统</p>
+        <p><span style="color:$accent"><strong>2</strong></span>　<strong>给动作分级</strong>：Read / Compute / Workspace Write / External Write / Destructive，策略逐级收紧</p>
+        <p><span style="color:$accent"><strong>3</strong></span>　<strong>把 API 封装成窄而稳定的 Tool</strong>：按用户意图组合，设租户身份、权限和返回上限</p>
+        <p><span style="color:$accent"><strong>4</strong></span>　<strong>把表单 Schema 变成 Slot Schema</strong>：类型、必需性、默认值来源、可否推断、是否需确认、过期条件</p>
+        <p><span style="color:$accent"><strong>5</strong></span>　<strong>复用稳定 Workflow</strong>：固定主流程作为 Tool，Agent 负责选择、补参和解释</p>
+        <p><span style="color:$accent"><strong>6</strong></span>　<strong>设计 Session、Task 和 Artifact</strong>：业务数据库仍是外部状态的权威来源</p>
+        <p><span style="color:$accent"><strong>7</strong></span>　<strong>补齐确认和恢复</strong>：preview / dry-run、关键参数展示、检查点恢复</p>
+        <p><span style="color:$accent"><strong>8</strong></span>　<strong>保留结构化 UI</strong>：对话负责"为什么、做什么"，UI 负责"精确选择和观察"</p>
+        <p><span style="color:$accent"><strong>9</strong></span>　<strong>灰度上线并做任务级评测</strong>：完成率、澄清轮数、Tool 选择错误率、撤销率、成本与时延对比</p>
+  - elementId: ban-head
+    elementType: text
+    bounds: [620, 112, 276, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      color: "$accent"
+      text: 不宜完全对话化的场景
+  - elementId: ban-list
+    elementType: text
+    bounds: [620, 140, 276, 350]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.62
+      text: |
+        <ul>
+        <li>用户已熟练、每天重复录入大量结构化数据</li>
+        <li>毫秒级响应或极低成本要求</li>
+        <li>每个字段都必须逐项人工确认</li>
+        <li>医疗、金融、生产控制等高风险动作没有完善审批</li>
+        <li>后端没有稳定 API，只能靠脆弱 UI 自动化</li>
+        <li>任务不能定义成功证据，也无法安全回滚</li>
+        </ul>
+        <p style="margin-top:10px">讨论重点不是"能否全部用聊天替代"，而是<strong>哪些不确定部分交给 Agent 后，用户路径真正变短了</strong>。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第八部分 · WebUI 迁移}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "31 / 36"}

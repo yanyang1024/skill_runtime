@@ -1,0 +1,71 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 总结页。十句话逐条回顾，对应课程各模块；最后落到 Agent 平台的设计目标。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第十二部分 · 课程总结
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 十句话带走本课
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: sum-left
+    elementType: text
+    bounds: [64, 112, 410, 336]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.5
+      text: |
+        <p><span style="color:$primary"><strong>1</strong></span>　Chatbot 暴露模型的语言能力，Agent 暴露模型在受控世界中<strong>持续工作</strong>的能力。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>2</strong></span>　RAG 解决"知道什么"，Tool 解决"能做什么"，Skill 解决"应该怎样做"。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>3</strong></span>　Workflow 把控制流交给开发者，Agent 把部分下一步决策交给模型。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>4</strong></span>　Agent 的核心不是人格，而是带状态的<strong>观察—决策—行动—反馈循环</strong>。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>5</strong></span>　AGENTS.md 是项目共识，Skill 是场景方法，Permission 和 Sandbox 才是硬边界。</p>
+  - elementId: sum-right
+    elementType: text
+    bounds: [510, 112, 386, 336]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.5
+      text: |
+        <p><span style="color:$primary"><strong>6</strong></span>　API 应先变成稳定、结构化、可审计的 Tool，再由 Skill 教 Agent 正确使用。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>7</strong></span>　stdout 给机器数据，stderr 给诊断，大结果给 Artifact，聊天给人解释。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>8</strong></span>　Skill 要分别测试触发质量和输出质量；explicit-only 必须由 Harness 强制。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>9</strong></span>　Multi-Agent 应服务于上下文隔离、独立并行或独立验证，而不是模拟组织架构。</p>
+        <p style="margin-top:9px"><span style="color:$primary"><strong>10</strong></span>　最好的 Agent WebUI 通常不是纯聊天框，而是"对话 + 结构化控件 + 工作区 + 可验证产物"。</p>
+  - elementId: goal-bar
+    elementType: shape
+    bounds: [64, 458, 4, 40]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: goal
+    elementType: text
+    bounds: [84, 458, 812, 44]
+    content:
+      fontSize: 13
+      color: "$ink"
+      lineHeight: 1.5
+      text: |
+        <p><strong>设计目标：</strong>不是让模型拥有尽可能多的自由，而是给它一个足够丰富、反馈真实、状态可恢复、边界不可绕过、结果可验证的工作世界。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第十二部分 · 课程总结}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "35 / 36"}

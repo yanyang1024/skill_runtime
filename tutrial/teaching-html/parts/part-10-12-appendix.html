@@ -1,0 +1,204 @@
+<section class="chapter" id="part-10">
+  <div class="chapter-tag">第十部分</div>
+  <h2>课堂练习与讨论</h2>
+  <p class="lead">三个练习分别对应课程的三个核心判断：机制选型、Skill 触发边界、WebUI Agent 化。</p>
+
+  <div class="callout practice">
+    <div class="callout-title">✏️ 练习一：判断应该使用什么机制（10 分钟）</div>
+    <p>针对每个需求选择 Tool、Skill、Workflow、MCP、Subagent 或 A2A，并说明理由：</p>
+    <ol>
+      <li>查询订单实时状态；</li>
+      <li>按团队规范完成一次生产发布；</li>
+      <li>每晚固定抽取数据、生成报表并发到指定系统；</li>
+      <li>让多个不同客户端统一访问企业知识与数据库查询能力；</li>
+      <li>让独立上下文中的 Reviewer 检查实现 Agent 的 Diff；</li>
+      <li>委托远程法务 Agent 完成一个可能持续数小时、有状态和 Artifact 的审查任务。</li>
+    </ol>
+    <details>
+      <summary>参考答案</summary>
+      <ol>
+        <li>Tool / API</li>
+        <li>Skill + Tools + permission</li>
+        <li>Workflow</li>
+        <li>MCP</li>
+        <li>Subagent</li>
+        <li>A2A</li>
+      </ol>
+    </details>
+  </div>
+
+  <div class="callout practice">
+    <div class="callout-title">✏️ 练习二：为一个 Skill 写触发边界（15 分钟）</div>
+    <p>选择团队中的一个真实 SOP，交付：</p>
+    <ul>
+      <li>一段不超过 1024 字符的 description；</li>
+      <li>5 条 should-trigger；</li>
+      <li>5 条 should-not-trigger，其中至少 3 条是<strong>近邻场景</strong>；</li>
+      <li>3 条输出质量断言；</li>
+      <li>明确它是自动激活还是 explicit-only；</li>
+      <li>如果有外部写操作，写出确认与停止条件。</li>
+    </ul>
+  </div>
+
+  <div class="callout practice">
+    <div class="callout-title">✏️ 练习三：把一个 WebUI 页面 Agent 化（20 分钟）</div>
+    <p>选择现有页面，画出：</p>
+    <ol>
+      <li>页面动作背后的 API；</li>
+      <li>Slot Schema；</li>
+      <li>Tool 列表；</li>
+      <li>仍应保留的参数卡、图表和按钮；</li>
+      <li>一条自然语言任务示例；</li>
+      <li>Agent 需要询问的最少问题；</li>
+      <li>成功 Artifact 与验收证据。</li>
+    </ol>
+    <p><strong>讨论重点</strong>：不是"能否全部用聊天替代"，而是"哪些不确定部分交给 Agent 后，用户路径真正变短了"。</p>
+  </div>
+</section>
+
+<section class="chapter" id="part-11">
+  <div class="chapter-tag">第十一部分</div>
+  <h2>常见误区：八个需要避免的结论</h2>
+
+  <div class="myth">
+    <h4>误区一：有系统 Prompt 就是 Agent</h4>
+    <p>Prompt 只定义行为倾向；Agent 还需要<strong>循环、工具、状态、反馈和停止机制</strong>。</p>
+  </div>
+  <div class="myth">
+    <h4>误区二：Skill 就是一个 Tool</h4>
+    <p>Tool 是能力接口，Skill 是使用这类能力的<strong>程序性知识</strong>。Skill 可以不用 Tool，Tool 也可以不依赖 Skill。</p>
+  </div>
+  <div class="myth">
+    <h4>误区三：MCP 是多 Agent 协议</h4>
+    <p>MCP 的中心是 Agent 应用与外部 Tools / Resources / Prompts 等能力连接；<strong>A2A</strong> 才更直接处理远程 Agent 的发现、任务状态和 Artifact。</p>
+  </div>
+  <div class="myth">
+    <h4>误区四：工具和 Skill 越多，Agent 越强</h4>
+    <p>过多相似能力会增加选择错误、上下文污染、权限面和维护成本。<strong>能力目录的精度往往比数量更重要。</strong></p>
+  </div>
+  <div class="myth">
+    <h4>误区五：在 AGENTS.md 写禁止事项就足够安全</h4>
+    <p>自然语言约束可能被误解或遗忘。高风险边界必须由 <strong>permission、sandbox、identity、network policy 和审计</strong>实现。</p>
+  </div>
+  <div class="myth">
+    <h4>误区六：对话式应用应该删除表单和可视化</h4>
+    <p>自然语言适合理解目标与例外；结构化 UI 适合精确输入、比较、审批和观察。<strong>两者应组合。</strong></p>
+  </div>
+  <div class="myth">
+    <h4>误区七：多 Agent 会自动提高正确率</h4>
+    <p>共享同一错误前提的多个角色可能只会增加自洽文本。Multi-Agent 的价值来自<strong>上下文隔离、并行独立性、不同权限或独立验证</strong>，不来自角色数量。</p>
+  </div>
+  <div class="myth">
+    <h4>误区八：记忆就是把所有聊天永久保存</h4>
+    <p>日志用于追溯，记忆用于改善决策。长期记忆必须经过<strong>确认、限定作用域、支持过期和纠错</strong>。</p>
+  </div>
+</section>
+
+<section class="chapter" id="part-12">
+  <div class="chapter-tag">第十二部分</div>
+  <h2>课程总结：十句话带走本课</h2>
+  <ol class="takeaway-list">
+    <li>Chatbot 暴露模型的语言能力，Agent 暴露模型在受控世界中<strong>持续工作</strong>的能力。</li>
+    <li>RAG 解决"知道什么"，Tool 解决"能做什么"，Skill 解决"应该怎样做"。</li>
+    <li>Workflow 把控制流交给开发者，Agent 把部分下一步决策交给模型。</li>
+    <li>Agent 的核心不是人格，而是<strong>带状态的观察—决策—行动—反馈循环</strong>。</li>
+    <li>AGENTS.md 是项目共识，Skill 是场景方法，Permission 和 Sandbox 才是硬边界。</li>
+    <li>API 应先变成稳定、结构化、可审计的 Tool，再由 Skill 教 Agent 正确使用。</li>
+    <li>stdout 给机器数据，stderr 给诊断，大结果给 Artifact，聊天给人解释。</li>
+    <li>Skill 要分别测试触发质量和输出质量；explicit-only 必须由 Harness 强制。</li>
+    <li>Multi-Agent 应服务于上下文隔离、独立并行或独立验证，而不是模拟组织架构。</li>
+    <li>最好的 Agent WebUI 通常不是纯聊天框，而是"<strong>对话 + 结构化控件 + 工作区 + 可验证产物</strong>"。</li>
+  </ol>
+  <div class="callout takeaway">
+    <div class="callout-title">🎯 Agent 平台的设计目标</div>
+    <p>不是让模型拥有尽可能多的自由，而是给它一个<strong>足够丰富、反馈真实、状态可恢复、边界不可绕过、结果可验证</strong>的工作世界。</p>
+  </div>
+</section>
+
+<section class="chapter" id="appendix">
+  <div class="chapter-tag">附录</div>
+  <h2>附录 A：项目检查表</h2>
+
+  <h3>A.1 Agent Runtime</h3>
+  <ul class="checklist">
+    <li>是否有明确的循环与停止条件？</li>
+    <li>是否能取消、超时和从检查点恢复？</li>
+    <li>是否区分 Session、Task、External State 和 Artifact？</li>
+    <li>Tool 结果是否进入可观察事件流？</li>
+    <li>上下文压缩后，关键规则和已激活 Skill 是否仍有效？</li>
+  </ul>
+
+  <h3>A.2 Context 与 Skill</h3>
+  <ul class="checklist">
+    <li>AGENTS.md 是否只保留跨任务高频信息？</li>
+    <li>Skill description 是否同时定义正边界和负边界？</li>
+    <li>references 是否按需读取，而不是全量注入？</li>
+    <li>Script 是否非交互、可重试、可诊断？</li>
+    <li>是否有 should-trigger / should-not-trigger 测试？</li>
+    <li>是否有 with-skill / baseline 结果对比？</li>
+  </ul>
+
+  <h3>A.3 Tool 与 API</h3>
+  <ul class="checklist">
+    <li>Tool 是否窄、强 Schema、稳定命名？</li>
+    <li>是否区分数据 stdout 与诊断 stderr？</li>
+    <li>错误是否有 code、retryable 和 suggested_action？</li>
+    <li>写操作是否支持幂等、dry-run 和审计？</li>
+    <li>大结果是否写入 Artifact，而不是污染上下文？</li>
+    <li>API 密钥是否完全位于 Skill 和 Prompt 之外？</li>
+  </ul>
+
+  <h3>A.4 Multi-Agent</h3>
+  <ul class="checklist">
+    <li>使用 Subagent 是否有明确的隔离或并行收益？</li>
+    <li>Primary 是否仍拥有用户沟通和最终验收？</li>
+    <li>Handoff 是否包含目标、输入、约束、预期 Artifact 和验收？</li>
+    <li>Reviewer 是否在独立上下文中根据证据判断？</li>
+    <li>是否限制委派深度、并发数和预算？</li>
+  </ul>
+
+  <h3>A.5 Security</h3>
+  <ul class="checklist">
+    <li>高风险限制是否由硬策略而不是自然语言实现？</li>
+    <li>工作区、网络、进程和凭据是否最小权限？</li>
+    <li>外部写与不可逆动作是否需要显式确认？</li>
+    <li>是否防止跨用户、跨租户和跨项目访问？</li>
+    <li>是否保留身份、参数、结果和时间的审计记录？</li>
+  </ul>
+
+  <h3>A.6 WebUI Agent 化</h3>
+  <ul class="checklist">
+    <li>是否优先复用 API，而不是模拟点击？</li>
+    <li>是否保留高效的结构化输入和可视化？</li>
+    <li>是否把表单字段转成有来源、有有效期的 Slots？</li>
+    <li>业务状态是否仍由后端系统权威维护？</li>
+    <li>是否能展示任务状态、错误、确认和 Artifact？</li>
+    <li>是否与原 WebUI 做任务完成率和时间对比？</li>
+  </ul>
+
+  <h2>附录 B：主要参考资料</h2>
+  <p class="note">资料核对日期：2026-08-09。Agent 平台和协议变化很快，具体配置应以部署版本的官方文档为准。</p>
+  <h4>Agent 与 RAG / Workflow</h4>
+  <ul class="refs">
+    <li><a href="https://arxiv.org/abs/2210.03629">ReAct: Synergizing Reasoning and Acting in Language Models</a></li>
+    <li><a href="https://docs.langchain.com/oss/python/langchain/rag/">LangChain: RAG</a> · <a href="https://doc.fastgpt.io/en/guide/dataset/rag">FastGPT: RAG Fundamentals</a></li>
+    <li><a href="https://docs.dify.ai/en/cloud/use-dify/build/workflow-chatflow">Dify: Workflow &amp; Chatflow</a> · <a href="https://www.coze.com/open/docs/guides/workflow">Coze: Workflow</a></li>
+  </ul>
+  <h4>OpenCode</h4>
+  <ul class="refs">
+    <li><a href="https://opencode.ai/docs/">Documentation</a> · <a href="https://opencode.ai/docs/rules/">Rules / AGENTS.md</a> · <a href="https://opencode.ai/docs/skills/">Agent Skills</a> · <a href="https://opencode.ai/docs/tools/">Tools</a></li>
+    <li><a href="https://opencode.ai/docs/agents/">Agents</a> · <a href="https://opencode.ai/docs/permissions/">Permissions</a> · <a href="https://opencode.ai/docs/server/">Server</a> · <a href="https://opencode.ai/docs/sdk/">SDK</a></li>
+  </ul>
+  <h4>Skills、MCP 与 A2A</h4>
+  <ul class="refs">
+    <li><a href="https://agentskills.io/home">Agent Skills Overview</a> · <a href="https://agentskills.io/specification">Specification</a> · <a href="https://agentskills.io/client-implementation/adding-skills-support">Adding Skills Support</a></li>
+    <li><a href="https://agentskills.io/skill-creation/optimizing-descriptions">Optimizing Descriptions</a> · <a href="https://agentskills.io/skill-creation/evaluating-skills">Evaluating Skills</a> · <a href="https://agentskills.io/skill-creation/using-scripts">Using Scripts</a></li>
+    <li><a href="https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture">MCP Architecture</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28">MCP Specification</a></li>
+    <li><a href="https://a2a-protocol.org/latest/specification/">A2A Protocol Specification</a> · <a href="https://a2a-protocol.org/latest/topics/key-concepts/">A2A Core Concepts</a></li>
+  </ul>
+  <h4>Vibe Coding 与工程化</h4>
+  <ul class="refs">
+    <li><a href="https://x.com/karpathy/status/1886192184808149383">Andrej Karpathy: Original "Vibe Coding" Post</a></li>
+    <li><a href="https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/">GitHub: Spec-driven development with AI</a></li>
+  </ul>
+</section>

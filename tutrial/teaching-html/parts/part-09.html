@@ -1,0 +1,60 @@
+<section class="chapter" id="part-09">
+  <div class="chapter-tag">第九部分</div>
+  <h2>一版可落地的参考架构</h2>
+  <p class="lead">第一版不要一开始就在建设复杂 Multi-Agent 网络。先把单 Agent 的闭环做扎实，再按需扩展。</p>
+
+  <h3>9.1 推荐的整体结构</h3>
+  <div class="flow vertical">
+    <div class="node">Chat + Files + Cards + Artifacts（UI）</div>
+    <div class="arrow">↓</div>
+    <div class="node accent">Agent Runtime / Session Manager<br><small>← AGENTS + Skill Catalog + Memory</small></div>
+    <div class="arrow">↓</div>
+    <div class="node">Tools / Workflow / MCP / Subagents</div>
+    <div class="arrow">↓</div>
+    <div class="node">Business APIs / Data / Workspace</div>
+    <div class="arrow">↓</div>
+    <div class="node">Task State / Trace / Artifact Store</div>
+  </div>
+  <p class="note">Permission / Sandbox / Identity / Audit 作为<strong>控制面</strong>，贯穿 Runtime 与能力层（虚线控制关系）。</p>
+
+  <h3>9.2 最小可用组件（九件）</h3>
+  <table>
+    <thead><tr><th>组件</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Agent Runtime</strong></td><td>模型调用、Tool Loop、取消、超时和停止</td></tr>
+      <tr><td><strong>Session Manager</strong></td><td>用户、项目、会话和 Task 的映射</td></tr>
+      <tr><td><strong>Context Loader</strong></td><td>AGENTS.md、Skill 目录和按需资源</td></tr>
+      <tr><td><strong>Tool Gateway</strong></td><td>统一 Schema、身份、错误、幂等、限流和审计</td></tr>
+      <tr><td><strong>Workspace</strong></td><td>文件上传、执行、Artifact 与隔离</td></tr>
+      <tr><td><strong>Policy Layer</strong></td><td>permission、沙箱、网络和凭据</td></tr>
+      <tr><td><strong>Observability</strong></td><td>事件、Trace、Tool Call、成本和失败原因</td></tr>
+      <tr><td><strong>Eval Harness</strong></td><td>触发测试、任务测试、安全测试和回归测试</td></tr>
+      <tr><td><strong>Hybrid UI</strong></td><td>对话、参数卡、任务状态与 Artifact 预览</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.3 "先简单做"的优先级</h3>
+  <div class="flow vertical">
+    <div class="node">① 一个 Primary Agent</div>
+    <div class="arrow">↓</div>
+    <div class="node">② 3–8 个窄而稳定的 Tools</div>
+    <div class="arrow">↓</div>
+    <div class="node">③ 一份简洁 AGENTS.md</div>
+    <div class="arrow">↓</div>
+    <div class="node">④ 1–3 个高价值 Skills</div>
+    <div class="arrow">↓</div>
+    <div class="node">⑤ Session + Workspace + Artifact</div>
+    <div class="arrow">↓</div>
+    <div class="node">⑥ permission + 系统隔离</div>
+    <div class="arrow">↓</div>
+    <div class="node">⑦ 任务级验收与 Trace</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">⑧ 确认存在上下文隔离或独立验证需求后，再加 Subagent</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">⑨ 确认存在跨系统 Agent 委托后，再考虑 A2A</div>
+  </div>
+  <div class="callout takeaway">
+    <div class="callout-title">💡 要点</div>
+    <p>⑧ 和 ⑨ 是"确认有真实需求后再加"，不是默认起点。复杂度应该由需求拉动，而不是由技术新鲜感推动。</p>
+  </div>
+</section>

@@ -1,0 +1,68 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页。七类停止条件逐条讲；强调"还可以继续想"不是继续循环的充分理由——每次循环都要回答能否获得新信息、新证据或推进状态。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第二部分 · 核心定义
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: Agent 必须知道何时停止：七类停止条件
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: stop-table
+    elementType: table
+    bounds: [64, 116, 832, 300]
+    columnWidths: [0.22, 0.78]
+    rowHeights: [0.1, 0.128, 0.128, 0.128, 0.128, 0.128, 0.128, 0.132]
+    style: "$default"
+    rows:
+      - - text: 停止条件
+        - text: 含义
+      - - text: "<strong>① 完成停止</strong>"
+        - text: 验收断言通过，并产生了约定的 Artifact
+      - - text: "<strong>② 需要输入</strong>"
+        - text: 缺少会显著改变结果的用户选择
+      - - text: "<strong>③ 权限阻塞</strong>"
+        - text: 动作被拒绝，且没有同等安全的替代路径
+      - - text: "<strong>④ 失败停止</strong>"
+        - text: 同一错误重复出现，继续尝试没有新增信息
+      - - text: "<strong>⑤ 风险停止</strong>"
+        - text: 即将执行不可逆、越权或高影响操作
+      - - text: "<strong>⑥ 预算停止</strong>"
+        - text: 达到时间、Token、调用次数或费用上限
+      - - text: "<strong>⑦ 外部停止</strong>"
+        - text: 用户取消、服务超时或依赖系统不可用
+  - elementId: warn-bar
+    elementType: shape
+    bounds: [64, 438, 4, 52]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: warn
+    elementType: text
+    bounds: [84, 438, 812, 56]
+    content:
+      fontSize: 13.5
+      color: "$ink"
+      lineHeight: 1.55
+      text: |
+        <p><strong>"还可以继续想"不是继续循环的充分理由。</strong>每次循环都应回答：这一步能否获得新的信息、产生新的证据或推进状态？</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第二部分 · Agent / Harness / Skill 的定义}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "09 / 36"}

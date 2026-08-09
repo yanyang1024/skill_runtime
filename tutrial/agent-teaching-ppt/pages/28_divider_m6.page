@@ -1,0 +1,52 @@
+pageType: chapter
+background:
+  type: solid
+  color: "$paper"
+notes: 模块六开场：迁移目标不是"删掉所有按钮只留输入框"，而是复用已有确定性能力；参考架构先简单做，复杂度由需求拉动。
+elements:
+  - elementId: big-num
+    elementType: text
+    bounds: [64, 90, 300, 160]
+    content:
+      fontSize: 120
+      color: "$primaryLight"
+      bold: true
+      wrap: false
+      text: "06"
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 268, 700, 18]
+    content:
+      style: "$kicker"
+      text: 模块六 · 第八、九部分
+  - elementId: title
+    elementType: text
+    bounds: [64, 292, 832, 44]
+    content:
+      fontSize: 30
+      color: "$ink"
+      bold: true
+      text: WebUI 迁移为 Agent 应用与参考架构
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 352, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: parts
+    elementType: text
+    bounds: [64, 374, 832, 110]
+    content:
+      style: "$body"
+      fontSize: 13
+      lineHeight: 1.7
+      text: |
+        <p><strong>第八部分</strong>　把 WebUI 应用迁移为 Agent 对话式应用：三种架构、UI 元素映射、迁移示例、九步方法</p>
+        <p><strong>第九部分</strong>　一版可落地的参考架构：最小可用组件与"先简单做"的优先级</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 模块六 · WebUI 迁移与参考架构}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "28 / 36"}

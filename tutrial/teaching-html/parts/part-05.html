@@ -1,0 +1,126 @@
+<section class="chapter" id="part-05">
+  <div class="chapter-tag">第五部分</div>
+  <h2>Tool、API、MCP 与 Agent Harness</h2>
+  <p class="lead">不要把"接入 API"理解成把几百行文档粘进 Prompt。本讲讲清工具如何进入架构、脚本如何为 Agent 设计、以及结果应该记住多久。</p>
+
+  <h3>5.1 工具如何进入 Agent 架构</h3>
+  <div class="flow">
+    <div class="node">用户任务</div>
+    <div class="arrow">→</div>
+    <div class="node">Agent Runtime<br><small>← Skill：何时及如何使用</small></div>
+    <div class="arrow">→</div>
+    <div class="node">Typed Tool / Adapter</div>
+    <div class="arrow">⇄</div>
+    <div class="node accent">业务 API / 数据库 / 程序</div>
+  </div>
+  <table>
+    <thead><tr><th>内容</th><th>最适合的位置</th></tr></thead>
+    <tbody>
+      <tr><td>Endpoint、参数类型、枚举、返回 Schema</td><td>Tool 定义、OpenAPI、SDK</td></tr>
+      <tr><td>鉴权、重试、分页、限流、幂等、错误归一化</td><td>Tool Adapter / Script</td></tr>
+      <tr><td>什么业务意图下调用、先后顺序、结果如何解释</td><td>Skill</td></tr>
+      <tr><td>所有任务都适用的接口使用约定</td><td>AGENTS.md</td></tr>
+      <tr><td>密钥、租户身份、网络范围</td><td>Credential / Runtime / Policy</td></tr>
+      <tr><td>调用过程、耗时、结果摘要</td><td>Trace / Observability</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <div class="callout-title">🧰 Tool 设计五条原则</div>
+    <ol>
+      <li><strong>窄接口</strong>：<code>get_order_status(order_id)</code> 优于 <code>execute_business_action(payload)</code>；</li>
+      <li><strong>强 Schema</strong>：使用 enum、required、范围约束和稳定字段；</li>
+      <li><strong>可诊断错误</strong>：区分参数错误、权限错误、限流、依赖不可用和业务冲突；</li>
+      <li><strong>安全重试</strong>：读操作可重试，写操作必须考虑幂等键；</li>
+      <li><strong>结果可验证</strong>：返回 ID、版本、时间、来源和状态，不只返回"成功"。</li>
+    </ol>
+  </div>
+
+  <h3>5.2 API 融入 Skill 的推荐结构</h3>
+  <pre><code>skills/order-investigation/
+├── SKILL.md
+├── scripts/
+│   └── order_api.py
+├── references/
+│   ├── field-semantics.md
+│   └── error-codes.md
+└── evals/
+    ├── trigger_queries.json
+    └── cases.json</code></pre>
+  <p><code>SKILL.md</code> 只保留核心流程：</p>
+  <pre><code>1. 从用户描述中提取 `order_id`；缺失时询问，不猜测。
+2. 调用 `scripts/order_api.py status --order-id &lt;id&gt; --format json`。
+3. 如果返回 `AUTH_EXPIRED`，停止并报告需要重新授权。
+4. 如果返回 `NOT_FOUND`，核对订单 ID 格式后最多重试一次。
+5. 只有在状态为 `SHIPPED` 时才读取物流详情。
+6. 最终区分：已确认事实、推断、需要业务人员确认的事项。</code></pre>
+  <p class="note">详细字段语义和低频错误码放入 <code>references/</code>，<strong>只有遇到对应情况时再读</strong>。</p>
+
+  <h3>5.3 stdin/stdout：为人设计的 CLI ≠ 为 Agent 设计的 CLI</h3>
+  <p>Agent 通过参数、stdin、stdout、stderr 和退出码理解结果。<a href="https://agentskills.io/skill-creation/using-scripts">脚本设计指南</a>建议：避免交互式输入、提供清晰的 <code>--help</code>、使用结构化输出、把数据与诊断分开。</p>
+  <table>
+    <thead><tr><th>通道</th><th>用途</th><th>规则</th></tr></thead>
+    <tbody>
+      <tr><td><strong>argv / stdin</strong></td><td>输入参数</td><td>参数少用 flags；复杂对象用单个 JSON；不要等待 TTY 交互</td></tr>
+      <tr><td><strong>stdout</strong></td><td>机器结果</td><td>默认只输出一个合法 JSON；不要混入进度文字</td></tr>
+      <tr><td><strong>stderr</strong></td><td>诊断</td><td>日志、警告、进度和可读错误</td></tr>
+      <tr><td><strong>exit code</strong></td><td>失败类别</td><td>为参数、鉴权、依赖、业务冲突设置稳定代码</td></tr>
+      <tr><td><strong>output file</strong></td><td>大结果</td><td>大表、图片、报告写入文件，stdout 只返回 manifest</td></tr>
+    </tbody>
+  </table>
+
+  <h4>成功输出示例</h4>
+  <pre><code>{
+  "ok": true,
+  "data": { "count": 20, "items": [] },
+  "artifacts": [
+    { "path": "outputs/report.csv", "mime_type": "text/csv", "sha256": "..." }
+  ],
+  "provenance": {
+    "source": "analytics-api",
+    "retrieved_at": "2026-08-09T18:00:00Z",
+    "api_version": "v2"
+  },
+  "warnings": [],
+  "next_cursor": null
+}</code></pre>
+  <h4>失败输出示例</h4>
+  <pre><code>{
+  "ok": false,
+  "error": {
+    "code": "AUTH_EXPIRED",
+    "message": "The service credential has expired.",
+    "retryable": false,
+    "suggested_action": "Ask an administrator to reconnect the integration."
+  }
+}</code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">👥 人类可读与 Agent 可读的分工</div>
+    <ul>
+      <li>脚本和 Tool 返回<strong>稳定、紧凑、可解析</strong>的数据；</li>
+      <li>Agent 根据用户角色把数据翻译成解释、表格或建议；</li>
+      <li>WebUI 用卡片、图表、进度和 Artifact 预览渲染同一份结构化结果；</li>
+      <li>不要让脚本同时承担<strong>数据接口、业务解释和最终文案</strong>三种责任。</li>
+    </ul>
+  </div>
+
+  <h3>5.4 响应持久化与 Runtime 记忆</h3>
+  <table>
+    <thead><tr><th>层级</th><th>保存什么</th><th>典型寿命</th><th>目的</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Turn context</strong></td><td>当前输入与短工具结果</td><td>一轮到数轮</td><td>支持下一步决策</td></tr>
+      <tr><td><strong>Session state</strong></td><td>已确认目标、选择和工作摘要</td><td>一次会话</td><td>保持连续性</td></tr>
+      <tr><td><strong>Task checkpoint</strong></td><td>当前阶段、待办、幂等键、恢复点</td><td>任务完成前后</td><td>中断恢复</td></tr>
+      <tr><td><strong>Raw response</strong></td><td>原始 API 响应或引用</td><td>按审计策略</td><td>追溯与重放</td></tr>
+      <tr><td><strong>Normalized result</strong></td><td>统一后的结构化数据</td><td>按业务版本</td><td>跨工具消费</td></tr>
+      <tr><td><strong>Artifact</strong></td><td>报告、代码、数据、图像</td><td>按交付策略</td><td>用户真正使用的结果</td></tr>
+      <tr><td><strong>Curated memory</strong></td><td>经确认且会重复使用的事实/偏好/规则</td><td>长期并带作用域</td><td>改善后续任务</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 进入长期记忆的五个前提 + 禁止沉淀清单</div>
+    <p>前提：明确来源；作用域（个人/项目/团队/租户）；经用户或系统确认；版本和过期策略；删除和纠错机制。</p>
+    <p><strong>禁止沉淀</strong>：密钥、临时授权、未经确认的推测、跨租户数据、无法解释来源的"模型印象"。</p>
+  </div>
+</section>

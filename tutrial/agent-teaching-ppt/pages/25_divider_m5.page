@@ -1,0 +1,52 @@
+pageType: chapter
+background:
+  type: solid
+  color: "$paper"
+notes: 模块五开场：先分清六种组合机制再谈编排。不要因为"多 Agent"听起来先进，就把一个函数拆成三个角色互相聊天。
+elements:
+  - elementId: big-num
+    elementType: text
+    bounds: [64, 90, 300, 160]
+    content:
+      fontSize: 120
+      color: "$primaryLight"
+      bold: true
+      wrap: false
+      text: "05"
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 268, 700, 18]
+    content:
+      style: "$kicker"
+      text: 模块五 · 第七部分
+  - elementId: title
+    elementType: text
+    bounds: [64, 292, 832, 44]
+    content:
+      fontSize: 30
+      color: "$ink"
+      bold: true
+      text: 多 Skill、MCP、A2A 与 Multi-Agent
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 352, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: parts
+    elementType: text
+    bounds: [64, 374, 832, 110]
+    content:
+      style: "$body"
+      fontSize: 13
+      lineHeight: 1.7
+      text: |
+        <p>Tool / Skill / Workflow / MCP / Subagent / A2A 六种机制各自解决什么问题、什么时候选哪个；</p>
+        <p>Primary 与 Subagent 的职责边界，多 Skill 融合策略，以及如何防止语义递归和循环。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 模块五 · 组合机制与 Multi-Agent}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "25 / 36"}

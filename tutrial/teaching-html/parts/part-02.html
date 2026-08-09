@@ -1,0 +1,121 @@
+<section class="chapter" id="part-02">
+  <div class="chapter-tag">第二部分</div>
+  <h2>Agent、Harness 与 Skill 的核心定义</h2>
+  <p class="lead">Agent 不是一个 Prompt，也不只是一个模型。本讲给出工程化定义，并拆解运行时的决策循环与 Skill 的本质。</p>
+
+  <h3>2.1 Agent 的工程公式</h3>
+  <pre><code>Agent = Model
+      + Harness（循环、上下文、工具中介）
+      + State（会话、任务、文件、检查点）
+      + Resources（规则、Skill、Tool、API、数据）
+      + Policy（权限、沙箱、密钥和审计）
+      + Feedback &amp; Verification（观察、测试、验收）</code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">🛠️ Harness：模型外部的运行脚手架，负责七件事</div>
+    <ol>
+      <li>组织消息和上下文；</li>
+      <li>把工具以<strong>结构化 Schema</strong> 暴露给模型；</li>
+      <li>执行工具调用并把结果送回模型；</li>
+      <li>保存 Session、Message、Artifact 和事件；</li>
+      <li>管理重试、超时、压缩、取消与恢复；</li>
+      <li>在行动前执行<strong>权限检查</strong>；</li>
+      <li>判断继续循环、请求用户输入还是停止。</li>
+    </ol>
+    <p>模型越能自主行动，Harness 对<strong>安全、状态、观察和验证</strong>的责任反而越重。</p>
+  </div>
+
+  <h3>2.2 Agent 的运行时：带状态的决策循环</h3>
+  <p><a href="https://arxiv.org/abs/2210.03629">ReAct</a> 把推理与行动交错：行动从环境得到观察，观察再影响后续决策。生产 Agent 通常采用 ReAct-like 循环，但不一定逐字暴露内部思维过程。</p>
+  <div class="flow vertical">
+    <div class="node">用户目标或待办任务</div>
+    <div class="arrow">↓</div>
+    <div class="node">装载会话状态与相关资源</div>
+    <div class="arrow">↓</div>
+    <div class="node">选择：回答 / 调用工具 / 委派子任务</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">权限与安全检查<br><small>拒绝 → 请求确认或停止</small></div>
+    <div class="arrow">↓ 允许</div>
+    <div class="node">执行并获得真实观察</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">有完成证据吗？<br><small>没有 → 回到装载状态</small></div>
+    <div class="arrow">↓ 有</div>
+    <div class="node accent">交付结果、产物与证据</div>
+  </div>
+
+  <h4>循环各环节的工程含义</h4>
+  <table>
+    <thead><tr><th>环节</th><th>工程含义</th><th>应保留的可观测信息</th></tr></thead>
+    <tbody>
+      <tr><td><strong>观察</strong></td><td>读取用户输入、文件、工具结果、环境状态</td><td>输入来源、版本、时间、权限范围</td></tr>
+      <tr><td><strong>决策</strong></td><td>选择下一步行动、更新计划</td><td>简明计划、选择理由、风险提示（不要求完整思维链）</td></tr>
+      <tr><td><strong>行动</strong></td><td>调用 Tool、API、脚本、Subagent</td><td>工具名、参数摘要、调用身份、幂等键</td></tr>
+      <tr><td><strong>反馈</strong></td><td>接收 stdout、API 响应、测试结果、用户回复</td><td>结构化结果、错误类型、证据与 Artifact</td></tr>
+      <tr><td><strong>状态更新</strong></td><td>写入 Session、Task、文件或检查点</td><td>状态迁移、差异、可恢复位置</td></tr>
+      <tr><td><strong>停止</strong></td><td>完成、阻塞、失败或超预算</td><td>停止原因、未完成项、下一步建议</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 Agent 必须知道何时停止：七类停止条件</h3>
+  <table>
+    <thead><tr><th>停止条件</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td><strong>完成停止</strong></td><td>验收断言通过，并产生了约定的 Artifact</td></tr>
+      <tr><td><strong>需要输入</strong></td><td>缺少会显著改变结果的用户选择</td></tr>
+      <tr><td><strong>权限阻塞</strong></td><td>动作被拒绝，且没有同等安全的替代路径</td></tr>
+      <tr><td><strong>失败停止</strong></td><td>同一错误重复出现，继续尝试没有新增信息</td></tr>
+      <tr><td><strong>风险停止</strong></td><td>即将执行不可逆、越权或高影响操作</td></tr>
+      <tr><td><strong>预算停止</strong></td><td>达到时间、Token、调用次数或费用上限</td></tr>
+      <tr><td><strong>外部停止</strong></td><td>用户取消、服务超时或依赖系统不可用</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 注意</div>
+    <p>"还可以继续想"不是继续循环的充分理由。每次循环都应回答：<strong>这一步能否获得新信息、产生新证据或推进状态？</strong></p>
+  </div>
+
+  <h3>2.4 Skill 的定义：可按需加载的操作知识包</h3>
+  <p><a href="https://agentskills.io/home">Agent Skills 规范</a>把 Skill 定义为以 <code>SKILL.md</code> 为核心、可附带脚本、参考资料和资产的可复用知识包：</p>
+  <pre><code>my-skill/
+├── SKILL.md              # 触发边界、流程、判断与资源路由
+├── scripts/              # 可重复、确定性的执行逻辑
+├── references/           # 需要时读取的领域或接口资料
+├── assets/               # 模板、样例、静态资源
+└── evals/                # 触发与输出质量测试</code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">✅ 一个合格的 Skill 回答的七个问题</div>
+    <ol>
+      <li>什么用户意图应该触发它？</li>
+      <li>哪些相邻场景<strong>不应该</strong>触发它？</li>
+      <li>开始前需要检查什么？</li>
+      <li>以什么顺序使用哪些资源？</li>
+      <li>哪些判断由模型做，哪些必须交给程序？</li>
+      <li>失败时如何分类、重试、降级或停止？</li>
+      <li>最终交付什么，如何验证？</li>
+    </ol>
+  </div>
+
+  <h4>Skill 不是什么</h4>
+  <table>
+    <thead><tr><th>容易混淆的对象</th><th>与 Skill 的区别</th></tr></thead>
+    <tbody>
+      <tr><td>Prompt</td><td>Prompt 是一次性指令；Skill 是带触发边界、流程和配套资源的可复用包</td></tr>
+      <tr><td>Tool / API</td><td>Tool 提供"能做什么"；Skill 说明"何时做、按什么方法做、怎样验收"</td></tr>
+      <tr><td>Workflow</td><td>Workflow 固化控制流；Skill 给模型一套可适应上下文的操作方法</td></tr>
+      <tr><td>Agent</td><td>Agent 是运行主体；Skill 是 Agent 可加载的程序性知识</td></tr>
+      <tr><td>Subagent</td><td>Subagent 有独立上下文与任务生命周期；Skill 默认注入当前 Agent 上下文</td></tr>
+      <tr><td>RAG 知识库</td><td>RAG 提供事实材料；Skill 偏程序性知识、边界和资源导航</td></tr>
+    </tbody>
+  </table>
+
+  <h4>按需加载：渐进式披露三级</h4>
+  <div class="flow">
+    <div class="node">① 发现<br><small>只暴露 name + description</small></div>
+    <div class="arrow">→</div>
+    <div class="node">② 激活<br><small>命中后读取完整 SKILL.md</small></div>
+    <div class="arrow">→</div>
+    <div class="node accent">③ 执行<br><small>需要时才读 reference / 脚本 / 资产</small></div>
+  </div>
+  <p>这使 Agent 可以"知道有哪些能力"，又不必为每个 Skill 预先支付完整上下文成本。</p>
+</section>

@@ -1,0 +1,82 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 框架页。六层总览表是模块二的骨架，后续三页分别展开规则层、流程层与能力接口层、状态层与安全控制面。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第三部分 · 平台分层
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 从自然语言到机器资源：六层架构总览
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: layer-table
+    elementType: table
+    bounds: [64, 112, 832, 330]
+    columnWidths: [0.17, 0.25, 0.24, 0.19, 0.15]
+    rowHeights: [0.1, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15]
+    style: "$default"
+    rows:
+      - - text: 层次
+        - text: OpenCode 中的载体
+        - text: 主要内容
+        - text: 装载方式
+        - text: 约束强度
+      - - text: "<strong>对话与任务层</strong>"
+        - text: 用户消息、附件、当前 Session
+        - text: 本次目标、背景、偏好、反馈
+        - text: 每轮直接进入上下文
+        - text: 软；可变化
+      - - text: "<strong>资源引导与规则层</strong>"
+        - text: AGENTS.md、instructions
+        - text: 项目结构、构建命令、团队规范
+        - text: 项目/全局规则进入上下文
+        - text: 软到中；自然语言
+      - - text: "<strong>应用流程层</strong>"
+        - text: SKILL.md
+        - text: 场景流程、资源路由、错误处理、验收
+        - text: 元数据常驻，正文按需加载
+        - text: 中；可解释执行
+      - - text: "<strong>能力接口层</strong>"
+        - text: Built-in / Custom Tool、MCP、Script、API
+        - text: 文件、命令、搜索、数据库、业务动作
+        - text: Tool Schema 或命令接口
+        - text: 中到强；参数有结构
+      - - text: "<strong>运行与状态层</strong>"
+        - text: Session、Task、Event、Workspace、Artifact
+        - text: 当前进度、工具结果、文件与检查点
+        - text: Harness 持续维护
+        - text: 强；运行时控制
+      - - text: "<strong>安全与治理控制面</strong>"
+        - text: opencode.json permission、OS 沙箱、网络、密钥、审计
+        - text: 允许、询问、拒绝、隔离和追踪
+        - text: 每次动作前后检查
+        - text: 最强；模型不能自行解除
+  - elementId: note
+    elementType: text
+    bounds: [64, 456, 832, 40]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.5
+      text: |
+        <p><strong>读表方法：</strong>层次越向下，越接近机器可执行资源，约束通常越明确；安全层作为控制面贯穿所有层，在每次动作前后检查。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第三部分 · OpenCode 平台分层}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "12 / 36"}

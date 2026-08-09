@@ -1,0 +1,98 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页。八步工作流分四组讲：0-1 风险与环境、2-3 勘察与切片、4-5 执行与反馈、6-8 验收、交付与沉淀。底部沉淀表是"从偶然成功到可复用能力"的关键。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第四部分 · Vibe Coding
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 推荐的 Vibe Coding 八步工作流
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: col1
+    elementType: text
+    bounds: [64, 112, 400, 200]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.55
+      text: |
+        <p><span style="color:$accent"><strong>第 0 步</strong></span>　<strong>先判断任务风险</strong>：一次性原型、内部工具还是生产系统？是否涉及生产数据、外部消息、付费、部署、删除、权限或隐私？</p>
+        <p style="margin-top:8px"><span style="color:$accent"><strong>第 1 步</strong></span>　<strong>布置可执行环境，而不只是写 Prompt</strong>：目标、背景、输入、可用资源、约束、验收、工作方式，七类信息齐备。</p>
+        <p style="margin-top:8px"><span style="color:$accent"><strong>第 2 步</strong></span>　<strong>先做只读环境勘察</strong>：目录结构、AGENTS.md 与 Skill、构建测试命令、Git 状态、依赖可用性、待确认假设。</p>
+  - elementId: col2
+    elementType: text
+    bounds: [496, 112, 400, 200]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.55
+      text: |
+        <p><span style="color:$accent"><strong>第 3 步</strong></span>　<strong>把计划变成可验证的小切片</strong>：每步改哪些边界、产生什么 Artifact、用什么证据判断通过、失败回退到哪里。</p>
+        <p style="margin-top:8px"><span style="color:$accent"><strong>第 4 步</strong></span>　<strong>Agent 主导执行，人类管理方向和边界</strong>：防目标漂移、超范围重构、高风险操作、fallback/mock/硬编码。</p>
+        <p style="margin-top:8px"><span style="color:$accent"><strong>第 5 步</strong></span>　<strong>每个切片接入真实反馈</strong>：类型检查与单测 → 集成测试 → 截图与日志 → 人类体验 → 模型自评（自评不能替代可执行验证）。</p>
+  - elementId: col3
+    elementType: text
+    bounds: [64, 322, 400, 110]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.55
+      text: |
+        <p><span style="color:$accent"><strong>第 6 步</strong></span>　<strong>独立验收关键结果</strong>：验证者只看需求、Diff、测试结果与已知风险，不继承实现 Agent 的自我辩护上下文。</p>
+        <p style="margin-top:8px"><span style="color:$accent"><strong>第 7 步</strong></span>　<strong>交付可恢复、可继续的结果</strong>：结果与用法、改动清单、实际跑过的验证、<strong>没验证的部分</strong>、风险与回滚点。</p>
+  - elementId: col4-head
+    elementType: text
+    bounds: [496, 322, 400, 20]
+    content:
+      style: "$h3"
+      fontSize: 12.5
+      text: 第 8 步：把重复经验沉淀回环境
+  - elementId: sink-table
+    elementType: table
+    bounds: [496, 346, 400, 150]
+    columnWidths: [0.52, 0.48]
+    rowHeights: [0.16, 0.168, 0.168, 0.168, 0.168, 0.168]
+    style: "$default"
+    rows:
+      - - text: 发现的信息
+        - text: 沉淀到
+      - - text: 跨任务的项目约定
+        - text: AGENTS.md
+      - - text: 某类任务的稳定做法
+        - text: Skill
+      - - text: 重复的确定性逻辑
+        - text: Script / Tool
+      - - text: 必须禁止或确认的动作
+        - text: Permission / Sandbox
+      - - text: 可机器判断的完成条件
+        - text: Tests / Evals
+  - elementId: sink-note
+    elementType: text
+    bounds: [64, 452, 832, 40]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.5
+      text: |
+        <p>第 8 步使"对话中的偶然成功"逐渐变成"<strong>环境中的可复用能力</strong>"——这是 Vibe Coding 能进入团队生产的关键一跃。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第四部分 · Vibe Coding}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "18 / 36"}

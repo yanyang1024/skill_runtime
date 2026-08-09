@@ -1,0 +1,115 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 对比页+方法页。description 要同时写意图与边界；explicit-only 的软边界（description）不能给 100% 保证，硬边界必须由 Harness 拦截显式指令完成。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第六部分 · Skill 命中率测试
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: description 写边界，explicit-only 靠 Harness 强制
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: bad-head
+    elementType: text
+    bounds: [64, 112, 400, 18]
+    content: {style: "$small", fontSize: 11, bold: true, color: "$accent", text: "✕ 不推荐：只有意图，没有边界"}
+  - elementId: bad-bg
+    elementType: shape
+    bounds: [64, 134, 400, 44]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: bad-code
+    elementType: text
+    bounds: [80, 140, 370, 32]
+    content: {style: "$code", fontSize: 11, text: "description: Handle security."}
+  - elementId: good-head
+    elementType: text
+    bounds: [64, 192, 400, 18]
+    content: {style: "$small", fontSize: 11, bold: true, color: "$primary", text: "✓ 推荐：意图 + 正边界 + 负边界"}
+  - elementId: good-bg
+    elementType: shape
+    bounds: [64, 214, 400, 120]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: good-code
+    elementType: text
+    bounds: [80, 224, 370, 104]
+    content:
+      style: "$code"
+      fontSize: 10
+      lineHeight: 1.45
+      text: |
+        <p>description: &gt;</p>
+        <p>  Review changes that can affect tenant data,</p>
+        <p>  filesystem, authentication, database filters,</p>
+        <p>  workspace mapping, or cross-tenant isolation.</p>
+        <p>  Do not use for UI-only changes, copy edits,</p>
+        <p>  or general code style review.</p>
+  - elementId: desc-note
+    elementType: text
+    bounds: [64, 348, 400, 140]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.55
+      text: |
+        <p>优化时不要简单堆积失败样例里的关键词，应找到背后的<strong>意图类别</strong>，否则对训练语句过拟合；触发测试固定 train / validation 划分。</p>
+        <p style="margin-top:8px">输出质量评测：每个用例分别跑 <strong>with skill</strong> 与 <strong>without / 旧版本</strong>，比较断言、耗时和 Token；每次用干净 Session。</p>
+  - elementId: hard-head
+    elementType: text
+    bounds: [500, 112, 396, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: explicit-only：软提示 vs 硬保证
+  - elementId: hard-body
+    elementType: text
+    bounds: [500, 140, 396, 220]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.62
+      text: |
+        <p><strong>软边界</strong>：只在 description 里写"仅在用户明确点名时使用"——能显著降低误触发，但模型仍看得到 Skill，<strong>给不了 100% 运行时保证</strong>。</p>
+        <p style="margin-top:10px"><strong>硬边界（由 Harness 完成）</strong>：</p>
+        <ol>
+        <li>默认不把该 Skill 放入模型可见目录</li>
+        <li>识别 $skill、slash command 或 Skill 按钮</li>
+        <li>明确点名后才注入本轮上下文</li>
+        <li>记录 activated_by=user_explicit</li>
+        <li>高风险 Skill 再叠加 permission ask 或审批</li>
+        </ol>
+  - elementId: hard-note-bar
+    elementType: shape
+    bounds: [500, 380, 4, 44]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: hard-note
+    elementType: text
+    bounds: [516, 380, 380, 110]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.5
+      text: |
+        <p>OpenCode 的 Skill permission 可以 allow / ask / deny，但不是"只有本轮包含特定文字才允许"的语义条件。<strong>需要硬保证时应在外层应用或自定义 Harness 中拦截</strong>，不能只依赖 description。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第六部分 · Skill 命中率测试}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "24 / 36"}

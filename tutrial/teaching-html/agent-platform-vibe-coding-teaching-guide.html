@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent 平台架构、Skill 与 Vibe Coding · 教学讲义</title>
+<style>
+:root{--ink:#1f2430;--muted:#5b6472;--line:#e4e8ef;--bg:#f7f8fa;--card:#fff;
+--brand:#3b5bfd;--brand-soft:#eef1ff;--ok:#0e9f6e;--ok-soft:#e8f7f1;
+--warn:#c2410c;--warn-soft:#fdf1e7;--key:#7c3aed;--key-soft:#f3edff;
+--code-bg:#16181d;--code-ink:#e6e8ee;}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+color:var(--ink);background:var(--bg);line-height:1.75;}
+.layout{display:flex;max-width:1280px;margin:0 auto;}
+nav{position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;
+width:250px;flex:0 0 250px;padding:28px 18px;background:#fff;border-right:1px solid var(--line);}
+nav h2{font-size:15px;margin:0 0 12px;color:var(--muted);}
+nav ol{margin:0;padding-left:18px;font-size:13.5px;}
+nav li{margin:5px 0;}
+nav a{color:var(--ink);text-decoration:none;}
+nav a:hover{color:var(--brand);}
+main{flex:1;min-width:0;padding:36px 44px 90px;}
+.cover{background:linear-gradient(135deg,#2b3a8f,#3b5bfd 60%,#6d8bff);color:#fff;
+border-radius:16px;padding:44px 42px;margin-bottom:36px;}
+.cover h1{margin:0 0 10px;font-size:30px;line-height:1.35;}
+.cover p{margin:6px 0;opacity:.92;}
+.cover .meta{margin-top:18px;font-size:13.5px;opacity:.85;}
+.chapter{background:var(--card);border:1px solid var(--line);border-radius:14px;
+padding:34px 38px;margin:0 0 34px;box-shadow:0 1px 3px rgba(20,30,60,.05);}
+.chapter-tag{display:inline-block;background:var(--brand-soft);color:var(--brand);
+font-size:12.5px;font-weight:600;padding:3px 12px;border-radius:99px;margin-bottom:8px;}
+.chapter h2{margin:6px 0 14px;font-size:24px;border-bottom:2px solid var(--brand-soft);padding-bottom:12px;}
+.chapter h3{margin:30px 0 12px;font-size:19px;color:#2b3a8f;}
+.chapter h4{margin:20px 0 8px;font-size:16px;}
+.lead{font-size:16.5px;color:var(--muted);border-left:4px solid var(--brand);padding-left:14px;margin:0 0 20px;}
+.note{font-size:14px;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 14px;}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:14px;background:#fff;}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+th{background:#f0f3fa;font-weight:600;}
+tr:nth-child(even) td{background:#fafbfd;}
+pre{background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:16px 18px;
+overflow-x:auto;font-size:13px;line-height:1.6;}
+code{font-family:"Cascadia Code",Consolas,monospace;font-size:.92em;}
+p code,li code,td code{background:#eef0f5;color:#c0341d;padding:1px 6px;border-radius:5px;}
+pre code{background:none;color:inherit;padding:0;}
+.callout{border-radius:10px;padding:16px 20px;margin:16px 0;border:1px solid;}
+.callout-title{font-weight:700;margin-bottom:6px;}
+.callout.lecture{background:#eef6ff;border-color:#bcd8f7;}
+.callout.key{background:var(--key-soft);border-color:#d8c8f5;}
+.callout.warn{background:var(--warn-soft);border-color:#f2cdb2;}
+.callout.takeaway{background:var(--ok-soft);border-color:#b7e4d2;}
+.callout.practice{background:#fff8e6;border-color:#ecd9a0;}
+.callout details{margin-top:10px;}
+.callout summary{cursor:pointer;font-weight:600;color:var(--brand);}
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:16px 0;}
+.flow.vertical{flex-direction:column;align-items:stretch;max-width:560px;}
+.node{background:#fff;border:2px solid #c6cee4;border-radius:10px;padding:10px 16px;
+font-size:14px;font-weight:600;text-align:center;}
+.node small{font-weight:400;color:var(--muted);}
+.node.accent{border-color:var(--brand);background:var(--brand-soft);}
+.node.warn-node{border-color:#e5a26a;background:#fdf6ee;}
+.arrow{color:var(--brand);font-weight:700;font-size:18px;text-align:center;}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0;}
+.col-box{border:1px solid var(--line);border-radius:10px;padding:14px 18px;background:#fff;}
+.col-box.ok{border-color:#b7e4d2;background:var(--ok-soft);}
+.col-box.no{border-color:#f2c9c0;background:#fdf0ec;}
+.col-title{font-weight:700;margin-bottom:6px;}
+.step{border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:10px;
+padding:14px 20px;margin:14px 0;background:#fff;}
+.step-num{display:inline-block;background:var(--brand);color:#fff;font-size:12.5px;
+font-weight:700;padding:2px 12px;border-radius:99px;}
+.step h4{margin:8px 0 6px;}
+.step p{margin:6px 0;}
+.myth{border:1px solid #f2c9c0;background:#fdf6f4;border-radius:10px;padding:12px 20px;margin:12px 0;}
+.myth h4{margin:4px 0;color:#a33327;}
+.myth p{margin:6px 0;}
+.checklist{list-style:none;padding-left:4px;}
+.checklist li{padding:4px 0 4px 30px;position:relative;}
+.checklist li::before{content:"\2610";position:absolute;left:4px;color:var(--brand);font-size:16px;}
+.takeaway-list li{margin:10px 0;font-size:15.5px;}
+ul.compact,ol.compact{margin:6px 0;}
+ul.compact li,ol.compact li{margin:2px 0;}
+.refs{font-size:14px;}
+a{color:var(--brand);}
+footer{color:var(--muted);font-size:13px;text-align:center;padding:20px 0 40px;}
+@media(max-width:900px){.layout{flex-direction:column;}nav{position:static;width:auto;height:auto;flex:none;}
+main{padding:20px;}.cols{grid-template-columns:1fr;}}
+@media print{nav{display:none;}main{padding:0;}.chapter{break-inside:avoid-page;box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav><h2>课程目录</h2><ol><li><a href="#part-01">应用形态为什么从 Chatbot 走向 Agent</a></li><li><a href="#part-02">Agent、Harness 与 Skill 的核心定义</a></li><li><a href="#part-03">以 OpenCode 为例理解 Agent 平台分层</a></li><li><a href="#part-04">Vibe Coding 的正确打开方式</a></li><li><a href="#part-05">Tool、API、MCP 与 Agent Harness</a></li><li><a href="#part-06">Skill 命中率测试与优化</a></li><li><a href="#part-07">多 Skill、MCP、A2A 与 Multi-Agent</a></li><li><a href="#part-08">把 WebUI 应用迁移为 Agent 对话式应用</a></li><li><a href="#part-09">一版可落地的参考架构</a></li><li><a href="#part-10">课堂练习与讨论</a></li><li><a href="#part-11">常见误区：八个需要避免的结论</a></li><li><a href="#part-12">课程总结：十句话带走本课</a></li><li><a href="#appendix">附录 A：项目检查表</a></li></ol></nav>
+<main>
+
+<header class="cover">
+  <h1>Agent 平台架构、Skill 与 Vibe Coding</h1>
+  <p>从"缸中之脑"到受控数字工人：Chatbot、RAG、Workflow 到 Agent 的演进，以及 Agent 平台的工程化落地</p>
+  <div class="meta">面向：软件研发、算法工程、数据分析与 AI 应用开发人员 · 建议时长 75–100 分钟 · 版本 1.0（2026-08-09）</div>
+</header>
+
+<section class="chapter" id="part-01">
+  <div class="chapter-tag">第一部分</div>
+  <h2>应用形态为什么从 Chatbot 走向 Agent</h2>
+  <p class="lead">一个只会"接收文本、返回文本"的大模型，再聪明也像<strong>缸中之脑</strong>。本讲回答：从 Chatbot 到 Agent 的演进，到底补齐了什么。</p>
+
+  <h3>1.1 开场：模型为什么像"缸中之脑"</h3>
+  <div class="callout lecture">
+    <div class="callout-title">🧠 讲师讲解</div>
+    <p>只接收文本再返回文本的大模型，即使很聪明，也存在六个"做不到"：</p>
+    <ul>
+      <li>不知道企业<strong>当前真实数据</strong>是什么；</li>
+      <li>不能直接读取<strong>项目文件、数据库和业务系统</strong>；</li>
+      <li>不能可靠地持续完成一个<strong>长任务</strong>；</li>
+      <li>做完动作后，不一定能看到<strong>真实反馈</strong>；</li>
+      <li>不知道哪些动作<strong>被允许、哪些不可逆</strong>；</li>
+      <li>可能给出<strong>看起来合理、实际没有执行过</strong>的答案。</li>
+    </ul>
+  </div>
+
+  <div class="callout key">
+    <div class="callout-title">🔑 核心框架：演进在补齐五类条件</div>
+    <table>
+      <thead><tr><th>条件</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Grounding</strong></td><td>让模型看到真实知识和真实环境</td></tr>
+        <tr><td><strong>Action</strong></td><td>让模型能调用工具、API、文件系统和程序</td></tr>
+        <tr><td><strong>State</strong></td><td>让任务、会话、文件和中间结果能够延续</td></tr>
+        <tr><td><strong>Feedback</strong></td><td>让模型看到动作的真实结果，并据此调整</td></tr>
+        <tr><td><strong>Governance</strong></td><td>用权限、沙箱、审计和验收限制其行动范围</td></tr>
+      </tbody>
+    </table>
+    <p>从 Chatbot 到 Agent 不是产品名词升级，而是<strong>模型与数字世界之间的接口逐渐完整</strong>。</p>
+  </div>
+
+  <h3>1.2 四个阶段的演进</h3>
+  <div class="flow">
+    <div class="node">Chatbot<br><small>生成回答</small></div>
+    <div class="arrow">→</div>
+    <div class="node">RAG + Chat<br><small>引入知识</small></div>
+    <div class="arrow">→</div>
+    <div class="node">Workflow + Chat<br><small>编排流程</small></div>
+    <div class="arrow">→</div>
+    <div class="node accent">Agent + Workspace<br><small>自主选择行动</small></div>
+  </div>
+  <p class="note">⚠️ 这是<strong>能力扩展关系</strong>，不是严格替代关系：Agent 可以调用 RAG 和 Workflow，Workflow 里也可以包含 Agent 节点。</p>
+
+  <table>
+    <thead><tr><th>阶段</th><th>主要控制者</th><th>执行单元</th><th>补齐的能力</th><th>优势</th><th>典型局限</th><th>代表工具</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Chatbot</strong></td><td>用户与应用</td><td>一轮消息</td><td>自然语言理解与生成</td><td>上手快、交互自然</td><td>只能"说"，事实和行动能力弱</td><td>各类聊天应用</td></tr>
+      <tr><td><strong>RAG + Chat</strong></td><td>检索程序</td><td>文档片段与回答</td><td>外部 / 私有 / 时效知识</td><td>降低知识缺口，便于更新</td><td>检索错误会传导；通常不执行真实任务</td><td>LangChain、FastGPT</td></tr>
+      <tr><td><strong>Workflow + Chat</strong></td><td>开发者预定义图</td><td>节点、条件、变量</td><td>确定性编排、系统集成</td><td>可视化、稳定、易审计</td><td>长尾需求需要不断加分支</td><td>Dify、Coze（扣子）</td></tr>
+      <tr><td><strong>Agent + Workspace</strong></td><td>模型在 Harness 边界内决策</td><td>Task、Tool Call、Artifact</td><td>动态规划、工具选择、反馈循环、状态延续</td><td>能处理开放任务和异常</td><td>概率性、成本、延迟、安全与验证更复杂</td><td>OpenCode、Pi、OpenClaw</td></tr>
+    </tbody>
+  </table>
+
+  <h4>① Chatbot：暴露模型的"说话能力"</h4>
+  <p>中心是 <code>message → model → message</code>。适合解释、翻译、改写、头脑风暴等<strong>低风险、结果由人直接判断</strong>的任务；不适合必须读实时业务状态、需要执行/验证/回滚的长任务、高风险且必须留证据链的操作。</p>
+
+  <h4>② RAG + Chat：给模型接入"可查阅的资料室"</h4>
+  <p>RAG 在推理时检索相关内容作为上下文，解决的是"<strong>模型不知道或记不准</strong>"，而不是天然解决"模型会不会做"。典型链路：</p>
+  <pre><code>用户问题 → 查询改写 → 召回 → 重排/过滤 → 上下文拼装 → 模型回答 → 引用来源</code></pre>
+  <div class="callout key">
+    <div class="callout-title">RAG 的生产重点（不在"有没有向量库"）</div>
+    <ul>
+      <li>查询是否被正确理解；</li>
+      <li>数据是否有来源、版本、权限和有效期；</li>
+      <li>召回结果是否覆盖真正需要的证据；</li>
+      <li>模型能否区分"资料中没有"与"自己不知道"；</li>
+      <li>回答能否追溯到原始材料。</li>
+    </ul>
+  </div>
+
+  <h4>③ Workflow + Chat：把工作过程变成可执行图</h4>
+  <p>把模型、知识库、代码、HTTP 请求、判断条件变成<strong>节点</strong>，由开发者提前决定大部分控制流。适合路径稳定、输入输出明确的业务（审批、批处理、内容流水线）。代价：<strong>长尾问题越多，分支越复杂</strong>，业务变化后需持续改图。</p>
+
+  <h4>④ Agent：把"下一步做什么"的部分决定权交给模型</h4>
+  <div class="callout key">
+    <div class="callout-title">📌 教学定义</div>
+    <p>Agent 是一个在<strong>受控环境</strong>中，根据当前目标、状态和观察结果，<strong>循环选择下一步行动</strong>，直到完成、阻塞或被停止的运行系统。Agent ≠ 完全自治。</p>
+  </div>
+  <p>OpenCode 提供会话、文件与命令工具、规则、Skills、Primary/Subagent、权限以及 Server/SDK；Pi 强调可扩展的终端 Coding Harness；OpenClaw 更接近持续运行的个人助手 Gateway。共同点不是"有聊天框"，而是<strong>给模型一个可持续观察和行动的环境</strong>。</p>
+
+  <h3>1.3 重要修正：演进不是"确定性越来越少"</h3>
+  <table>
+    <thead><tr><th>问题类型</th><th>更适合的承担者</th></tr></thead>
+    <tbody>
+      <tr><td>理解模糊意图、处理例外、选择策略</td><td>模型 / Agent</td></tr>
+      <tr><td>计算、格式转换、查询、写入</td><td>Tool / API / Script</td></tr>
+      <tr><td>稳定且高频的固定路径</td><td>Workflow</td></tr>
+      <tr><td>企业共识与项目约定</td><td>AGENTS.md / Rules</td></tr>
+      <tr><td>场景化操作方法</td><td>Skill</td></tr>
+      <tr><td>不可突破的限制</td><td>Permission / Sandbox / Policy</td></tr>
+      <tr><td>成功与否的判断</td><td>测试、断言、业务验收、人类评审</td></tr>
+    </tbody>
+  </table>
+  <div class="callout takeaway">
+    <div class="callout-title">💡 一句话总结</div>
+    <p>把不确定性留给模型，把确定性沉淀到环境；把灵活性放在决策层，把安全和正确性放在<strong>模型无法绕过的边界</strong>上。</p>
+  </div>
+</section><section class="chapter" id="part-02">
+  <div class="chapter-tag">第二部分</div>
+  <h2>Agent、Harness 与 Skill 的核心定义</h2>
+  <p class="lead">Agent 不是一个 Prompt，也不只是一个模型。本讲给出工程化定义，并拆解运行时的决策循环与 Skill 的本质。</p>
+
+  <h3>2.1 Agent 的工程公式</h3>
+  <pre><code>Agent = Model
+      + Harness（循环、上下文、工具中介）
+      + State（会话、任务、文件、检查点）
+      + Resources（规则、Skill、Tool、API、数据）
+      + Policy（权限、沙箱、密钥和审计）
+      + Feedback &amp; Verification（观察、测试、验收）</code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">🛠️ Harness：模型外部的运行脚手架，负责七件事</div>
+    <ol>
+      <li>组织消息和上下文；</li>
+      <li>把工具以<strong>结构化 Schema</strong> 暴露给模型；</li>
+      <li>执行工具调用并把结果送回模型；</li>
+      <li>保存 Session、Message、Artifact 和事件；</li>
+      <li>管理重试、超时、压缩、取消与恢复；</li>
+      <li>在行动前执行<strong>权限检查</strong>；</li>
+      <li>判断继续循环、请求用户输入还是停止。</li>
+    </ol>
+    <p>模型越能自主行动，Harness 对<strong>安全、状态、观察和验证</strong>的责任反而越重。</p>
+  </div>
+
+  <h3>2.2 Agent 的运行时：带状态的决策循环</h3>
+  <p><a href="https://arxiv.org/abs/2210.03629">ReAct</a> 把推理与行动交错：行动从环境得到观察，观察再影响后续决策。生产 Agent 通常采用 ReAct-like 循环，但不一定逐字暴露内部思维过程。</p>
+  <div class="flow vertical">
+    <div class="node">用户目标或待办任务</div>
+    <div class="arrow">↓</div>
+    <div class="node">装载会话状态与相关资源</div>
+    <div class="arrow">↓</div>
+    <div class="node">选择：回答 / 调用工具 / 委派子任务</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">权限与安全检查<br><small>拒绝 → 请求确认或停止</small></div>
+    <div class="arrow">↓ 允许</div>
+    <div class="node">执行并获得真实观察</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">有完成证据吗？<br><small>没有 → 回到装载状态</small></div>
+    <div class="arrow">↓ 有</div>
+    <div class="node accent">交付结果、产物与证据</div>
+  </div>
+
+  <h4>循环各环节的工程含义</h4>
+  <table>
+    <thead><tr><th>环节</th><th>工程含义</th><th>应保留的可观测信息</th></tr></thead>
+    <tbody>
+      <tr><td><strong>观察</strong></td><td>读取用户输入、文件、工具结果、环境状态</td><td>输入来源、版本、时间、权限范围</td></tr>
+      <tr><td><strong>决策</strong></td><td>选择下一步行动、更新计划</td><td>简明计划、选择理由、风险提示（不要求完整思维链）</td></tr>
+      <tr><td><strong>行动</strong></td><td>调用 Tool、API、脚本、Subagent</td><td>工具名、参数摘要、调用身份、幂等键</td></tr>
+      <tr><td><strong>反馈</strong></td><td>接收 stdout、API 响应、测试结果、用户回复</td><td>结构化结果、错误类型、证据与 Artifact</td></tr>
+      <tr><td><strong>状态更新</strong></td><td>写入 Session、Task、文件或检查点</td><td>状态迁移、差异、可恢复位置</td></tr>
+      <tr><td><strong>停止</strong></td><td>完成、阻塞、失败或超预算</td><td>停止原因、未完成项、下一步建议</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 Agent 必须知道何时停止：七类停止条件</h3>
+  <table>
+    <thead><tr><th>停止条件</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td><strong>完成停止</strong></td><td>验收断言通过，并产生了约定的 Artifact</td></tr>
+      <tr><td><strong>需要输入</strong></td><td>缺少会显著改变结果的用户选择</td></tr>
+      <tr><td><strong>权限阻塞</strong></td><td>动作被拒绝，且没有同等安全的替代路径</td></tr>
+      <tr><td><strong>失败停止</strong></td><td>同一错误重复出现，继续尝试没有新增信息</td></tr>
+      <tr><td><strong>风险停止</strong></td><td>即将执行不可逆、越权或高影响操作</td></tr>
+      <tr><td><strong>预算停止</strong></td><td>达到时间、Token、调用次数或费用上限</td></tr>
+      <tr><td><strong>外部停止</strong></td><td>用户取消、服务超时或依赖系统不可用</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 注意</div>
+    <p>"还可以继续想"不是继续循环的充分理由。每次循环都应回答：<strong>这一步能否获得新信息、产生新证据或推进状态？</strong></p>
+  </div>
+
+  <h3>2.4 Skill 的定义：可按需加载的操作知识包</h3>
+  <p><a href="https://agentskills.io/home">Agent Skills 规范</a>把 Skill 定义为以 <code>SKILL.md</code> 为核心、可附带脚本、参考资料和资产的可复用知识包：</p>
+  <pre><code>my-skill/
+├── SKILL.md              # 触发边界、流程、判断与资源路由
+├── scripts/              # 可重复、确定性的执行逻辑
+├── references/           # 需要时读取的领域或接口资料
+├── assets/               # 模板、样例、静态资源
+└── evals/                # 触发与输出质量测试</code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">✅ 一个合格的 Skill 回答的七个问题</div>
+    <ol>
+      <li>什么用户意图应该触发它？</li>
+      <li>哪些相邻场景<strong>不应该</strong>触发它？</li>
+      <li>开始前需要检查什么？</li>
+      <li>以什么顺序使用哪些资源？</li>
+      <li>哪些判断由模型做，哪些必须交给程序？</li>
+      <li>失败时如何分类、重试、降级或停止？</li>
+      <li>最终交付什么，如何验证？</li>
+    </ol>
+  </div>
+
+  <h4>Skill 不是什么</h4>
+  <table>
+    <thead><tr><th>容易混淆的对象</th><th>与 Skill 的区别</th></tr></thead>
+    <tbody>
+      <tr><td>Prompt</td><td>Prompt 是一次性指令；Skill 是带触发边界、流程和配套资源的可复用包</td></tr>
+      <tr><td>Tool / API</td><td>Tool 提供"能做什么"；Skill 说明"何时做、按什么方法做、怎样验收"</td></tr>
+      <tr><td>Workflow</td><td>Workflow 固化控制流；Skill 给模型一套可适应上下文的操作方法</td></tr>
+      <tr><td>Agent</td><td>Agent 是运行主体；Skill 是 Agent 可加载的程序性知识</td></tr>
+      <tr><td>Subagent</td><td>Subagent 有独立上下文与任务生命周期；Skill 默认注入当前 Agent 上下文</td></tr>
+      <tr><td>RAG 知识库</td><td>RAG 提供事实材料；Skill 偏程序性知识、边界和资源导航</td></tr>
+    </tbody>
+  </table>
+
+  <h4>按需加载：渐进式披露三级</h4>
+  <div class="flow">
+    <div class="node">① 发现<br><small>只暴露 name + description</small></div>
+    <div class="arrow">→</div>
+    <div class="node">② 激活<br><small>命中后读取完整 SKILL.md</small></div>
+    <div class="arrow">→</div>
+    <div class="node accent">③ 执行<br><small>需要时才读 reference / 脚本 / 资产</small></div>
+  </div>
+  <p>这使 Agent 可以"知道有哪些能力"，又不必为每个 Skill 预先支付完整上下文成本。</p>
+</section><section class="chapter" id="part-03">
+  <div class="chapter-tag">第三部分</div>
+  <h2>以 OpenCode 为例理解 Agent 平台分层</h2>
+  <p class="lead">从自然语言到机器资源，越向下约束越明确。安全层不是"最下面的一段提示词"，而是<strong>贯穿整个系统的控制面</strong>。</p>
+
+  <h3>3.1 六层架构总览</h3>
+  <table>
+    <thead><tr><th>层次</th><th>OpenCode 中的载体</th><th>主要内容</th><th>装载方式</th><th>约束强度</th></tr></thead>
+    <tbody>
+      <tr><td><strong>对话与任务层</strong></td><td>用户消息、附件、当前 Session</td><td>本次目标、背景、偏好、反馈</td><td>每轮直接进入上下文</td><td>软；可变化</td></tr>
+      <tr><td><strong>资源引导与规则层</strong></td><td><code>AGENTS.md</code>、instructions</td><td>项目结构、构建命令、团队规范</td><td>项目/全局规则进入上下文</td><td>软到中；仍是自然语言</td></tr>
+      <tr><td><strong>应用流程层</strong></td><td><code>SKILL.md</code></td><td>场景流程、资源路由、错误处理、验收</td><td>元数据常驻，正文按需加载</td><td>中；可被模型解释执行</td></tr>
+      <tr><td><strong>能力接口层</strong></td><td>Built-in / Custom Tool、MCP、Script、API</td><td>文件、命令、搜索、数据库、业务动作</td><td>Tool Schema 或命令接口</td><td>中到强；参数有结构</td></tr>
+      <tr><td><strong>运行与状态层</strong></td><td>Session、Task、Event、Workspace、Artifact</td><td>当前进度、工具结果、文件与检查点</td><td>Harness 持续维护</td><td>强；由运行时控制</td></tr>
+      <tr><td><strong>安全与治理控制面</strong></td><td><code>opencode.json</code> permission、OS 沙箱、网络、密钥、审计</td><td>允许、询问、拒绝、隔离和追踪</td><td>每次动作前后检查</td><td><strong>最强；模型不能自行解除</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 各层放什么、不放什么</h3>
+
+  <h4>① 对话层：只描述本次任务</h4>
+  <div class="cols">
+    <div class="col-box ok">
+      <div class="col-title">✅ 适合放</div>
+      <ul><li>为什么做</li><li>这一次处理哪些输入</li><li>用户真正关心的结果</li><li>临时偏好和当前反馈</li></ul>
+    </div>
+    <div class="col-box no">
+      <div class="col-title">❌ 不适合反复放</div>
+      <ul><li>每个会话都相同的项目规范</li><li>很长的 API 文档</li><li>需机器严格执行的权限规则</li><li>与当前任务无关的大量领域资料</li></ul>
+    </div>
+  </div>
+
+  <h4>② AGENTS.md：告诉 Agent"这是怎样的项目"</h4>
+  <p>OpenCode 会把项目级和全局规则加入上下文，官方建议记录构建、测试、项目结构、约定与易踩坑处。示例：</p>
+  <pre><code># Project Guide
+
+## Goal
+这是一个多租户数据分析服务。任何修改都不能破坏租户隔离。
+
+## Structure
+- `api/`: 对外接口
+- `core/`: 业务逻辑
+- `tests/`: 单元与隔离测试
+
+## Commands
+- 单元测试：`pytest -q`
+- 隔离测试：`pytest -q tests/isolation`
+- 静态检查：`ruff check .`
+
+## Rules
+- 不在源码中写入密钥。
+- 修改数据库 Schema 前先生成迁移计划，不直接执行生产迁移。
+- 完成后必须报告改动文件、验证命令和仍未覆盖的风险。</code></pre>
+  <p class="note">AGENTS.md 是<strong>高频、跨任务</strong>的上下文，不应变成百科全书：场景性长流程拆到 Skill，机器硬限制放入权限或沙箱。</p>
+
+  <h4>③ Skill：告诉 Agent"这种任务应该怎样完成"</h4>
+  <pre><code>---
+name: tenant-isolation-review
+description: &gt;
+  Review changes that may affect tenant data or filesystem isolation.
+  Use for authentication, storage, workspace mapping, database queries,
+  or cross-tenant access paths. Do not use for unrelated UI-only edits.
+---
+
+# Tenant Isolation Review
+
+1. Identify the tenant boundary and authoritative tenant ID.
+2. Trace all read/write paths affected by the change.
+3. Run `scripts/check-isolation.sh`.
+4. Read `references/isolation-invariants.md` only if a boundary changes.
+5. Report PASS/FAIL for each invariant with file or test evidence.
+6. Do not modify production credentials or execute production migrations.</code></pre>
+
+  <h4>④ Tool 与 API：告诉 Agent"环境允许做什么"</h4>
+  <p>OpenCode 内置文件、搜索和命令等工具，也可接入自定义 Tool 或 MCP Server。原则：Tool 应提供<strong>稳定、窄而清楚</strong>的输入输出，而不是把整个业务系统变成一个模糊的"万能接口"。</p>
+
+  <h4>⑤ Session 与 Workspace：让任务不只存在于一条回复里</h4>
+  <p>OpenCode 的 TUI 本身是 Server 的客户端；<code>opencode serve</code> 提供 OpenAPI 接口，SDK 可创建会话、发送消息和订阅事件。工程上要区分六种状态：</p>
+  <table>
+    <thead><tr><th>状态类型</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Conversation state</strong></td><td>用户与 Agent 说了什么</td></tr>
+      <tr><td><strong>Task state</strong></td><td>任务处于 planning / working / blocked / completed</td></tr>
+      <tr><td><strong>Workspace state</strong></td><td>文件、代码和中间产物是什么</td></tr>
+      <tr><td><strong>External state</strong></td><td>数据库、工单、部署环境当前是什么</td></tr>
+      <tr><td><strong>Checkpoint</strong></td><td>失败后从哪里恢复</td></tr>
+      <tr><td><strong>Artifact</strong></td><td>最终可交付的文件、结构化数据或变更集</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 关键原则</div>
+    <p>聊天记录不能替代业务数据库；模型总结也不能成为生产状态的唯一真相来源。</p>
+  </div>
+
+  <h3>3.3 安全层：自然语言规则不是硬隔离</h3>
+  <p>OpenCode 的 permission 配置可对工具、命令、Skill、Subagent、外部目录和重复循环设置 <code>allow / ask / deny</code>，规则采用模式匹配（具体规则放在通配规则之后）：</p>
+  <pre><code>{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "edit": "ask",
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "rm *": "deny",
+      "sudo *": "deny"
+    },
+    "external_directory": "deny",
+    "webfetch": "ask",
+    "skill": { "*": "ask", "trusted-*": "allow" },
+    "task": { "*": "deny", "reviewer": "allow" },
+    "doom_loop": "ask"
+  }
+}</code></pre>
+  <div class="callout key">
+    <div class="callout-title">🔐 五条安全要点</div>
+    <ul>
+      <li>Permission 是 Harness 的<strong>动作门</strong>，不等于完整 OS 沙箱；</li>
+      <li><code>AGENTS.md</code> 里写"禁止删除"<strong>不能替代</strong>真正的 <code>deny</code>；</li>
+      <li>对不可信代码，应增加容器 / bwrap 隔离、只读挂载、网络出口控制和独立凭据；</li>
+      <li>密钥由运行环境或凭据代理注入，<strong>不能写入 Prompt、Skill 或仓库</strong>；</li>
+      <li>高风险写操作应具备 dry-run、幂等键、显式确认、审计和回滚方案。</li>
+    </ul>
+  </div>
+</section><section class="chapter" id="part-04">
+  <div class="chapter-tag">第四部分</div>
+  <h2>Vibe Coding 的正确打开方式</h2>
+  <p class="lead">Vibe Coding 不是"随便描述一句让 AI 写完代码"。本讲区分两种语境，并给出可落地的八步工作流。</p>
+
+  <h3>4.1 Vibe Coding 的两个语境</h3>
+  <p>"Vibe Coding"最初（<a href="https://x.com/karpathy/status/1886192184808149383">Karpathy</a>）描述一种高度依赖自然语言和快速反馈、甚至不仔细阅读代码差异的开发体验。教学中应区分：</p>
+  <table>
+    <thead><tr><th>模式</th><th>目标</th><th>可接受做法</th><th>不可接受做法</th></tr></thead>
+    <tbody>
+      <tr><td><strong>原型式 Vibe Coding</strong></td><td>快速验证想法、一次性个人工具</td><td>快速生成、边看效果边调整、允许重做</td><td>用于生产后仍不理解权限、数据和依赖</td></tr>
+      <tr><td><strong>生产式 Agentic Coding</strong></td><td>在 Agent 主导执行下交付可维护结果</td><td>自然语言定义目标，机器执行测试，人审阅风险与验收证据</td><td>"Accept All"、只看 UI 正常、让同一 Agent 无证据地自我宣布完成</td></tr>
+    </tbody>
+  </table>
+  <div class="callout key">
+    <div class="callout-title">🔄 生产环境的升级路径：不是取消"Vibe"，而是工程化</div>
+    <pre><code>自然语言意图
+→ 可确认的规格与边界
+→ Agent 在受控工作区执行
+→ 自动测试与真实反馈
+→ 人类体验和风险审阅
+→ 检查点、交付和知识沉淀</code></pre>
+    <p>GitHub 的 <a href="https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/">Spec-driven development</a> 也指出：从一句描述直接跳到代码适合快速原型，严肃项目需要更清楚的规格和验证。</p>
+  </div>
+
+  <h3>4.2 推荐的 Vibe Coding 八步工作流</h3>
+
+  <div class="step">
+    <div class="step-num">第 0 步</div>
+    <h4>先判断任务风险</h4>
+    <p>先回答：这是一次性原型、内部工具，还是生产系统？是否涉及生产数据、外部消息、付费、部署、删除、权限或隐私？风险越高，越需要：明确验收标准、分离计划与执行、限制工具权限、独立验证、保留回滚与审计。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 1 步</div>
+    <h4>布置可执行环境，而不只是写一个 Prompt</h4>
+    <pre><code>## 目标      要解决谁的什么问题，最终产生什么结果。
+## 背景      为什么做；现状、已有尝试和业务语义。
+## 输入      文件、接口、数据源、样例在哪里，哪个是权威来源。
+## 可用资源  可以使用哪些 Tool、API、Skill、脚本和测试环境。
+## 约束      哪些路径不可访问，哪些行为禁止，哪些动作需要确认。
+## 验收      哪些命令、断言、截图、业务指标或人工体验代表完成。
+## 工作方式  先只读分析和计划；按小批次实施；失败时报告证据。</code></pre>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 2 步</div>
+    <h4>让 Agent 先做只读环境勘察</h4>
+    <p>确认：项目入口和真实目录结构；AGENTS.md 与相关 Skill；构建、测试、格式化命令；当前 Git 状态和用户已有修改；接口、数据和依赖是否可用；哪些假设仍需确认。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 3 步</div>
+    <h4>把计划变成可验证的小切片</h4>
+    <p>计划不应只是"先分析、再实现、最后测试"，而应说明：每一步改动哪些边界；产生什么中间 Artifact；用什么命令或证据判断通过；失败后回退到哪里；哪些步骤可并行、哪些有依赖。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 4 步</div>
+    <h4>让 Agent 主导执行，人类管理方向和边界</h4>
+    <p>人类不必逐行指导写代码，但应控制：目标是否漂移；是否出现超范围重构；是否触碰高风险操作；是否产生大量 fallback、mock、placeholder 或硬编码；是否用真实路径完成，而不是只让测试表面通过。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 5 步</div>
+    <h4>每个小切片都接入真实反馈</h4>
+    <ol>
+      <li>类型检查、单元测试和静态分析；</li>
+      <li>集成测试、真实 API 或沙箱数据；</li>
+      <li>页面截图、Artifact、日志和性能数据；</li>
+      <li>人类体验反馈；</li>
+      <li>模型自评。</li>
+    </ol>
+    <p class="note">模型自评可以发现问题，但<strong>不能替代可执行验证</strong>。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 6 步</div>
+    <h4>独立验收关键结果</h4>
+    <p>高风险改动应让验证者只看：原始需求与验收标准、Diff 或最终 Artifact、测试结果和关键日志、已知风险和未覆盖项。验证者<strong>不应继承</strong>实现 Agent 为自己辩护的全部上下文——上下文隔离的价值是减少同一套错误假设被重复接受。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 7 步</div>
+    <h4>交付可恢复、可继续的结果</h4>
+    <p>交付内容至少包括：结果与使用方法；改动文件或 Artifact 链接；实际运行过的验证；<strong>没有验证的部分</strong>；风险、回滚点和下一步。</p>
+  </div>
+
+  <div class="step">
+    <div class="step-num">第 8 步</div>
+    <h4>把重复经验沉淀回环境</h4>
+    <table>
+      <thead><tr><th>发现的信息</th><th>应沉淀到哪里</th></tr></thead>
+      <tbody>
+        <tr><td>每次任务都适用的项目约定</td><td>AGENTS.md</td></tr>
+        <tr><td>某类任务的稳定做法</td><td>Skill</td></tr>
+        <tr><td>重复生成的确定性逻辑</td><td>Script / Tool</td></tr>
+        <tr><td>大量详细领域资料</td><td>references / RAG</td></tr>
+        <tr><td>严格禁止或必须确认的动作</td><td>Permission / Sandbox</td></tr>
+        <tr><td>可机器判断的完成条件</td><td>Tests / Evals</td></tr>
+        <tr><td>本次任务的过程与中间结果</td><td>Session / Trace / Artifact</td></tr>
+      </tbody>
+    </table>
+    <p class="note">这一步使"对话中的偶然成功"逐渐变成"<strong>环境中的可复用能力</strong>"。</p>
+  </div>
+</section><section class="chapter" id="part-05">
+  <div class="chapter-tag">第五部分</div>
+  <h2>Tool、API、MCP 与 Agent Harness</h2>
+  <p class="lead">不要把"接入 API"理解成把几百行文档粘进 Prompt。本讲讲清工具如何进入架构、脚本如何为 Agent 设计、以及结果应该记住多久。</p>
+
+  <h3>5.1 工具如何进入 Agent 架构</h3>
+  <div class="flow">
+    <div class="node">用户任务</div>
+    <div class="arrow">→</div>
+    <div class="node">Agent Runtime<br><small>← Skill：何时及如何使用</small></div>
+    <div class="arrow">→</div>
+    <div class="node">Typed Tool / Adapter</div>
+    <div class="arrow">⇄</div>
+    <div class="node accent">业务 API / 数据库 / 程序</div>
+  </div>
+  <table>
+    <thead><tr><th>内容</th><th>最适合的位置</th></tr></thead>
+    <tbody>
+      <tr><td>Endpoint、参数类型、枚举、返回 Schema</td><td>Tool 定义、OpenAPI、SDK</td></tr>
+      <tr><td>鉴权、重试、分页、限流、幂等、错误归一化</td><td>Tool Adapter / Script</td></tr>
+      <tr><td>什么业务意图下调用、先后顺序、结果如何解释</td><td>Skill</td></tr>
+      <tr><td>所有任务都适用的接口使用约定</td><td>AGENTS.md</td></tr>
+      <tr><td>密钥、租户身份、网络范围</td><td>Credential / Runtime / Policy</td></tr>
+      <tr><td>调用过程、耗时、结果摘要</td><td>Trace / Observability</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout key">
+    <div class="callout-title">🧰 Tool 设计五条原则</div>
+    <ol>
+      <li><strong>窄接口</strong>：<code>get_order_status(order_id)</code> 优于 <code>execute_business_action(payload)</code>；</li>
+      <li><strong>强 Schema</strong>：使用 enum、required、范围约束和稳定字段；</li>
+      <li><strong>可诊断错误</strong>：区分参数错误、权限错误、限流、依赖不可用和业务冲突；</li>
+      <li><strong>安全重试</strong>：读操作可重试，写操作必须考虑幂等键；</li>
+      <li><strong>结果可验证</strong>：返回 ID、版本、时间、来源和状态，不只返回"成功"。</li>
+    </ol>
+  </div>
+
+  <h3>5.2 API 融入 Skill 的推荐结构</h3>
+  <pre><code>skills/order-investigation/
+├── SKILL.md
+├── scripts/
+│   └── order_api.py
+├── references/
+│   ├── field-semantics.md
+│   └── error-codes.md
+└── evals/
+    ├── trigger_queries.json
+    └── cases.json</code></pre>
+  <p><code>SKILL.md</code> 只保留核心流程：</p>
+  <pre><code>1. 从用户描述中提取 `order_id`；缺失时询问，不猜测。
+2. 调用 `scripts/order_api.py status --order-id &lt;id&gt; --format json`。
+3. 如果返回 `AUTH_EXPIRED`，停止并报告需要重新授权。
+4. 如果返回 `NOT_FOUND`，核对订单 ID 格式后最多重试一次。
+5. 只有在状态为 `SHIPPED` 时才读取物流详情。
+6. 最终区分：已确认事实、推断、需要业务人员确认的事项。</code></pre>
+  <p class="note">详细字段语义和低频错误码放入 <code>references/</code>，<strong>只有遇到对应情况时再读</strong>。</p>
+
+  <h3>5.3 stdin/stdout：为人设计的 CLI ≠ 为 Agent 设计的 CLI</h3>
+  <p>Agent 通过参数、stdin、stdout、stderr 和退出码理解结果。<a href="https://agentskills.io/skill-creation/using-scripts">脚本设计指南</a>建议：避免交互式输入、提供清晰的 <code>--help</code>、使用结构化输出、把数据与诊断分开。</p>
+  <table>
+    <thead><tr><th>通道</th><th>用途</th><th>规则</th></tr></thead>
+    <tbody>
+      <tr><td><strong>argv / stdin</strong></td><td>输入参数</td><td>参数少用 flags；复杂对象用单个 JSON；不要等待 TTY 交互</td></tr>
+      <tr><td><strong>stdout</strong></td><td>机器结果</td><td>默认只输出一个合法 JSON；不要混入进度文字</td></tr>
+      <tr><td><strong>stderr</strong></td><td>诊断</td><td>日志、警告、进度和可读错误</td></tr>
+      <tr><td><strong>exit code</strong></td><td>失败类别</td><td>为参数、鉴权、依赖、业务冲突设置稳定代码</td></tr>
+      <tr><td><strong>output file</strong></td><td>大结果</td><td>大表、图片、报告写入文件，stdout 只返回 manifest</td></tr>
+    </tbody>
+  </table>
+
+  <h4>成功输出示例</h4>
+  <pre><code>{
+  "ok": true,
+  "data": { "count": 20, "items": [] },
+  "artifacts": [
+    { "path": "outputs/report.csv", "mime_type": "text/csv", "sha256": "..." }
+  ],
+  "provenance": {
+    "source": "analytics-api",
+    "retrieved_at": "2026-08-09T18:00:00Z",
+    "api_version": "v2"
+  },
+  "warnings": [],
+  "next_cursor": null
+}</code></pre>
+  <h4>失败输出示例</h4>
+  <pre><code>{
+  "ok": false,
+  "error": {
+    "code": "AUTH_EXPIRED",
+    "message": "The service credential has expired.",
+    "retryable": false,
+    "suggested_action": "Ask an administrator to reconnect the integration."
+  }
+}</code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">👥 人类可读与 Agent 可读的分工</div>
+    <ul>
+      <li>脚本和 Tool 返回<strong>稳定、紧凑、可解析</strong>的数据；</li>
+      <li>Agent 根据用户角色把数据翻译成解释、表格或建议；</li>
+      <li>WebUI 用卡片、图表、进度和 Artifact 预览渲染同一份结构化结果；</li>
+      <li>不要让脚本同时承担<strong>数据接口、业务解释和最终文案</strong>三种责任。</li>
+    </ul>
+  </div>
+
+  <h3>5.4 响应持久化与 Runtime 记忆</h3>
+  <table>
+    <thead><tr><th>层级</th><th>保存什么</th><th>典型寿命</th><th>目的</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Turn context</strong></td><td>当前输入与短工具结果</td><td>一轮到数轮</td><td>支持下一步决策</td></tr>
+      <tr><td><strong>Session state</strong></td><td>已确认目标、选择和工作摘要</td><td>一次会话</td><td>保持连续性</td></tr>
+      <tr><td><strong>Task checkpoint</strong></td><td>当前阶段、待办、幂等键、恢复点</td><td>任务完成前后</td><td>中断恢复</td></tr>
+      <tr><td><strong>Raw response</strong></td><td>原始 API 响应或引用</td><td>按审计策略</td><td>追溯与重放</td></tr>
+      <tr><td><strong>Normalized result</strong></td><td>统一后的结构化数据</td><td>按业务版本</td><td>跨工具消费</td></tr>
+      <tr><td><strong>Artifact</strong></td><td>报告、代码、数据、图像</td><td>按交付策略</td><td>用户真正使用的结果</td></tr>
+      <tr><td><strong>Curated memory</strong></td><td>经确认且会重复使用的事实/偏好/规则</td><td>长期并带作用域</td><td>改善后续任务</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 进入长期记忆的五个前提 + 禁止沉淀清单</div>
+    <p>前提：明确来源；作用域（个人/项目/团队/租户）；经用户或系统确认；版本和过期策略；删除和纠错机制。</p>
+    <p><strong>禁止沉淀</strong>：密钥、临时授权、未经确认的推测、跨租户数据、无法解释来源的"模型印象"。</p>
+  </div>
+</section><section class="chapter" id="part-06">
+  <div class="chapter-tag">第六部分</div>
+  <h2>Skill 命中率测试与优化</h2>
+  <p class="lead">Skill 有两类质量：<strong>会不会被用</strong>，以及<strong>用了有没有帮助</strong>。只测其一都会漏掉另一半问题。</p>
+
+  <h3>6.1 两层评测体系</h3>
+  <table>
+    <thead><tr><th>评测层</th><th>核心问题</th><th>典型指标</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Trigger eval</strong></td><td>该触发时是否触发，不该触发时是否保持安静</td><td>Precision、Recall、FPR、触发稳定率</td></tr>
+      <tr><td><strong>Outcome eval</strong></td><td>Skill 被加载后是否提升任务结果</td><td>断言通过率、Artifact 质量、耗时、Token、失败率</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 触发测试集怎么设计</h3>
+  <p><a href="https://agentskills.io/skill-creation/optimizing-descriptions">description 优化指南</a>建议同时准备 should-trigger 与 should-not-trigger 查询，并多次运行观察非确定性。第一版可用约 <strong>20 条查询 × 每条 3 次</strong>。</p>
+  <table>
+    <thead><tr><th>类别</th><th>示例</th><th>预期</th></tr></thead>
+    <tbody>
+      <tr><td><strong>明确点名</strong></td><td>"使用 <code>$tenant-isolation-review</code> 检查这个 PR"</td><td>必须触发</td></tr>
+      <tr><td><strong>明确业务意图</strong></td><td>"这个改动可能让 A 租户读到 B 租户文件，帮我审查"</td><td>自动型 Skill 应触发</td></tr>
+      <tr><td><strong>隐含但真实相关</strong></td><td>"我们把 workspace 路径从用户级改成应用级，有什么风险？"</td><td>视 Skill 边界触发</td></tr>
+      <tr><td><strong>关键词近邻</strong></td><td>"帮我改一下租户设置页面的颜色"</td><td>不触发</td></tr>
+      <tr><td><strong>同文件、不同意图</strong></td><td>"给 isolation.py 补 docstring"</td><td>通常不触发</td></tr>
+      <tr><td><strong>多意图冲突</strong></td><td>"先修隔离漏洞，再更新发布说明"</td><td>触发主 Skill，并按策略组合或分阶段</td></tr>
+    </tbody>
+  </table>
+  <p class="note">负样例应是"<strong>很像但不该触发</strong>"的近邻场景，而不是天气、笑话等毫无关联的问题。</p>
+
+  <h4>指标定义</h4>
+  <pre><code>Precision = TP / (TP + FP)   # 触发后有多少次是对的
+Recall    = TP / (TP + FN)   # 应触发的请求覆盖了多少
+FPR       = FP / (FP + TN)   # 不该触发的请求中误触发多少</code></pre>
+  <p>还应记录：同一 Prompt 三次运行的触发率；平均激活 Skill 数量；激活后首次有效行动所需轮数；误触发带来的 Token、延迟与错误动作；与无 Skill / 旧版本相比的任务成功增量。</p>
+
+  <h3>6.3 description 如何写得更容易正确命中</h3>
+  <p>description 要同时写"<strong>用户想完成什么</strong>"和"<strong>边界在哪里</strong>"：</p>
+  <div class="cols">
+    <div class="col-box no">
+      <div class="col-title">❌ 不推荐</div>
+      <pre><code>description: Handle security.</code></pre>
+    </div>
+    <div class="col-box ok">
+      <div class="col-title">✅ 推荐</div>
+      <pre><code>description: &gt;
+  Review code or configuration changes
+  that can affect tenant data, filesystem,
+  authentication, database filters, workspace
+  mapping, or cross-tenant isolation.
+  Do not use for UI-only changes, copy edits,
+  or general code style review.</code></pre>
+    </div>
+  </div>
+  <p class="note">优化时不要简单堆积失败样例里的关键词，应找到背后的<strong>意图类别</strong>，否则对训练语句过拟合。触发测试最好固定 train / validation 划分。</p>
+
+  <h3>6.4 如果只允许用户明确指定 Skill（explicit-only）</h3>
+  <h4>软边界：只改 description</h4>
+  <pre><code>---
+name: production-release
+description: &gt;
+  Use only when the user explicitly types $production-release,
+  /production-release, or says "use production-release".
+  Do not infer activation from generic release, deployment,
+  changelog, Git, or production-related requests.
+---</code></pre>
+  <p>能显著降低误触发，但<strong>不能给出 100% 运行时保证</strong>——模型仍看得到 Skill，并自行判断是否加载。</p>
+
+  <h4>强边界：由 Harness 拦截显式指令</h4>
+  <ol>
+    <li>默认不把该 Skill 放入模型可见目录；</li>
+    <li>WebUI 或 Harness 识别 <code>$production-release</code>、slash command 或 Skill 按钮；</li>
+    <li>只有明确点名后才把 Skill 注入本轮上下文；</li>
+    <li>记录 <code>activated_by=user_explicit</code>；</li>
+    <li>对高风险 Skill 再叠加 permission <code>ask</code> 或业务审批。</li>
+  </ol>
+  <pre><code>mentioned = parse_explicit_skill_mentions(user_message)
+visible_catalog = auto_invokable_skills
+
+for skill_name in mentioned:
+    skill = explicit_only_registry.get(skill_name)
+    if skill:
+        inject_skill(skill, activated_by="user_explicit")</code></pre>
+  <div class="callout warn">
+    <div class="callout-title">⚠️ 平台差异</div>
+    <p>OpenCode 的 Skill permission 可以 <code>allow / ask / deny</code>，但它不是"只有本轮包含特定文字才允许"的语义条件。需要硬保证时，应在外层应用或自定义 Harness 中拦截，<strong>不能只依赖 description</strong>。</p>
+  </div>
+
+  <h3>6.5 输出质量评测</h3>
+  <p><a href="https://agentskills.io/skill-creation/evaluating-skills">评测指南</a>建议每个用例分别运行 "<strong>with skill</strong>" 和 "<strong>without skill / 旧版本</strong>"，再比较断言、耗时和 Token。一个用例至少包含：</p>
+  <pre><code>{
+  "id": "isolation-001",
+  "prompt": "Review this workspace mapping change for tenant isolation.",
+  "files": ["fixtures/change.diff"],
+  "expected_output": "An invariant-by-invariant review with PASS/FAIL evidence.",
+  "assertions": [
+    "The output identifies the authoritative tenant ID.",
+    "Every filesystem read/write path is traced.",
+    "Each isolation invariant has PASS or FAIL evidence.",
+    "The reviewer does not modify source files."
+  ]
+}</code></pre>
+  <p class="note">机械断言优先用程序验证；主观质量可用盲评和人工评审补充。每次评测使用<strong>干净 Session</strong>，避免开发过程的上下文泄漏到测试。</p>
+</section><section class="chapter" id="part-07">
+  <div class="chapter-tag">第七部分</div>
+  <h2>多 Skill、MCP、A2A 与 Multi-Agent</h2>
+  <p class="lead">先分清六种组合机制，再谈编排。不要因为"多 Agent"听起来更先进，就把一个函数拆成三个角色互相聊天。</p>
+
+  <h3>7.1 六种组合机制对比</h3>
+  <table>
+    <thead><tr><th>机制</th><th>解决的问题</th><th>控制流</th><th>是否新上下文</th><th>典型产物</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tool / API</strong></td><td>执行一个可定义的能力</td><td>Agent 调用函数</td><td>否</td><td>结构化结果</td></tr>
+      <tr><td><strong>Skill</strong></td><td>告诉 Agent 一类任务怎样做</td><td>模型按说明执行</td><td>默认否</td><td>方法、流程和 Artifact</td></tr>
+      <tr><td><strong>Workflow</strong></td><td>固定或半固定步骤编排</td><td>开发者定义图</td><td>通常否</td><td>节点结果、最终输出</td></tr>
+      <tr><td><strong>MCP</strong></td><td>标准化 Agent 与 Tool/Data/Prompt/UI 的连接</td><td>Client–Server 协议</td><td>不等于新 Agent 上下文</td><td>Tool result、Resource 等</td></tr>
+      <tr><td><strong>Subagent</strong></td><td>把子任务放入独立 Agent 会话</td><td>Primary 委派</td><td><strong>是</strong></td><td>子任务结论与 Artifact</td></tr>
+      <tr><td><strong>A2A</strong></td><td>跨进程或组织委托有状态 Agent 任务</td><td>Agent Client–Agent Server</td><td><strong>是，且远端拥有生命周期</strong></td><td>Task、Status、Message、Artifact</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><a href="https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture">MCP</a> 用于以标准方式发现和调用 Server 暴露的能力，<strong>不是天然的多 Agent 编排器</strong>；<a href="https://a2a-protocol.org/latest/specification/">A2A</a> 围绕 Agent Card、Task、状态更新、消息和 Artifact 描述远程 Agent 协作。</p>
+
+  <div class="callout key">
+    <div class="callout-title">🧭 实用选型顺序（六问）</div>
+    <ol>
+      <li>能否写成确定性函数？能 → 优先 <strong>Tool / API</strong>；</li>
+      <li>缺的是"如何正确完成"的场景知识？→ <strong>Skill</strong>；</li>
+      <li>步骤稳定、需要清楚审计？→ <strong>Workflow</strong>；</li>
+      <li>需要跨客户端标准接入外部能力或数据？→ <strong>MCP</strong>；</li>
+      <li>需要上下文隔离、独立探索或独立验证？→ <strong>Subagent</strong>；</li>
+      <li>远端是拥有自身状态、能力发现和长任务生命周期的 Agent？→ <strong>A2A</strong>。</li>
+    </ol>
+  </div>
+
+  <h3>7.2 OpenCode 中的 Primary 与 Subagent</h3>
+  <p>Primary 承担主对话；Subagent 可由 Primary 调用，也可由用户点名。推荐职责：</p>
+  <table>
+    <thead><tr><th>角色</th><th>应负责</th><th>不应负责</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Primary</strong></td><td>理解用户目标、拆分任务、管理状态、处理确认、最终验收和交付</td><td>把所有原始上下文无差别复制给每个 Subagent</td></tr>
+      <tr><td><strong>Explore Subagent</strong></td><td>在只读条件下查找代码、资料和候选方案</td><td>直接修改主工作区</td></tr>
+      <tr><td><strong>Builder Subagent</strong></td><td>实现边界清楚的独立子任务</td><td>替 Primary 改变需求或接受风险</td></tr>
+      <tr><td><strong>Reviewer Subagent</strong></td><td>在独立上下文中检查 Diff、证据和规则</td><td>继承实现者的自我辩护并默认通过</td></tr>
+    </tbody>
+  </table>
+  <div class="callout key">
+    <div class="callout-title">✅ 使用 Subagent 的充分理由只有三类</div>
+    <ul>
+      <li>需要隔离大量上下文，避免污染主会话；</li>
+      <li>子任务彼此独立，确实可以并行；</li>
+      <li>需要不同信息条件下的独立验证。</li>
+    </ul>
+    <p><strong>角色扮演本身不是充分理由。</strong></p>
+  </div>
+
+  <h3>7.3 多 Skill 融合策略</h3>
+  <table>
+    <thead><tr><th>组合模式</th><th>适用场景</th><th>做法</th><th>主要风险</th></tr></thead>
+    <tbody>
+      <tr><td><strong>单 Skill</strong></td><td>一个 Skill 已完整覆盖任务</td><td>只激活命中最高者</td><td>覆盖不足</td></tr>
+      <tr><td><strong>主 + 辅助 Skill</strong></td><td>一个负责主流程，另一个提供局部能力</td><td>主 Skill 持有任务所有权，辅助只返回局部结果</td><td>指令优先级冲突</td></tr>
+      <tr><td><strong>顺序管道</strong></td><td>A 的 Artifact 是 B 的输入</td><td>显式定义 A → Artifact → B</td><td>错误传导</td></tr>
+      <tr><td><strong>分阶段切换</strong></td><td>用户请求包含多个不同目标</td><td>完成并验收 A 后再激活 B</td><td>会话过长</td></tr>
+      <tr><td><strong>Subagent 隔离</strong></td><td>Skill 很大、相互冲突或需独立验证</td><td>每个子任务独立上下文，只回传摘要与 Artifact</td><td>协调成本</td></tr>
+    </tbody>
+  </table>
+
+  <h4>组合时的最小协议（七字段）</h4>
+  <table>
+    <thead><tr><th>字段</th><th>含义</th></tr></thead>
+    <tbody>
+      <tr><td><code>intent</code></td><td>解决哪类用户目标</td></tr>
+      <tr><td><code>inputs</code></td><td>需要哪些已确认输入</td></tr>
+      <tr><td><code>outputs</code></td><td>返回什么 Artifact 或结构化结果</td></tr>
+      <tr><td><code>side_effects</code></td><td>是否写文件、发消息、写数据库</td></tr>
+      <tr><td><code>stop_conditions</code></td><td>何时完成或阻塞</td></tr>
+      <tr><td><code>conflicts</code></td><td>与哪些 Skill 不应同时激活</td></tr>
+      <tr><td><code>owner</code></td><td>谁对最终验收负责</td></tr>
+    </tbody>
+  </table>
+  <pre><code>skills:
+  - name: data-analysis
+    intent: analyze_experiment_data
+    provides: [analysis_report, cleaned_dataset]
+    consumes: [dataset, metric_definition]
+    side_effects: [write_workspace_files]
+    conflicts_with: [quick-unverified-summary]
+    composition: primary
+
+  - name: report-publisher
+    intent: publish_approved_report
+    provides: [published_report_url]
+    consumes: [approved_report]
+    side_effects: [external_write]
+    composition: terminal</code></pre>
+  <p class="note">这些字段可维护在团队自己的 <code>skill-registry.yaml</code> 中。它们<strong>不是 Agent Skills 标准字段</strong>，不要假装成跨平台通用协议。</p>
+
+  <h4>防止语义递归和循环</h4>
+  <pre><code>Skill A 要求调用 Skill B
+→ Skill B 判断任务仍属于 A
+→ 再次加载 Skill A
+→ 上下文膨胀、重复工具调用或 doom loop</code></pre>
+  <ol>
+    <li>Harness 记录本 Session 已激活的 Skill，重复加载时去重；</li>
+    <li>维护 <code>activation_chain</code> 和最大深度；</li>
+    <li>依赖由 Router/Primary 解析，不让 Skill 通过自然语言无限递归调用；</li>
+    <li>组合前检查 <code>conflicts_with</code>；</li>
+    <li>同一 Tool 输入重复多次时触发 loop guard；</li>
+    <li>每个 Skill 返回明确终止状态：<code>completed / blocked / handoff_required</code>。</li>
+  </ol>
+
+  <h4>多 Skill 测试矩阵（十项）</h4>
+  <ul class="compact">
+    <li>A 单独运行 / B 单独运行；</li>
+    <li>A → B 与 B → A；</li>
+    <li>A 与 B 同时满足但只能选一个；</li>
+    <li>显式点名 A、语义上更像 B；</li>
+    <li>A 完成后不应再次触发；</li>
+    <li>无关 Skill C 不应被加载；</li>
+    <li>权限拒绝 B 后，A 能否安全停止；</li>
+    <li>上下文压缩后，已加载 Skill 的关键规则是否仍有效。</li>
+  </ul>
+</section><section class="chapter" id="part-08">
+  <div class="chapter-tag">第八部分</div>
+  <h2>把 WebUI 应用迁移为 Agent 对话式应用</h2>
+  <p class="lead">目标不是"把所有按钮删掉，只留一个输入框"。最实用的 Agent UI 往往是：<strong>Chat + 文件区 + 参数卡 + 任务时间线 + Artifact 预览 + 权限确认</strong>。</p>
+
+  <h3>8.1 现有 WebUI 已经沉淀的确定性能力</h3>
+  <p>参数 Schema、业务校验、API 和权限、状态机与错误处理、图表/表格/文件预览、用户已熟悉的快捷操作。迁移时最有价值的做法是<strong>复用这些能力</strong>，让 Agent 负责意图理解、补全条件、选择流程、解释结果和处理长尾——而不是让 Agent 通过浏览器点击来模拟所有操作。</p>
+
+  <h3>8.2 三种迁移架构</h3>
+  <table>
+    <thead><tr><th>方案</th><th>架构</th><th>优点</th><th>缺点</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr><td><strong>浏览器 / DOM 操作</strong></td><td>Agent 像人一样点击原 WebUI</td><td>接入快，不改后端</td><td>脆弱、慢、难审计、UI 改版即失效</td><td>仅作过渡或无 API 时使用</td></tr>
+      <tr><td><strong>API Tool 化</strong></td><td>把原有 API 封装为 Typed Tools</td><td>稳定、快、可测试、可授权</td><td>需要整理 Schema 和错误</td><td><strong>默认推荐</strong></td></tr>
+      <tr><td><strong>Workflow as Tool</strong></td><td>把原有固定流程作为一个 Tool</td><td>最大限度复用确定性流程</td><td>中间过程的交互灵活性有限</td><td>稳定主流程推荐</td></tr>
+      <tr><td><strong>对话 + 结构化 UI</strong></td><td>Agent 编排，卡片/表单/工作区承载精确交互</td><td>灵活且可控，用户体验最好</td><td>前端与状态设计工作较多</td><td><strong>生产目标形态</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.3 UI 元素如何映射到 Agent 交互</h3>
+  <table>
+    <thead><tr><th>原 WebUI 元素</th><th>Agent 应用中的映射</th><th>设计注意</th></tr></thead>
+    <tbody>
+      <tr><td>文本输入框</td><td>对话中的 Slot</td><td>能从上下文推断时填充；高影响值必须确认</td></tr>
+      <tr><td>下拉框</td><td>Enum Tool 参数 + 可点击选项卡</td><td>不让模型生成不存在的选项</td></tr>
+      <tr><td>多选框</td><td>数组参数 + 选择卡片</td><td>显示当前选择，允许一键修改</td></tr>
+      <tr><td>多步 Wizard</td><td>分阶段对话或一次性参数卡</td><td>不要每个字段都问一轮</td></tr>
+      <tr><td>"运行"按钮</td><td>Tool / Workflow 调用</td><td>调用前展示关键参数和副作用</td></tr>
+      <tr><td>进度条</td><td>Task status / Event stream</td><td>区分排队、运行、等待输入、完成、失败</td></tr>
+      <tr><td>Toast 错误</td><td>结构化错误 + 恢复建议</td><td>保留错误代码和 trace ID</td></tr>
+      <tr><td>表格与图表</td><td>Artifact Preview / 可视化卡片</td><td>不强迫模型把大表复述成文本</td></tr>
+      <tr><td>下载按钮</td><td>Artifact 链接</td><td>标注类型、大小、版本和来源</td></tr>
+      <tr><td>保存 / 提交</td><td>外部写操作 + 显式确认</td><td>使用幂等键和审计记录</td></tr>
+      <tr><td>历史任务</td><td>Session / Task 列表</td><td>任务状态不只存在于聊天消息里</td></tr>
+    </tbody>
+  </table>
+
+  <h3>8.4 迁移示例：算法实验分析平台</h3>
+  <div class="cols">
+    <div class="col-box">
+      <div class="col-title">🖥️ 原 WebUI：用户需要八步</div>
+      <ol class="compact">
+        <li>上传 CSV</li><li>选择层别</li><li>选择日期范围</li><li>勾选清洗策略</li>
+        <li>选择模型</li><li>设置 Top N</li><li>点击运行</li><li>下载报告</li>
+      </ol>
+    </div>
+    <div class="col-box ok">
+      <div class="col-title">💬 对话式 Agent：用户说一句话</div>
+      <p><em>"用我刚上传的 MCH 数据分析最近三个月的异常，沿用上次的清洗规则，比较常用模型，给我 Top 10 参数组合和一份可下载报告。"</em></p>
+    </div>
+  </div>
+  <div class="callout key">
+    <div class="callout-title">🤖 Agent 的合理行为（八步）</div>
+    <ol>
+      <li>从附件和会话状态解析 dataset、layer、date range、cleaning profile 和 Top N；</li>
+      <li>对"上次规则"读取<strong>已确认且仍有效</strong>的配置，不从模糊记忆猜测；</li>
+      <li>在参数卡中一次性展示解析结果；</li>
+      <li>只询问真正缺失且会改变结果的指标定义或约束；</li>
+      <li>调用原有数据校验 API；</li>
+      <li>把稳定分析 Workflow 作为 Tool 执行；</li>
+      <li>在任务时间线中展示阶段状态；</li>
+      <li>返回摘要、图表和报告 Artifact，并说明数据版本与验证结果。</li>
+    </ol>
+    <p>Agent 消除了用户理解所有表单字段的负担，但<strong>没有删除</strong>底层参数校验、Workflow 和可视化能力。</p>
+  </div>
+
+  <h3>8.5 WebUI 迁移的九步方法</h3>
+  <div class="step"><div class="step-num">第 1 步</div><h4>盘点真实能力，而不是盘点页面</h4><p>把每个页面动作追踪到后端 API、数据库读写、文件操作或第三方系统，形成 capability inventory。</p></div>
+  <div class="step"><div class="step-num">第 2 步</div><h4>给动作分级</h4>
+    <table>
+      <thead><tr><th>等级</th><th>示例</th><th>默认策略</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Read</strong></td><td>查询状态、预览数据</td><td>可自动执行，记录来源</td></tr>
+        <tr><td><strong>Compute</strong></td><td>分析、转换、生成草稿</td><td>可自动执行，限制资源</td></tr>
+        <tr><td><strong>Workspace Write</strong></td><td>写入用户工作区</td><td>执行后展示 Diff / Artifact</td></tr>
+        <tr><td><strong>External Write</strong></td><td>发消息、建工单、更新业务系统</td><td>明确参数并确认</td></tr>
+        <tr><td><strong>Destructive / Financial</strong></td><td>删除、支付、生产发布</td><td>强审批、幂等、审计、回滚</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="step"><div class="step-num">第 3 步</div><h4>把 API 封装成窄而稳定的 Tool</h4><p>不要直接把整个内部 OpenAPI 暴露给模型。按用户意图组合成少量高内聚工具，并设置租户身份、权限和返回上限。</p></div>
+  <div class="step"><div class="step-num">第 4 步</div><h4>把表单 Schema 变成 Slot Schema</h4><p>每个 Slot 标记：类型与合法值、是否必需、默认值来源、能否从上下文推断、是否需要用户确认、过期条件。</p></div>
+  <div class="step"><div class="step-num">第 5 步</div><h4>复用稳定 Workflow</h4><p>固定主流程不要让 Agent 每次自由发明。把 Workflow 暴露为一个 Tool，Agent 负责选择、补参和解释。</p></div>
+  <div class="step"><div class="step-num">第 6 步</div><h4>设计 Session、Task 和 Artifact</h4><p>Session 保存对话与意图；Task 保存真实任务状态；Artifact 保存结果；业务数据库仍是外部状态的权威来源。</p></div>
+  <div class="step"><div class="step-num">第 7 步</div><h4>补齐确认和恢复</h4><p>对副作用操作提供 preview / dry-run；展示即将执行的关键参数；失败后允许重试、修改参数或从检查点恢复。</p></div>
+  <div class="step"><div class="step-num">第 8 步</div><h4>保留结构化 UI</h4><p>高维参数、精确比较、大表格、图像和进度更适合可视化组件。对话负责"为什么、做什么、下一步"，UI 负责"精确选择和观察"。</p></div>
+  <div class="step"><div class="step-num">第 9 步</div><h4>灰度上线并做任务级评测</h4><p>关注：任务完成率、平均澄清轮数、错误 Tool 选择率、参数纠正率、外部写操作撤销率、延迟/Token/API 成本、从请求到可用 Artifact 的时间、与原 WebUI 的成功率和满意度对比。</p></div>
+
+  <h3>8.6 对话式改造的利弊</h3>
+  <table>
+    <thead><tr><th>价值</th><th>代价</th></tr></thead>
+    <tbody>
+      <tr><td>用户按目标表达，不必先理解产品信息架构</td><td>能力发现不如菜单直观，需要建议语句和能力目录</td></tr>
+      <tr><td>能组合多个原本分散的页面与流程</td><td>模型路由错误会调用错误流程</td></tr>
+      <tr><td>更适合模糊需求、异常情况和个性化任务</td><td>多轮澄清可能比直接填表更慢</td></tr>
+      <tr><td>能解释参数、结果和失败原因</td><td>延迟与 Token 成本增加</td></tr>
+      <tr><td>可以在会话中读取文件并持续迭代</td><td>状态、权限和记忆治理更复杂</td></tr>
+      <tr><td>Agent 可把结果交付为 Artifact</td><td>必须建立可观测、验证和恢复机制</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="callout-title">🚫 不宜完全对话化的场景</div>
+    <ul>
+      <li>用户已非常熟练、每天重复录入大量结构化数据；</li>
+      <li>毫秒级响应或极低成本要求；</li>
+      <li>每个字段都必须逐项人工确认；</li>
+      <li>医疗、金融、生产控制等高风险动作没有完善审批；</li>
+      <li>后端没有稳定 API，只能靠脆弱 UI 自动化；</li>
+      <li>任务不能定义成功证据，也无法安全回滚。</li>
+    </ul>
+  </div>
+</section><section class="chapter" id="part-09">
+  <div class="chapter-tag">第九部分</div>
+  <h2>一版可落地的参考架构</h2>
+  <p class="lead">第一版不要一开始就在建设复杂 Multi-Agent 网络。先把单 Agent 的闭环做扎实，再按需扩展。</p>
+
+  <h3>9.1 推荐的整体结构</h3>
+  <div class="flow vertical">
+    <div class="node">Chat + Files + Cards + Artifacts（UI）</div>
+    <div class="arrow">↓</div>
+    <div class="node accent">Agent Runtime / Session Manager<br><small>← AGENTS + Skill Catalog + Memory</small></div>
+    <div class="arrow">↓</div>
+    <div class="node">Tools / Workflow / MCP / Subagents</div>
+    <div class="arrow">↓</div>
+    <div class="node">Business APIs / Data / Workspace</div>
+    <div class="arrow">↓</div>
+    <div class="node">Task State / Trace / Artifact Store</div>
+  </div>
+  <p class="note">Permission / Sandbox / Identity / Audit 作为<strong>控制面</strong>，贯穿 Runtime 与能力层（虚线控制关系）。</p>
+
+  <h3>9.2 最小可用组件（九件）</h3>
+  <table>
+    <thead><tr><th>组件</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Agent Runtime</strong></td><td>模型调用、Tool Loop、取消、超时和停止</td></tr>
+      <tr><td><strong>Session Manager</strong></td><td>用户、项目、会话和 Task 的映射</td></tr>
+      <tr><td><strong>Context Loader</strong></td><td>AGENTS.md、Skill 目录和按需资源</td></tr>
+      <tr><td><strong>Tool Gateway</strong></td><td>统一 Schema、身份、错误、幂等、限流和审计</td></tr>
+      <tr><td><strong>Workspace</strong></td><td>文件上传、执行、Artifact 与隔离</td></tr>
+      <tr><td><strong>Policy Layer</strong></td><td>permission、沙箱、网络和凭据</td></tr>
+      <tr><td><strong>Observability</strong></td><td>事件、Trace、Tool Call、成本和失败原因</td></tr>
+      <tr><td><strong>Eval Harness</strong></td><td>触发测试、任务测试、安全测试和回归测试</td></tr>
+      <tr><td><strong>Hybrid UI</strong></td><td>对话、参数卡、任务状态与 Artifact 预览</td></tr>
+    </tbody>
+  </table>
+
+  <h3>9.3 "先简单做"的优先级</h3>
+  <div class="flow vertical">
+    <div class="node">① 一个 Primary Agent</div>
+    <div class="arrow">↓</div>
+    <div class="node">② 3–8 个窄而稳定的 Tools</div>
+    <div class="arrow">↓</div>
+    <div class="node">③ 一份简洁 AGENTS.md</div>
+    <div class="arrow">↓</div>
+    <div class="node">④ 1–3 个高价值 Skills</div>
+    <div class="arrow">↓</div>
+    <div class="node">⑤ Session + Workspace + Artifact</div>
+    <div class="arrow">↓</div>
+    <div class="node">⑥ permission + 系统隔离</div>
+    <div class="arrow">↓</div>
+    <div class="node">⑦ 任务级验收与 Trace</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">⑧ 确认存在上下文隔离或独立验证需求后，再加 Subagent</div>
+    <div class="arrow">↓</div>
+    <div class="node warn-node">⑨ 确认存在跨系统 Agent 委托后，再考虑 A2A</div>
+  </div>
+  <div class="callout takeaway">
+    <div class="callout-title">💡 要点</div>
+    <p>⑧ 和 ⑨ 是"确认有真实需求后再加"，不是默认起点。复杂度应该由需求拉动，而不是由技术新鲜感推动。</p>
+  </div>
+</section><section class="chapter" id="part-10">
+  <div class="chapter-tag">第十部分</div>
+  <h2>课堂练习与讨论</h2>
+  <p class="lead">三个练习分别对应课程的三个核心判断：机制选型、Skill 触发边界、WebUI Agent 化。</p>
+
+  <div class="callout practice">
+    <div class="callout-title">✏️ 练习一：判断应该使用什么机制（10 分钟）</div>
+    <p>针对每个需求选择 Tool、Skill、Workflow、MCP、Subagent 或 A2A，并说明理由：</p>
+    <ol>
+      <li>查询订单实时状态；</li>
+      <li>按团队规范完成一次生产发布；</li>
+      <li>每晚固定抽取数据、生成报表并发到指定系统；</li>
+      <li>让多个不同客户端统一访问企业知识与数据库查询能力；</li>
+      <li>让独立上下文中的 Reviewer 检查实现 Agent 的 Diff；</li>
+      <li>委托远程法务 Agent 完成一个可能持续数小时、有状态和 Artifact 的审查任务。</li>
+    </ol>
+    <details>
+      <summary>参考答案</summary>
+      <ol>
+        <li>Tool / API</li>
+        <li>Skill + Tools + permission</li>
+        <li>Workflow</li>
+        <li>MCP</li>
+        <li>Subagent</li>
+        <li>A2A</li>
+      </ol>
+    </details>
+  </div>
+
+  <div class="callout practice">
+    <div class="callout-title">✏️ 练习二：为一个 Skill 写触发边界（15 分钟）</div>
+    <p>选择团队中的一个真实 SOP，交付：</p>
+    <ul>
+      <li>一段不超过 1024 字符的 description；</li>
+      <li>5 条 should-trigger；</li>
+      <li>5 条 should-not-trigger，其中至少 3 条是<strong>近邻场景</strong>；</li>
+      <li>3 条输出质量断言；</li>
+      <li>明确它是自动激活还是 explicit-only；</li>
+      <li>如果有外部写操作，写出确认与停止条件。</li>
+    </ul>
+  </div>
+
+  <div class="callout practice">
+    <div class="callout-title">✏️ 练习三：把一个 WebUI 页面 Agent 化（20 分钟）</div>
+    <p>选择现有页面，画出：</p>
+    <ol>
+      <li>页面动作背后的 API；</li>
+      <li>Slot Schema；</li>
+      <li>Tool 列表；</li>
+      <li>仍应保留的参数卡、图表和按钮；</li>
+      <li>一条自然语言任务示例；</li>
+      <li>Agent 需要询问的最少问题；</li>
+      <li>成功 Artifact 与验收证据。</li>
+    </ol>
+    <p><strong>讨论重点</strong>：不是"能否全部用聊天替代"，而是"哪些不确定部分交给 Agent 后，用户路径真正变短了"。</p>
+  </div>
+</section><section class="chapter" id="part-11">
+  <div class="chapter-tag">第十一部分</div>
+  <h2>常见误区：八个需要避免的结论</h2>
+
+  <div class="myth">
+    <h4>误区一：有系统 Prompt 就是 Agent</h4>
+    <p>Prompt 只定义行为倾向；Agent 还需要<strong>循环、工具、状态、反馈和停止机制</strong>。</p>
+  </div>
+  <div class="myth">
+    <h4>误区二：Skill 就是一个 Tool</h4>
+    <p>Tool 是能力接口，Skill 是使用这类能力的<strong>程序性知识</strong>。Skill 可以不用 Tool，Tool 也可以不依赖 Skill。</p>
+  </div>
+  <div class="myth">
+    <h4>误区三：MCP 是多 Agent 协议</h4>
+    <p>MCP 的中心是 Agent 应用与外部 Tools / Resources / Prompts 等能力连接；<strong>A2A</strong> 才更直接处理远程 Agent 的发现、任务状态和 Artifact。</p>
+  </div>
+  <div class="myth">
+    <h4>误区四：工具和 Skill 越多，Agent 越强</h4>
+    <p>过多相似能力会增加选择错误、上下文污染、权限面和维护成本。<strong>能力目录的精度往往比数量更重要。</strong></p>
+  </div>
+  <div class="myth">
+    <h4>误区五：在 AGENTS.md 写禁止事项就足够安全</h4>
+    <p>自然语言约束可能被误解或遗忘。高风险边界必须由 <strong>permission、sandbox、identity、network policy 和审计</strong>实现。</p>
+  </div>
+  <div class="myth">
+    <h4>误区六：对话式应用应该删除表单和可视化</h4>
+    <p>自然语言适合理解目标与例外；结构化 UI 适合精确输入、比较、审批和观察。<strong>两者应组合。</strong></p>
+  </div>
+  <div class="myth">
+    <h4>误区七：多 Agent 会自动提高正确率</h4>
+    <p>共享同一错误前提的多个角色可能只会增加自洽文本。Multi-Agent 的价值来自<strong>上下文隔离、并行独立性、不同权限或独立验证</strong>，不来自角色数量。</p>
+  </div>
+  <div class="myth">
+    <h4>误区八：记忆就是把所有聊天永久保存</h4>
+    <p>日志用于追溯，记忆用于改善决策。长期记忆必须经过<strong>确认、限定作用域、支持过期和纠错</strong>。</p>
+  </div>
+</section><section class="chapter" id="part-12">
+  <div class="chapter-tag">第十二部分</div>
+  <h2>课程总结：十句话带走本课</h2>
+  <ol class="takeaway-list">
+    <li>Chatbot 暴露模型的语言能力，Agent 暴露模型在受控世界中<strong>持续工作</strong>的能力。</li>
+    <li>RAG 解决"知道什么"，Tool 解决"能做什么"，Skill 解决"应该怎样做"。</li>
+    <li>Workflow 把控制流交给开发者，Agent 把部分下一步决策交给模型。</li>
+    <li>Agent 的核心不是人格，而是<strong>带状态的观察—决策—行动—反馈循环</strong>。</li>
+    <li>AGENTS.md 是项目共识，Skill 是场景方法，Permission 和 Sandbox 才是硬边界。</li>
+    <li>API 应先变成稳定、结构化、可审计的 Tool，再由 Skill 教 Agent 正确使用。</li>
+    <li>stdout 给机器数据，stderr 给诊断，大结果给 Artifact，聊天给人解释。</li>
+    <li>Skill 要分别测试触发质量和输出质量；explicit-only 必须由 Harness 强制。</li>
+    <li>Multi-Agent 应服务于上下文隔离、独立并行或独立验证，而不是模拟组织架构。</li>
+    <li>最好的 Agent WebUI 通常不是纯聊天框，而是"<strong>对话 + 结构化控件 + 工作区 + 可验证产物</strong>"。</li>
+  </ol>
+  <div class="callout takeaway">
+    <div class="callout-title">🎯 Agent 平台的设计目标</div>
+    <p>不是让模型拥有尽可能多的自由，而是给它一个<strong>足够丰富、反馈真实、状态可恢复、边界不可绕过、结果可验证</strong>的工作世界。</p>
+  </div>
+</section><section class="chapter" id="appendix">
+  <div class="chapter-tag">附录</div>
+  <h2>附录 A：项目检查表</h2>
+
+  <h3>A.1 Agent Runtime</h3>
+  <ul class="checklist">
+    <li>是否有明确的循环与停止条件？</li>
+    <li>是否能取消、超时和从检查点恢复？</li>
+    <li>是否区分 Session、Task、External State 和 Artifact？</li>
+    <li>Tool 结果是否进入可观察事件流？</li>
+    <li>上下文压缩后，关键规则和已激活 Skill 是否仍有效？</li>
+  </ul>
+
+  <h3>A.2 Context 与 Skill</h3>
+  <ul class="checklist">
+    <li>AGENTS.md 是否只保留跨任务高频信息？</li>
+    <li>Skill description 是否同时定义正边界和负边界？</li>
+    <li>references 是否按需读取，而不是全量注入？</li>
+    <li>Script 是否非交互、可重试、可诊断？</li>
+    <li>是否有 should-trigger / should-not-trigger 测试？</li>
+    <li>是否有 with-skill / baseline 结果对比？</li>
+  </ul>
+
+  <h3>A.3 Tool 与 API</h3>
+  <ul class="checklist">
+    <li>Tool 是否窄、强 Schema、稳定命名？</li>
+    <li>是否区分数据 stdout 与诊断 stderr？</li>
+    <li>错误是否有 code、retryable 和 suggested_action？</li>
+    <li>写操作是否支持幂等、dry-run 和审计？</li>
+    <li>大结果是否写入 Artifact，而不是污染上下文？</li>
+    <li>API 密钥是否完全位于 Skill 和 Prompt 之外？</li>
+  </ul>
+
+  <h3>A.4 Multi-Agent</h3>
+  <ul class="checklist">
+    <li>使用 Subagent 是否有明确的隔离或并行收益？</li>
+    <li>Primary 是否仍拥有用户沟通和最终验收？</li>
+    <li>Handoff 是否包含目标、输入、约束、预期 Artifact 和验收？</li>
+    <li>Reviewer 是否在独立上下文中根据证据判断？</li>
+    <li>是否限制委派深度、并发数和预算？</li>
+  </ul>
+
+  <h3>A.5 Security</h3>
+  <ul class="checklist">
+    <li>高风险限制是否由硬策略而不是自然语言实现？</li>
+    <li>工作区、网络、进程和凭据是否最小权限？</li>
+    <li>外部写与不可逆动作是否需要显式确认？</li>
+    <li>是否防止跨用户、跨租户和跨项目访问？</li>
+    <li>是否保留身份、参数、结果和时间的审计记录？</li>
+  </ul>
+
+  <h3>A.6 WebUI Agent 化</h3>
+  <ul class="checklist">
+    <li>是否优先复用 API，而不是模拟点击？</li>
+    <li>是否保留高效的结构化输入和可视化？</li>
+    <li>是否把表单字段转成有来源、有有效期的 Slots？</li>
+    <li>业务状态是否仍由后端系统权威维护？</li>
+    <li>是否能展示任务状态、错误、确认和 Artifact？</li>
+    <li>是否与原 WebUI 做任务完成率和时间对比？</li>
+  </ul>
+
+  <h2>附录 B：主要参考资料</h2>
+  <p class="note">资料核对日期：2026-08-09。Agent 平台和协议变化很快，具体配置应以部署版本的官方文档为准。</p>
+  <h4>Agent 与 RAG / Workflow</h4>
+  <ul class="refs">
+    <li><a href="https://arxiv.org/abs/2210.03629">ReAct: Synergizing Reasoning and Acting in Language Models</a></li>
+    <li><a href="https://docs.langchain.com/oss/python/langchain/rag/">LangChain: RAG</a> · <a href="https://doc.fastgpt.io/en/guide/dataset/rag">FastGPT: RAG Fundamentals</a></li>
+    <li><a href="https://docs.dify.ai/en/cloud/use-dify/build/workflow-chatflow">Dify: Workflow &amp; Chatflow</a> · <a href="https://www.coze.com/open/docs/guides/workflow">Coze: Workflow</a></li>
+  </ul>
+  <h4>OpenCode</h4>
+  <ul class="refs">
+    <li><a href="https://opencode.ai/docs/">Documentation</a> · <a href="https://opencode.ai/docs/rules/">Rules / AGENTS.md</a> · <a href="https://opencode.ai/docs/skills/">Agent Skills</a> · <a href="https://opencode.ai/docs/tools/">Tools</a></li>
+    <li><a href="https://opencode.ai/docs/agents/">Agents</a> · <a href="https://opencode.ai/docs/permissions/">Permissions</a> · <a href="https://opencode.ai/docs/server/">Server</a> · <a href="https://opencode.ai/docs/sdk/">SDK</a></li>
+  </ul>
+  <h4>Skills、MCP 与 A2A</h4>
+  <ul class="refs">
+    <li><a href="https://agentskills.io/home">Agent Skills Overview</a> · <a href="https://agentskills.io/specification">Specification</a> · <a href="https://agentskills.io/client-implementation/adding-skills-support">Adding Skills Support</a></li>
+    <li><a href="https://agentskills.io/skill-creation/optimizing-descriptions">Optimizing Descriptions</a> · <a href="https://agentskills.io/skill-creation/evaluating-skills">Evaluating Skills</a> · <a href="https://agentskills.io/skill-creation/using-scripts">Using Scripts</a></li>
+    <li><a href="https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture">MCP Architecture</a> · <a href="https://modelcontextprotocol.io/specification/2026-07-28">MCP Specification</a></li>
+    <li><a href="https://a2a-protocol.org/latest/specification/">A2A Protocol Specification</a> · <a href="https://a2a-protocol.org/latest/topics/key-concepts/">A2A Core Concepts</a></li>
+  </ul>
+  <h4>Vibe Coding 与工程化</h4>
+  <ul class="refs">
+    <li><a href="https://x.com/karpathy/status/1886192184808149383">Andrej Karpathy: Original "Vibe Coding" Post</a></li>
+    <li><a href="https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/">GitHub: Spec-driven development with AI</a></li>
+  </ul>
+</section>
+<footer>本讲义由 Markdown 教学讲稿改写生成 · 共 13 个章节 · 打印时自动隐藏目录</footer>
+</main>
+</div>
+</body>
+</html>

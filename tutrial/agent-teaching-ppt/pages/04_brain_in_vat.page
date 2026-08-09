@@ -1,0 +1,89 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 概念页。先给"缸中之脑"六个做不到，再给演进补齐的五类条件。要点：Chatbot 到 Agent 不是名词升级，而是接口逐渐完整。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第一部分 · 应用形态演进
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 只会"说话"的模型，为什么像缸中之脑
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: left-head
+    elementType: text
+    bounds: [64, 112, 400, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 纯文本模型的六个"做不到"
+  - elementId: left-body
+    elementType: text
+    bounds: [64, 140, 410, 260]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.6
+      text: |
+        <ul>
+        <li>不知道企业<strong>当前真实数据</strong>是什么</li>
+        <li>不能直接读取<strong>项目文件、数据库和业务系统</strong></li>
+        <li>不能可靠地持续完成一个<strong>长任务</strong></li>
+        <li>做完动作后，不一定能看到<strong>真实反馈</strong></li>
+        <li>不知道哪些动作<strong>被允许、哪些不可逆</strong></li>
+        <li>可能给出看起来合理、<strong>实际没有执行过</strong>的答案</li>
+        </ul>
+  - elementId: left-conclusion
+    elementType: text
+    bounds: [64, 412, 410, 76]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.55
+      text: |
+        <p>从 Chatbot 到 Agent 不是产品名词升级，而是<strong>模型与数字世界之间的接口逐渐完整</strong>。一个 Agent 可以调用 RAG 和 Workflow；Workflow 里也可以包含 Agent 节点。</p>
+  - elementId: right-head
+    elementType: text
+    bounds: [510, 112, 386, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 演进在补齐五类条件
+  - elementId: cond-table
+    elementType: table
+    bounds: [510, 140, 386, 300]
+    columnWidths: [0.34, 0.66]
+    rowHeights: [0.14, 0.172, 0.172, 0.172, 0.172, 0.172]
+    style: "$default"
+    rows:
+      - - text: 条件
+        - text: 含义
+      - - text: "<strong>Grounding</strong>"
+        - text: 让模型看到真实知识和真实环境
+      - - text: "<strong>Action</strong>"
+        - text: 能调用工具、API、文件系统和程序
+      - - text: "<strong>State</strong>"
+        - text: 任务、会话、文件和中间结果能延续
+      - - text: "<strong>Feedback</strong>"
+        - text: 看到动作的真实结果，并据此调整
+      - - text: "<strong>Governance</strong>"
+        - text: 用权限、沙箱、审计和验收限制行动范围
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第一部分 · 应用形态演进}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "04 / 36"}

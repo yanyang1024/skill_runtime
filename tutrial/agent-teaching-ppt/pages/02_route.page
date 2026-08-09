@@ -1,0 +1,80 @@
+pageType: table_of_contents
+background:
+  type: solid
+  color: "$paper"
+notes: 学习路线页：先给五个驱动问题，再给课程核心判断。让学员知道"为什么学、学完能做什么"。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 学习路线 · COURSE MAP
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 这门课回答五个实际问题
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: questions
+    elementType: text
+    bounds: [64, 116, 500, 300]
+    content:
+      style: "$body"
+      fontSize: 13
+      lineHeight: 1.5
+      text: |
+        <p><span style="color:$accent"><strong>Q1</strong></span>　Chatbot、RAG、Workflow 和 Agent 分别解决了什么问题，为什么同时存在？</p>
+        <p style="margin-top:14px"><span style="color:$accent"><strong>Q2</strong></span>　一个以 OpenCode 为代表的 Agent 平台，运行时到底发生了什么？</p>
+        <p style="margin-top:14px"><span style="color:$accent"><strong>Q3</strong></span>　AGENTS.md、Skill、Tool、API、MCP、Subagent、A2A 分别该放什么、不该放什么？</p>
+        <p style="margin-top:14px"><span style="color:$accent"><strong>Q4</strong></span>　怎样测试 Skill 是否在正确场景命中，避免误触发、冲突和递归？</p>
+        <p style="margin-top:14px"><span style="color:$accent"><strong>Q5</strong></span>　怎样把已有 WebUI 应用改造成对话式 Agent 应用，同时保留确定性、可审计性和效率？</p>
+  - elementId: side-head
+    elementType: text
+    bounds: [620, 116, 276, 22]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 课程模块
+  - elementId: side-list
+    elementType: text
+    bounds: [620, 144, 276, 250]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.75
+      text: |
+        <p><strong>模块一</strong>　演进与核心定义（一、二）</p>
+        <p><strong>模块二</strong>　OpenCode 平台分层（三）</p>
+        <p><strong>模块三</strong>　Vibe Coding 工作流（四）</p>
+        <p><strong>模块四</strong>　工具接入与 Skill 评测（五、六）</p>
+        <p><strong>模块五</strong>　组合机制与 Multi-Agent（七）</p>
+        <p><strong>模块六</strong>　WebUI 迁移与参考架构（八、九）</p>
+        <p><strong>收束</strong>　练习 · 误区 · 总结（十~十二）</p>
+  - elementId: core-line
+    elementType: shape
+    bounds: [64, 436, 4, 52]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: core-judgement
+    elementType: text
+    bounds: [84, 436, 812, 56]
+    content:
+      fontSize: 14
+      color: "$ink"
+      lineHeight: 1.55
+      text: |
+        <p><strong>核心判断：</strong>模型能力决定 Agent 的认知上限；Harness、资源接口、权限边界、状态管理和验证闭环，决定它能否稳定进入生产。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 学习路线}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "02 / 36"}

@@ -1,0 +1,107 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 示范页。左：tenant-isolation-review Skill 示例，注意 description 同时写了正边界和负边界；右：Tool 应窄而稳定，不要把业务系统变成万能接口。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第三部分 · 平台分层
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: Skill 教方法，Tool 给能力：各归其位
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: code-bg
+    elementType: shape
+    bounds: [64, 112, 480, 330]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: code
+    elementType: text
+    bounds: [82, 126, 450, 306]
+    content:
+      style: "$code"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p>---</p>
+        <p>name: tenant-isolation-review</p>
+        <p>description: &gt;</p>
+        <p>  Review changes that may affect tenant data</p>
+        <p>  or filesystem isolation. Use for auth, storage,</p>
+        <p>  workspace mapping, database queries, or</p>
+        <p>  cross-tenant access paths. Do not use for</p>
+        <p>  unrelated UI-only edits.</p>
+        <p>---</p>
+        <p></p>
+        <p># Tenant Isolation Review</p>
+        <p>1. Identify the tenant boundary and the</p>
+        <p>   authoritative tenant ID.</p>
+        <p>2. Trace all read/write paths affected.</p>
+        <p>3. Run scripts/check-isolation.sh.</p>
+        <p>4. Read references/isolation-invariants.md</p>
+        <p>   only if a boundary changes.</p>
+        <p>5. Report PASS/FAIL for each invariant with</p>
+        <p>   file or test evidence.</p>
+        <p>6. Do not modify production credentials or</p>
+        <p>   execute production migrations.</p>
+  - elementId: code-note
+    elementType: text
+    bounds: [64, 454, 480, 40]
+    content:
+      style: "$small"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p>注意 description 的写法：既说"<strong>什么时候用</strong>"，也说"<strong>什么时候不用</strong>"——正边界与负边界同时定义。</p>
+  - elementId: tool-head
+    elementType: text
+    bounds: [580, 112, 316, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: Tool 与 API：环境允许做什么
+  - elementId: tool-body
+    elementType: text
+    bounds: [580, 140, 316, 220]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.65
+      text: |
+        <p>OpenCode 内置文件、搜索和命令等工具，也可接入自定义 Tool 或 MCP Server。</p>
+        <p style="margin-top:10px">Tool 应提供<strong>稳定、窄而清楚</strong>的输入输出，而不是把整个业务系统变成一个模糊的"万能接口"。</p>
+        <p style="margin-top:10px">分层记忆：对话层只描述本次任务；AGENTS.md 写项目共识；Skill 写场景方法；<strong>机器硬限制必须落到权限与沙箱</strong>。</p>
+  - elementId: tool-note-bar
+    elementType: shape
+    bounds: [580, 380, 4, 44]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: tool-note
+    elementType: text
+    bounds: [596, 380, 300, 110]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.5
+      text: |
+        <p>判断放哪层的口诀：</p>
+        <p>每次任务都变 → 对话层；跨任务共识 → AGENTS.md；场景方法 → Skill；能做的动作 → Tool。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第三部分 · OpenCode 平台分层}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "14 / 36"}

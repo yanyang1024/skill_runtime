@@ -1,0 +1,120 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 概念页。Skill 是以 SKILL.md 为核心的可复用知识包。左：目录结构与合格 Skill 的七问；右：与 Prompt/Tool/Workflow/Agent/Subagent/RAG 的边界，以及三级渐进式披露。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第二部分 · 核心定义
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: Skill：可按需加载的操作知识包
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: struct-bg
+    elementType: shape
+    bounds: [64, 112, 400, 130]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: struct
+    elementType: text
+    bounds: [82, 122, 370, 112]
+    content:
+      style: "$code"
+      fontSize: 10.5
+      lineHeight: 1.55
+      text: |
+        <p>my-skill/</p>
+        <p>├── SKILL.md　　# 触发边界、流程、资源路由</p>
+        <p>├── scripts/　　# 可重复、确定性的执行逻辑</p>
+        <p>├── references/　# 需要时读取的领域资料</p>
+        <p>├── assets/　　 # 模板、样例、静态资源</p>
+        <p>└── evals/　　　# 触发与输出质量测试</p>
+  - elementId: seven-head
+    elementType: text
+    bounds: [64, 258, 400, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 合格的 Skill 回答七个问题
+  - elementId: seven
+    elementType: text
+    bounds: [64, 284, 400, 220]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.62
+      text: |
+        <ol>
+        <li>什么用户意图应该触发它？</li>
+        <li>哪些相邻场景<strong>不应该</strong>触发它？</li>
+        <li>开始前需要检查什么？</li>
+        <li>以什么顺序使用哪些资源？</li>
+        <li>哪些判断由模型做，哪些必须交给程序？</li>
+        <li>失败时如何分类、重试、降级或停止？</li>
+        <li>最终交付什么，如何验证？</li>
+        </ol>
+  - elementId: not-head
+    elementType: text
+    bounds: [510, 112, 386, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: Skill 不是什么
+  - elementId: not-table
+    elementType: table
+    bounds: [510, 138, 386, 210]
+    columnWidths: [0.28, 0.72]
+    rowHeights: [0.13, 0.145, 0.145, 0.145, 0.145, 0.145, 0.145]
+    style: "$default"
+    rows:
+      - - text: 易混淆对象
+        - text: 与 Skill 的区别
+      - - text: Prompt
+        - text: 一次性指令；Skill 是带边界与资源的可复用包
+      - - text: Tool / API
+        - text: Tool 是"能做什么"；Skill 是"何时做、怎么做、怎样验收"
+      - - text: Workflow
+        - text: Workflow 固化控制流；Skill 可适应上下文
+      - - text: Agent
+        - text: Agent 是运行主体；Skill 是其可加载的程序性知识
+      - - text: Subagent
+        - text: Subagent 有独立上下文；Skill 注入当前上下文
+      - - text: RAG 知识库
+        - text: RAG 提供事实材料；Skill 偏程序性知识与导航
+  - elementId: pd-head
+    elementType: text
+    bounds: [510, 364, 386, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 渐进式披露：不为每个 Skill 预付全文上下文
+  - elementId: pd-flow
+    elementType: text
+    bounds: [510, 390, 386, 60]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.55
+      text: |
+        <p><strong>① 发现</strong>　只暴露 name + description</p>
+        <p><strong>② 激活</strong>　命中后读取完整 SKILL.md</p>
+        <p><strong>③ 执行</strong>　需要时才读 reference / 脚本 / 资产</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第二部分 · Agent / Harness / Skill 的定义}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "10 / 36"}

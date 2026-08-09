@@ -1,0 +1,123 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页。Agent 通过参数、stdin、stdout、stderr 和退出码理解脚本结果。讲契约表，再用成功/失败 JSON 示例落地，最后强调人机分工。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第五部分 · Tool / API / MCP
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 为 Agent 设计的 CLI：stdin/stdout 契约
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: cli-table
+    elementType: table
+    bounds: [64, 112, 460, 210]
+    columnWidths: [0.24, 0.22, 0.54]
+    rowHeights: [0.12, 0.176, 0.176, 0.176, 0.176, 0.176]
+    style: "$default"
+    rows:
+      - - text: 通道
+        - text: 用途
+        - text: 规则
+      - - text: "<strong>argv / stdin</strong>"
+        - text: 输入参数
+        - text: 少用 flags；复杂对象用单个 JSON；不等待 TTY 交互
+      - - text: "<strong>stdout</strong>"
+        - text: 机器结果
+        - text: 默认只输出一个合法 JSON；不混进度文字
+      - - text: "<strong>stderr</strong>"
+        - text: 诊断
+        - text: 日志、警告、进度和可读错误
+      - - text: "<strong>exit code</strong>"
+        - text: 失败类别
+        - text: 为参数、鉴权、依赖、业务冲突设稳定代码
+      - - text: "<strong>output file</strong>"
+        - text: 大结果
+        - text: 大表/图片/报告写入文件，stdout 只返回 manifest
+  - elementId: human-note-bar
+    elementType: shape
+    bounds: [64, 344, 4, 60]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: human-note
+    elementType: text
+    bounds: [84, 344, 440, 140]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.55
+      text: |
+        <p><strong>人类可读与 Agent 可读的分工：</strong></p>
+        <p>脚本返回稳定、紧凑、可解析的数据；Agent 把数据翻译成解释和建议；WebUI 用卡片、图表和 Artifact 预览渲染同一份结果。</p>
+        <p style="margin-top:6px">不要让脚本同时承担<strong>数据接口、业务解释和最终文案</strong>三种责任。</p>
+  - elementId: ok-bg
+    elementType: shape
+    bounds: [560, 112, 336, 180]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: ok-code
+    elementType: text
+    bounds: [576, 122, 310, 164]
+    content:
+      style: "$code"
+      fontSize: 9.5
+      lineHeight: 1.45
+      text: |
+        <p>{</p>
+        <p>  "ok": true,</p>
+        <p>  "data": {"count": 20, "items": []},</p>
+        <p>  "artifacts": [{"path": "outputs/report.csv",</p>
+        <p>    "mime_type": "text/csv", "sha256": "..."}],</p>
+        <p>  "provenance": {"source": "analytics-api",</p>
+        <p>    "retrieved_at": "2026-08-09T18:00:00Z",</p>
+        <p>    "api_version": "v2"},</p>
+        <p>  "warnings": [], "next_cursor": null</p>
+        <p>}</p>
+  - elementId: ok-label
+    elementType: text
+    bounds: [560, 296, 336, 16]
+    content: {style: "$small", fontSize: 10, text: ↑ 成功输出：数据 + 产物清单 + 来源}
+  - elementId: err-bg
+    elementType: shape
+    bounds: [560, 322, 336, 120]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: err-code
+    elementType: text
+    bounds: [576, 332, 310, 104]
+    content:
+      style: "$code"
+      fontSize: 9.5
+      lineHeight: 1.45
+      text: |
+        <p>{</p>
+        <p>  "ok": false,</p>
+        <p>  "error": {"code": "AUTH_EXPIRED",</p>
+        <p>    "message": "The credential has expired.",</p>
+        <p>    "retryable": false,</p>
+        <p>    "suggested_action": "Ask an admin to reconnect."}</p>
+        <p>}</p>
+  - elementId: err-label
+    elementType: text
+    bounds: [560, 446, 336, 16]
+    content: {style: "$small", fontSize: 10, text: ↑ 失败输出：稳定 code + 可重试性 + 建议动作}
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第五部分 · Tool / API / MCP 与 Harness}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "21 / 36"}

@@ -1,0 +1,92 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 安全页。permission 是 Harness 的动作门而非完整沙箱；自然语言写"禁止删除"不能替代真正的 deny。教学用最小示例，实际项目按威胁模型调整。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第三部分 · 平台分层
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 安全层：自然语言规则不是硬隔离
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: code-bg
+    elementType: shape
+    bounds: [64, 112, 430, 330]
+    shapeName: rect
+    fill: {type: solid, color: "$codebg"}
+  - elementId: code
+    elementType: text
+    bounds: [82, 126, 400, 306]
+    content:
+      style: "$code"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p>{</p>
+        <p>  "permission": {</p>
+        <p>    "edit": "ask",</p>
+        <p>    "bash": {</p>
+        <p>      "*": "ask",</p>
+        <p>      "git status*": "allow",</p>
+        <p>      "git diff*": "allow",</p>
+        <p>      "rm *": "deny",</p>
+        <p>      "sudo *": "deny"</p>
+        <p>    },</p>
+        <p>    "external_directory": "deny",</p>
+        <p>    "webfetch": "ask",</p>
+        <p>    "skill": {"*": "ask", "trusted-*": "allow"},</p>
+        <p>    "task": {"*": "deny", "reviewer": "allow"},</p>
+        <p>    "doom_loop": "ask"</p>
+        <p>  }</p>
+        <p>}</p>
+  - elementId: code-note
+    elementType: text
+    bounds: [64, 454, 430, 40]
+    content:
+      style: "$small"
+      fontSize: 10.5
+      lineHeight: 1.5
+      text: |
+        <p>规则采用模式匹配，<strong>具体规则放在通配规则之后</strong>。教学用最小示例，实际项目应按威胁模型调整。</p>
+  - elementId: sec-head
+    elementType: text
+    bounds: [530, 112, 366, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: 五条安全要点
+  - elementId: sec-list
+    elementType: text
+    bounds: [530, 140, 366, 350]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.68
+      text: |
+        <ol>
+        <li>Permission 是 Harness 的<strong>动作门</strong>，不等于完整 OS 沙箱</li>
+        <li>AGENTS.md 里写"禁止删除"<strong>不能替代</strong>真正的 deny</li>
+        <li>对不可信代码，应加容器 / bwrap 隔离、只读挂载、网络出口控制和独立凭据</li>
+        <li>密钥由运行环境或凭据代理注入，<strong>不能写入 Prompt、Skill 或仓库</strong></li>
+        <li>高风险写操作应具备 dry-run、幂等键、显式确认、审计和回滚方案</li>
+        </ol>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第三部分 · OpenCode 平台分层}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "15 / 36"}

@@ -1,0 +1,84 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 方法页。接入 API 不等于把文档粘进 Prompt——按内容类型归位。Tool 五原则逐条讲，窄接口是第一条。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第五部分 · Tool / API / MCP
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 接入 API：内容各归其位，Tool 窄而稳定
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: place-table
+    elementType: table
+    bounds: [64, 116, 460, 250]
+    columnWidths: [0.58, 0.42]
+    rowHeights: [0.12, 0.147, 0.147, 0.147, 0.147, 0.146, 0.146]
+    style: "$default"
+    rows:
+      - - text: 内容
+        - text: 最适合的位置
+      - - text: Endpoint、参数类型、返回 Schema
+        - text: Tool 定义、OpenAPI、SDK
+      - - text: 鉴权、重试、分页、限流、幂等
+        - text: Tool Adapter / Script
+      - - text: 什么意图下调用、顺序、结果解释
+        - text: Skill
+      - - text: 所有任务适用的接口约定
+        - text: AGENTS.md
+      - - text: 密钥、租户身份、网络范围
+        - text: Credential / Runtime / Policy
+      - - text: 调用过程、耗时、结果摘要
+        - text: Trace / Observability
+  - elementId: flow-note
+    elementType: text
+    bounds: [64, 382, 460, 100]
+    content:
+      style: "$small"
+      fontSize: 11
+      lineHeight: 1.55
+      text: |
+        <p><strong>调用链：</strong>用户任务 → Agent Runtime（← Skill：何时及如何使用）→ Typed Tool / Adapter ⇄ 业务 API / 数据库 / 程序。</p>
+        <p style="margin-top:6px">详细字段语义和低频错误码放入 Skill 的 references/，<strong>只有遇到对应情况时再读</strong>。</p>
+  - elementId: prin-head
+    elementType: text
+    bounds: [560, 112, 336, 20]
+    content:
+      style: "$h3"
+      fontSize: 13
+      text: Tool 设计五条原则
+  - elementId: prin-list
+    elementType: text
+    bounds: [560, 140, 336, 350]
+    content:
+      style: "$body"
+      fontSize: 12
+      lineHeight: 1.68
+      text: |
+        <ol>
+        <li><strong>窄接口</strong>：get_order_status(order_id) 优于 execute_business_action(payload)</li>
+        <li><strong>强 Schema</strong>：enum、required、范围约束、稳定字段</li>
+        <li><strong>可诊断错误</strong>：区分参数错误、权限错误、限流、依赖不可用、业务冲突</li>
+        <li><strong>安全重试</strong>：读操作可重试，写操作必须考虑幂等键</li>
+        <li><strong>结果可验证</strong>：返回 ID、版本、时间、来源和状态，不只返回"成功"</li>
+        </ol>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第五部分 · Tool / API / MCP 与 Harness}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "20 / 36"}

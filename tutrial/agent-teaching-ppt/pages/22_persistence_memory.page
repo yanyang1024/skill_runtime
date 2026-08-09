@@ -1,0 +1,103 @@
+pageType: content
+background:
+  type: solid
+  color: "$paper"
+notes: 概念页。不是所有工具结果都该永久塞进对话，也不是所有对话都该变成长时记忆。七层寿命表 + 长期记忆的五个前提与禁止清单。
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [64, 30, 700, 16]
+    content:
+      style: "$kicker"
+      text: 第五部分 · Tool / API / MCP
+  - elementId: title
+    elementType: text
+    bounds: [64, 48, 832, 38]
+    content:
+      style: "$title"
+      text: 响应持久化：每类结果都有自己的寿命
+  - elementId: rule
+    elementType: shape
+    bounds: [64, 96, 832, 1]
+    shapeName: rect
+    fill: {type: solid, color: "$line"}
+  - elementId: mem-table
+    elementType: table
+    bounds: [64, 112, 832, 260]
+    columnWidths: [0.2, 0.34, 0.2, 0.26]
+    rowHeights: [0.1, 0.128, 0.128, 0.128, 0.128, 0.128, 0.128, 0.132]
+    style: "$default"
+    rows:
+      - - text: 层级
+        - text: 保存什么
+        - text: 典型寿命
+        - text: 目的
+      - - text: "<strong>Turn context</strong>"
+        - text: 当前输入与短工具结果
+        - text: 一轮到数轮
+        - text: 支持下一步决策
+      - - text: "<strong>Session state</strong>"
+        - text: 已确认目标、选择和摘要
+        - text: 一次会话
+        - text: 保持连续性
+      - - text: "<strong>Task checkpoint</strong>"
+        - text: 阶段、待办、幂等键、恢复点
+        - text: 任务完成前后
+        - text: 中断恢复
+      - - text: "<strong>Raw response</strong>"
+        - text: 原始 API 响应或引用
+        - text: 按审计策略
+        - text: 追溯与重放
+      - - text: "<strong>Normalized result</strong>"
+        - text: 统一后的结构化数据
+        - text: 按业务版本
+        - text: 跨工具消费
+      - - text: "<strong>Artifact</strong>"
+        - text: 报告、代码、数据、图像
+        - text: 按交付策略
+        - text: 用户真正使用的结果
+      - - text: "<strong>Curated memory</strong>"
+        - text: 经确认且会复用的事实/偏好/规则
+        - text: 长期并带作用域
+        - text: 改善后续任务
+  - elementId: pre-head
+    elementType: text
+    bounds: [64, 392, 400, 20]
+    content:
+      style: "$h3"
+      fontSize: 12.5
+      text: 进入长期记忆的五个前提
+  - elementId: pre-list
+    elementType: text
+    bounds: [64, 416, 400, 80]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.55
+      text: |
+        <p>明确来源；作用域（个人 / 项目 / 团队 / 租户）；经用户或系统确认；版本和过期策略；删除和纠错机制。</p>
+  - elementId: ban-head
+    elementType: text
+    bounds: [496, 392, 400, 20]
+    content:
+      style: "$h3"
+      fontSize: 12.5
+      color: "$accent"
+      text: 禁止沉淀
+  - elementId: ban-list
+    elementType: text
+    bounds: [496, 416, 400, 80]
+    content:
+      style: "$body"
+      fontSize: 11.5
+      lineHeight: 1.55
+      text: |
+        <p>密钥、临时授权、未经确认的推测、跨租户数据，以及无法解释来源的"模型印象"。</p>
+  - elementId: footer-label
+    elementType: text
+    bounds: [64, 518, 500, 12]
+    content: {style: "$small", fontSize: 9, text: 第五部分 · Tool / API / MCP 与 Harness}
+  - elementId: page-num
+    elementType: text
+    bounds: [850, 518, 50, 12]
+    content: {style: "$small", fontSize: 9, align: [right, top], text: "22 / 36"}
