@@ -1,0 +1,174 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 02 · 接口现状}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 三个立刻能用的工具工程实践}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: c1-bg
+    elementType: shape
+    bounds: [70, 140, 360, 496]
+    shapeName: roundRect
+    adjustments: [6000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: c1-head
+    elementType: text
+    bounds: [94, 160, 312, 28]
+    content: {fontSize: 18, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>① Schema 是"说明书"</strong>}
+  - elementId: c1-desc
+    elementType: text
+    bounds: [94, 196, 312, 64]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, top], text: Schema 不只定义参数，也在教模型理解工具：名称区分度、前置条件、副作用、失败方式。}
+  - elementId: c1-bad
+    elementType: text
+    bounds: [94, 268, 312, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$bad", wrap: false, align: [left, middle], text: <strong>❌ 不友好：模型只能瞎猜</strong>}
+  - elementId: c1-bad-code
+    elementType: shape
+    bounds: [94, 296, 312, 36]
+    shapeName: roundRect
+    adjustments: [16000]
+    fill: {type: solid, color: "$badSoft"}
+  - elementId: c1-bad-txt
+    elementType: text
+    bounds: [110, 296, 280, 36]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$bad", wrap: false, align: [left, middle], text: 400 Bad Request}
+  - elementId: c1-good
+    elementType: text
+    bounds: [94, 348, 312, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$good", wrap: false, align: [left, middle], text: <strong>✅ Agent-friendly：可自我恢复</strong>}
+  - elementId: c1-good-code
+    elementType: shape
+    bounds: [94, 376, 312, 168]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$night"}
+  - elementId: c1-good-txt
+    elementType: text
+    bounds: [110, 376, 284, 168]
+    content:
+      fontSize: 12
+      fontFamily: "MiSans"
+      color: "#E8E6F0"
+      lineHeight: 1.55
+      align: [left, middle]
+      text: |
+        <p>{</p>
+        <p>  "error_type": "invalid_argument",</p>
+        <p>  "field": "start_date",</p>
+        <p>  "expected": "YYYY-MM-DD,",</p>
+        <p>  "retryable": true</p>
+        <p>}</p>
+  - elementId: c1-note
+    elementType: text
+    bounds: [94, 560, 312, 56]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.45, align: [left, top], text: 错误信息要包含出错字段、期望格式、是否可重试，模型才知道怎么修。}
+  - elementId: c2-bg
+    elementType: shape
+    bounds: [460, 140, 360, 496]
+    shapeName: roundRect
+    adjustments: [6000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: c2-head
+    elementType: text
+    bounds: [484, 160, 312, 28]
+    content: {fontSize: 18, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>② Tool Search 按需加载</strong>}
+  - elementId: c2-desc
+    elementType: text
+    bounds: [484, 196, 312, 64]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, top], text: 像考试带手册：先看目录（namespace 名称+一句话描述），确定章节再翻正文（具体 Schema）。}
+  - elementId: c2-list
+    elementType: text
+    bounds: [484, 272, 312, 240]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.75
+      align: [left, top]
+      text: |
+        <ul>
+        <li>按<strong>用户意图</strong>划分 namespace，而不是按后端微服务</li>
+        <li>namespace 描述要短而有区分度</li>
+        <li>低频、Schema 大的工具用 <span style="color:$primary;">defer_loading</span></li>
+        <li>单个 namespace 尽量 ≤ 10 个工具</li>
+        <li>高频关键工具直接加载，省掉搜索步骤</li>
+        </ul>
+  - elementId: c2-note-bg
+    elementType: shape
+    bounds: [484, 528, 312, 88]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$primarySoft"}
+  - elementId: c2-note
+    elementType: text
+    bounds: [500, 528, 280, 88]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$ink", lineHeight: 1.5, align: [left, middle], text: 记得记录"模型看见了哪些工具"——否则实验结果无法复现。}
+  - elementId: c3-bg
+    elementType: shape
+    bounds: [850, 140, 360, 496]
+    shapeName: roundRect
+    adjustments: [6000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: c3-head
+    elementType: text
+    bounds: [874, 160, 312, 28]
+    content: {fontSize: 18, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>③ 输出提供"双视图"</strong>}
+  - elementId: c3-desc
+    elementType: text
+    bounds: [874, 196, 312, 64]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, top], text: 别把一切转成 Markdown，也别把原始数据全塞给模型——不同视图服务不同消费者。}
+  - elementId: c3-r1
+    elementType: text
+    bounds: [874, 272, 312, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>summary</strong>　给模型快速判断的结论}
+  - elementId: c3-r2
+    elementType: text
+    bounds: [874, 308, 312, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>structured</strong>　给程序消费、Schema 校验}
+  - elementId: c3-r3
+    elementType: text
+    bounds: [874, 344, 312, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>resources</strong>　大对象存 handle / 游标}
+  - elementId: c3-r4
+    elementType: text
+    bounds: [874, 380, 312, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>evidence</strong>　来源、版本、校验信息}
+  - elementId: c3-r5
+    elementType: text
+    bounds: [874, 416, 312, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>control</strong>　状态 + 是否可重试}
+  - elementId: c3-note-bg
+    elementType: shape
+    bounds: [874, 528, 312, 88]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$goodSoft"}
+  - elementId: c3-note
+    elementType: text
+    bounds: [890, 528, 280, 88]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$ink", lineHeight: 1.5, align: [left, middle], text: Markdown 适合阅读，结构化数据适合组合，handle 适合大对象，evidence 适合验证。}
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "09"}

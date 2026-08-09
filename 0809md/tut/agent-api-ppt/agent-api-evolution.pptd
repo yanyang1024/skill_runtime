@@ -1,0 +1,72 @@
+title: 从 Chat API 到 Agent Runtime：接口如何解锁模型的隐藏能力
+size: [1280, 720]
+theme:
+  colors:
+    bg: "#F7F6F3"
+    paper: "#FFFFFF"
+    ink: "#23252D"
+    soft: "#5C5F6B"
+    line: "#E3E0D8"
+    primary: "#4A44C6"
+    primaryMid: "#6E67D8"
+    primarySoft: "#ECEAFA"
+    accent: "#E8863A"
+    accentSoft: "#FCEBDD"
+    good: "#2E9E6B"
+    goodSoft: "#E3F4EC"
+    bad: "#D5544F"
+    badSoft: "#FBE9E8"
+    night: "#26233F"
+    nightSoft: "#3D3580"
+  textStyles:
+    kicker:
+      fontSize: 14
+      color: "$primary"
+      fontFamily: "MiSans"
+      letterSpacing: 3
+    title:
+      fontSize: 30
+      color: "$ink"
+      fontFamily: "alimamashuheiti"
+    body:
+      fontSize: 17
+      color: "$ink"
+      fontFamily: "MiSans"
+      lineHeight: 1.5
+    small:
+      fontSize: 13
+      color: "$soft"
+      fontFamily: "MiSans"
+      lineHeight: 1.4
+  tableStyles:
+    default:
+      fontSize: 15
+      fontFamily: "MiSans"
+      headerFill: "$night"
+      headerColor: "#FFFFFF"
+      headerBold: true
+      bodyFill: ["#FFFFFF", "#F4F2EC"]
+      bodyColor: "$ink"
+      border:
+        style: solid
+        width: 1
+        color: "$line"
+pages:
+  - pages/p01_cover.page
+  - pages/p02_toc.page
+  - pages/p03_ch1.page
+  - pages/p04_formula.page
+  - pages/p05_ch2.page
+  - pages/p06_inference.page
+  - pages/p07_responses.page
+  - pages/p08_stairs.page
+  - pages/p09_toolpractice.page
+  - pages/p10_ch3.page
+  - pages/p11_stack.page
+  - pages/p12_states.page
+  - pages/p13_ch4.page
+  - pages/p14_problems.page
+  - pages/p15_results.page
+  - pages/p16_tricks.page
+  - pages/p17_future.page
+  - pages/p18_final.page

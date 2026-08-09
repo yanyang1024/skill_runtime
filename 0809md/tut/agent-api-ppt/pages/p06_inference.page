@@ -1,0 +1,158 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 02 · 接口现状}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 推理接口的四次进化}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: era-1-bg
+    elementType: shape
+    bounds: [70, 140, 264, 106]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: era-1-tag
+    elementType: text
+    bounds: [90, 152, 224, 20]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: 第一代}
+  - elementId: era-1-name
+    elementType: text
+    bounds: [90, 174, 224, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>Chat / Message API</strong>}
+  - elementId: era-1-desc
+    elementType: text
+    bounds: [90, 202, 224, 36]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.35, align: [left, top], text: messages 进 message 出，推理状态用完即弃}
+  - elementId: era-arrow-1
+    elementType: text
+    bounds: [334, 140, 28, 106]
+    content: {fontSize: 22, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: era-2-bg
+    elementType: shape
+    bounds: [362, 140, 264, 106]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$primarySoft"}
+  - elementId: era-2-tag
+    elementType: text
+    bounds: [382, 152, 224, 20]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: 第二代}
+  - elementId: era-2-name
+    elementType: text
+    bounds: [382, 174, 224, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>Responses-like API</strong>}
+  - elementId: era-2-desc
+    elementType: text
+    bounds: [382, 202, 224, 36]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.35, align: [left, top], text: 运行拆成 Item，状态可跨回合接力}
+  - elementId: era-arrow-2
+    elementType: text
+    bounds: [626, 140, 28, 106]
+    content: {fontSize: 22, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: era-3-bg
+    elementType: shape
+    bounds: [654, 140, 264, 106]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: era-3-tag
+    elementType: text
+    bounds: [674, 152, 224, 20]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: 另一条轴 · 节奏}
+  - elementId: era-3-name
+    elementType: text
+    bounds: [674, 174, 224, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>Realtime API</strong>}
+  - elementId: era-3-desc
+    elementType: text
+    bounds: [674, 202, 224, 36]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.35, align: [left, top], text: 持续连接、低延迟、可打断}
+  - elementId: era-arrow-3
+    elementType: text
+    bounds: [918, 140, 28, 106]
+    content: {fontSize: 22, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: era-4-bg
+    elementType: shape
+    bounds: [946, 140, 264, 106]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: era-4-tag
+    elementType: text
+    bounds: [966, 152, 224, 20]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: 另一条轴 · 寿命}
+  - elementId: era-4-name
+    elementType: text
+    bounds: [966, 174, 224, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>Async / Background</strong>}
+  - elementId: era-4-desc
+    elementType: text
+    bounds: [966, 202, 224, 36]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.35, align: [left, top], text: 长耗时执行、断线恢复、轮询通知}
+  - elementId: api-table
+    elementType: table
+    bounds: [70, 272, 1140, 296]
+    columnWidths: [0.17, 0.27, 0.26, 0.30]
+    rowHeights: [0.15, 0.2125, 0.2125, 0.2125, 0.2125]
+    style: "$default"
+    rows:
+      - - content: {text: 接口形态, fontSize: 14}
+        - content: {text: 核心对象, fontSize: 14}
+        - content: {text: 状态管理, fontSize: 14}
+        - content: {text: 适合场景, fontSize: 14}
+      - - content: {text: Chat/Message, fontSize: 13, align: [left, middle]}
+        - content: {text: Message / Content, fontSize: 13, align: [left, middle]}
+        - content: {text: 客户端重传消息历史, fontSize: 13, align: [left, middle]}
+        - content: {text: 单轮问答、多轮聊天、分类、抽取, fontSize: 13, align: [left, middle]}
+      - - content: {text: Responses-like, fontSize: 13, align: [left, middle]}
+        - content: {text: Message、Reasoning、Tool、Compaction 等 Item, fontSize: 13, align: [left, middle]}
+        - content: {text: previous_response_id 或完整 Item 回放, fontSize: 13, align: [left, middle]}
+        - content: {text: 多步推理、复杂 Tool Use、长程 Agent, fontSize: 13, align: [left, middle]}
+      - - content: {text: Realtime, fontSize: 13, align: [left, middle]}
+        - content: {text: 连续音频、文本、事件与工具调用, fontSize: 13, align: [left, middle]}
+        - content: {text: 连接级实时状态, fontSize: 13, align: [left, middle]}
+        - content: {text: 语音助手、实时客服、低延迟交互, fontSize: 13, align: [left, middle]}
+      - - content: {text: Async/Background, fontSize: 13, align: [left, middle]}
+        - content: {text: Job / Task / Event, fontSize: 13, align: [left, middle]}
+        - content: {text: 服务端任务状态, fontSize: 13, align: [left, middle]}
+        - content: {text: 深度研究、批处理、长耗时任务, fontSize: 13, align: [left, middle]}
+  - elementId: takeaway-bg
+    elementType: shape
+    bounds: [70, 592, 1140, 56]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$primarySoft"}
+  - elementId: takeaway
+    elementType: text
+    bounds: [100, 592, 1080, 56]
+    content:
+      fontSize: 16
+      fontFamily: "MiSans"
+      color: "$ink"
+      wrap: false
+      align: [left, middle]
+      text: <strong>📌 一句话记住：</strong>选型先问——任务需要跨回合的推理连续性吗？需要 → Responses；不需要 → Chat 足够。
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "06"}

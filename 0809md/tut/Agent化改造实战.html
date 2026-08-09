@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent 化改造实战：三条落地路径 · 交互式学习讲义</title>
+<style>
+  :root{
+    --bg:#f7f6f3;
+    --paper:#ffffff;
+    --ink:#23252d;
+    --ink-soft:#5c5f6b;
+    --line:#e6e3dc;
+    --accent:#5b54e8;
+    --accent-soft:#eeecfd;
+    --warm:#e8863a;
+    --warm-soft:#fdeee0;
+    --green:#2e9e6b;
+    --green-soft:#e3f4ec;
+    --red:#d5544f;
+    --red-soft:#fbe9e8;
+    --code-bg:#1e1f2b;
+    --code-ink:#e8e6f0;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.85;font-size:16.5px;
+  }
+  #progress{position:fixed;top:0;left:0;height:4px;width:0%;background:linear-gradient(90deg,var(--accent),var(--warm));z-index:999;transition:width .1s;}
+  .layout{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:250px 1fr;gap:36px;padding:0 28px;}
+  main{min-width:0;padding-bottom:120px;}
+  nav.toc{position:sticky;top:32px;align-self:start;padding:26px 0;height:fit-content;max-height:calc(100vh - 60px);overflow:auto;}
+  nav.toc h4{font-size:12px;letter-spacing:2px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:14px;}
+  nav.toc a{display:block;padding:7px 12px;margin:2px 0;font-size:13.5px;color:var(--ink-soft);text-decoration:none;border-left:2px solid var(--line);transition:all .2s;}
+  nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;}
+  @media(max-width:960px){.layout{grid-template-columns:1fr;}nav.toc{display:none;}}
+  .hero{padding:90px 0 60px;}
+  .hero .kicker{display:inline-block;font-size:13px;font-weight:600;letter-spacing:2px;color:var(--accent);background:var(--accent-soft);padding:5px 14px;border-radius:99px;margin-bottom:22px;}
+  .hero h1{font-size:clamp(30px,4.5vw,46px);line-height:1.25;font-weight:800;letter-spacing:-.5px;}
+  .hero h1 em{font-style:normal;color:var(--accent);}
+  .hero .sub{margin-top:18px;font-size:18px;color:var(--ink-soft);max-width:780px;}
+  .hero .meta{margin-top:14px;font-size:13px;color:#9a9daa;}
+  .hero-cards{margin-top:40px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .hero-cards .hc{background:var(--paper);border:1px solid var(--line);border-top:5px solid var(--accent);border-radius:var(--radius);padding:22px 24px;}
+  .hero-cards .hc b{font-size:16px;display:block;margin-bottom:6px;}
+  .hero-cards .hc span{font-size:13.5px;color:var(--ink-soft);line-height:1.6;display:block;}
+  @media(max-width:760px){.hero-cards{grid-template-columns:1fr;}}
+  section.chapter{margin-top:80px;scroll-margin-top:24px;}
+  .chapter-head{display:flex;align-items:baseline;gap:16px;border-bottom:3px solid var(--ink);padding-bottom:12px;margin-bottom:30px;}
+  .chapter-head .num{font-size:15px;font-weight:800;color:#fff;background:var(--ink);border-radius:8px;padding:3px 11px;}
+  .chapter-head h2{font-size:27px;font-weight:800;letter-spacing:-.3px;}
+  h3{font-size:20px;font-weight:700;margin:38px 0 14px;display:flex;align-items:center;gap:10px;}
+  h3::before{content:"";width:9px;height:22px;background:var(--accent);border-radius:4px;}
+  h4{font-size:16.5px;font-weight:700;margin:26px 0 10px;}
+  p{margin:12px 0;}
+  ul,ol{margin:12px 0 12px 24px;}
+  li{margin:6px 0;}
+  code.inline{font-family:"JetBrains Mono","SF Mono",Consolas,monospace;font-size:.88em;background:var(--accent-soft);color:#4338ca;padding:2px 7px;border-radius:6px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:26px 30px;margin:22px 0;box-shadow:0 4px 18px -8px rgba(35,37,45,.08);}
+  .tip{display:flex;gap:16px;border-radius:var(--radius);padding:20px 24px;margin:22px 0;border:1px solid;}
+  .tip .icon{font-size:24px;line-height:1.4;flex-shrink:0;}
+  .tip .body{flex:1;font-size:15.5px;}
+  .tip .body strong{display:block;margin-bottom:4px;font-size:15px;}
+  .tip.analogy{background:var(--warm-soft);border-color:#f2cfae;}
+  .tip.analogy strong{color:var(--warm);}
+  .tip.warn{background:var(--red-soft);border-color:#f0c0bd;}
+  .tip.warn strong{color:var(--red);}
+  .tip.key{background:var(--green-soft);border-color:#bfe3d2;}
+  .tip.key strong{color:var(--green);}
+  table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14.5px;background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 12px -4px rgba(35,37,45,.08);}
+  th{background:#26233f;color:#fff;text-align:left;padding:12px 16px;font-weight:600;font-size:13.5px;}
+  td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#faf9f7;}
+  td:first-child{font-weight:600;}
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:var(--radius);padding:22px 26px;overflow:auto;font-family:"JetBrains Mono","SF Mono",Consolas,monospace;font-size:13.5px;line-height:1.7;margin:18px 0;}
+  pre .c{color:#7c7f96;}
+  pre .k{color:#b5a6ff;}
+  pre .s{color:#8ef0c1;}
+  pre .n{color:#ffb98a;}
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:24px 0;}
+  .flow .step{flex:1;min-width:130px;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative;display:flex;flex-direction:column;justify-content:center;}
+  .flow .step b{font-size:14.5px;display:block;}
+  .flow .step span{font-size:12.5px;color:var(--ink-soft);display:block;margin-top:4px;line-height:1.5;}
+  .flow .arr{align-self:center;padding:0 8px;color:var(--accent);font-size:22px;font-weight:800;flex-shrink:0;}
+  .flow .step.hl{border-color:var(--accent);background:var(--accent-soft);}
+  .versus{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0;}
+  .versus .col{border-radius:var(--radius);padding:22px 24px;border:2px solid;}
+  .versus .col.bad{border-color:#efc4c2;background:#fdf6f5;}
+  .versus .col.good{border-color:#bfe3d2;background:#f5fbf8;}
+  .versus .col h4{margin-top:0;display:flex;align-items:center;gap:8px;}
+  .versus .bad h4{color:var(--red);} .versus .good h4{color:var(--green);}
+  .versus .col ul{margin-left:18px;font-size:14.5px;}
+  @media(max-width:700px){.versus{grid-template-columns:1fr;}}
+  .decision{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:26px;margin:22px 0;text-align:center;}
+  .decision .q{display:inline-block;background:var(--ink);color:#fff;border-radius:10px;padding:12px 26px;font-weight:700;font-size:15px;}
+  .decision .branches{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .decision .branches .b{border-radius:10px;padding:16px;font-size:14px;margin-top:14px;}
+  .decision .b.yes{background:var(--green-soft);border:1.5px solid #bfe3d2;}
+  .decision .b.no{background:var(--warm-soft);border:1.5px solid #f2cfae;}
+  .decision .b b{display:block;margin-bottom:4px;}
+  .decision .b .cond{display:inline-block;font-weight:800;font-size:13px;border-radius:99px;padding:1px 12px;margin-bottom:8px;}
+  .decision .b.yes .cond{background:var(--green);color:#fff;}
+  .decision .b.no .cond{background:var(--warm);color:#fff;}
+  @media(max-width:640px){.decision .branches{grid-template-columns:1fr;}}
+  /* 架构分层图 */
+  .arch{display:flex;flex-direction:column;gap:10px;margin:26px 0;}
+  .arch .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .arch .box{border-radius:12px;padding:16px 20px;font-size:14px;display:flex;flex-direction:column;justify-content:center;border:1.5px solid var(--line);background:var(--paper);}
+  .arch .box b{font-size:15px;}
+  .arch .box span{color:var(--ink-soft);font-size:12.5px;margin-top:2px;line-height:1.5;}
+  .arch .box.core{background:#26233f;color:#fff;border-color:#26233f;text-align:center;}
+  .arch .box.core span{color:#b9b4d6;}
+  .arch .box.new{border-color:var(--accent);background:var(--accent-soft);}
+  .arch .join{text-align:center;color:var(--accent);font-size:18px;line-height:1;}
+  /* 检查清单 */
+  .checklist{list-style:none;margin:16px 0;}
+  .checklist li{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--green);border-radius:10px;padding:14px 18px;margin:10px 0;font-size:14.5px;display:flex;gap:12px;align-items:flex-start;}
+  .checklist li::before{content:"☐";color:var(--green);font-size:18px;line-height:1.5;}
+  .checklist li b{flex-shrink:0;}
+  /* 四问卡片 */
+  .quad{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0;}
+  .quad .q{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:20px 22px;}
+  .quad .q h4{margin:0 0 8px;font-size:15.5px;color:var(--accent);}
+  .quad .q p{font-size:13.8px;color:var(--ink-soft);margin:4px 0;}
+  @media(max-width:700px){.quad{grid-template-columns:1fr;}}
+  /* 阶段推进 chevron */
+  .phases{display:flex;gap:0;margin:26px 0;align-items:stretch;}
+  .phase{flex:1;position:relative;padding:18px 16px 18px 30px;color:#fff;font-size:13px;line-height:1.55;}
+  .phase b{display:block;font-size:15px;margin-bottom:4px;}
+  .phase:nth-child(1){background:#8a84f0;border-radius:12px 0 0 12px;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,0 100%);}
+  .phase:nth-child(2){background:#6e67d8;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,0 100%,18px 50%);margin-left:-4px;}
+  .phase:nth-child(3){background:#5b54e8;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 50%,calc(100% - 18px) 100%,0 100%,18px 50%);margin-left:-4px;}
+  .phase:nth-child(4){background:#322a9e;border-radius:0 12px 12px 0;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,18px 50%);margin-left:-4px;}
+  @media(max-width:820px){.phases{flex-direction:column;}.phase{clip-path:none!important;border-radius:12px!important;margin:6px 0!important;}}
+  blockquote.quote{border:none;background:linear-gradient(135deg,var(--accent-soft),#fdf2e7);border-radius:var(--radius);padding:28px 32px;margin:30px 0;font-size:19px;font-weight:700;line-height:1.7;position:relative;}
+  blockquote.quote::before{content:"“";position:absolute;top:-6px;left:18px;font-size:64px;color:var(--accent);opacity:.35;font-family:Georgia,serif;}
+  details.quiz{background:var(--paper);border:1px solid var(--line);border-radius:12px;margin:12px 0;overflow:hidden;}
+  details.quiz summary{cursor:pointer;padding:16px 22px;font-weight:700;font-size:15px;list-style:none;display:flex;gap:10px;align-items:center;}
+  details.quiz summary::before{content:"Q";background:var(--ink);color:#fff;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  details.quiz summary:hover{background:#faf9f7;}
+  details.quiz .ans{padding:0 22px 18px 56px;font-size:14.5px;color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--green);}
+  footer.refs{margin-top:90px;border-top:2px solid var(--line);padding:34px 0 60px;font-size:13.5px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<div class="layout">
+  <nav class="toc">
+    <h4>学习路径</h4>
+    <a href="#ch0">🗺️ 开场：一张共同的地图</a>
+    <a href="#ch1">① 传统 API 梳理与改造</a>
+    <a href="#ch2">② API 融入 Skill 与 Agent</a>
+    <a href="#ch3">③ WebUI 转对话式应用</a>
+    <a href="#ch4">✅ 自测与一页纸总结</a>
+  </nav>
+
+  <main>
+  <header class="hero">
+    <span class="kicker">交互式学习讲义 · 落地篇（配套《从 Chat API 到 Agent Runtime》）</span>
+    <h1>Agent 化改造实战：<br>把理论变成<em>能开工</em>的三条路径</h1>
+    <p class="sub">原理大家都懂了——接口决定模型能发挥多少能力。但回到工位，面对一堆传统 API、CLI 脚本和 WebUI 老系统，第一步到底怎么走？这份讲义把三个典型改造场景拆成可操作的方法论、清单和样例。</p>
+    <p class="meta">基于《agent化改造场景方法论.md》重组 · 2026-08</p>
+    <div class="hero-cards">
+      <div class="hc"><b>场景 ① 传统 API 改造</b><span>不破坏老消费者的前提下，让 API 更适合 Agent 工作流——核心动作是"加一层 Façade"。</span></div>
+      <div class="hc"><b>场景 ② 融入 Skill 与 Agent</b><span>工具正确只是第一层；还要教模型"怎么用"（Skill）、管住"边界"（Harness）。</span></div>
+      <div class="hc"><b>场景 ③ WebUI 转型</b><span>拒绝模拟点击，把业务能力接口化（MCP），把操作流程 SOP 化（Skill）。</span></div>
+    </div>
+  </header>
+
+  <!-- ============ 第 0 章 ============ -->
+  <section class="chapter" id="ch0">
+    <div class="chapter-head"><span class="num">开场</span><h2>三个场景，一张共同的地图</h2></div>
+
+    <p>三个场景看似不同，其实共享同一个底层原则和同一个判断框架。先掌握它们，后面每个场景只是套用。</p>
+
+    <h3>共同原则：加一层，而不是改一层</h3>
+    <div class="arch">
+      <div class="row">
+        <div class="box"><b>老消费者</b><span>前端、脚本、合作方——一切照旧</span></div>
+        <div class="box new"><b>Agent（新消费者）</b><span>走新增的 Agent Façade / MCP 层</span></div>
+      </div>
+      <div class="join">↓ 各走各路 ↓</div>
+      <div class="box core"><b>同一套业务核心（不改）</b><span>逻辑、数据、权限体系复用——改的是"怎么暴露"，不是"业务本身"</span></div>
+    </div>
+    <div class="tip analogy">
+      <span class="icon">🏢</span>
+      <div class="body"><strong>打个比方</strong>老楼加装电梯：住户（老消费者）照常走楼梯，新电梯（Façade 层）贴着外墙建，楼的承重结构（业务核心）一根钢筋都不动。<b>凡是需要拆承重墙才能装的电梯，方案本身就是错的。</b></div>
+    </div>
+
+    <h3>共同框架：三层包装</h3>
+    <p>无论改造什么，最终都要回答三层问题——很多团队只做第一层，然后奇怪"为什么 Agent 还是用不好"：</p>
+    <div class="flow">
+      <div class="step"><b>第 1 层 · 工具本身</b><span>单次调用正确、错误可恢复、输出双视图</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>第 2 层 · 组合方式</b><span>Skill：什么时候用、按什么顺序、失败怎么办</span></div>
+      <div class="arr">→</div>
+      <div class="step hl"><b>第 3 层 · 运行约束</b><span>Harness/Policy：谁能调、要不要审批、状态怎么存</span></div>
+    </div>
+    <div class="tip key"><span class="icon">🧭</span><div class="body"><strong>阅读路线</strong>场景① 主要讲第 1 层怎么改；场景② 讲第 1 层之后的三层怎么配齐；场景③ 讲整套方法如何落到一个存量 WebUI 系统上。可以按顺序读，也可以直接跳到你手头的场景。</div></div>
+  </section>
+
+  <!-- ============ 场景一 ============ -->
+  <section class="chapter" id="ch1">
+    <div class="chapter-head"><span class="num">场景 ①</span><h2>传统 API 梳理 / 改造方法论</h2></div>
+
+    <div class="tip warn">
+      <span class="icon">💣</span>
+      <div class="body"><strong>先排掉最大的雷</strong>老接口已经有真实消费者（前端、脚本、合作方）。直接改返回格式让 Agent 更好用 = 生产事故。所以第一原则：<b>老接口一个字不动，新增 Agent-facing Façade 层</b>，两边复用同一业务核心。</div>
+    </div>
+
+    <h3>方法论总览：四步走</h3>
+    <div class="flow">
+      <div class="step"><b>① 盘点分级</b><span>API 清单 + 风险/语义双轴分级</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>② 差距评估</b><span>Agent-Ready 清单逐项打分</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>③ Façade 改造</b><span>按性价比做五个动作</span></div>
+      <div class="arr">→</div>
+      <div class="step hl"><b>④ 度量验收</b><span>四个指标对比改造前后</span></div>
+    </div>
+
+    <h3>第 1 步：盘点与分级</h3>
+    <p>把 API 拉成一张清单，按两个轴分级，决定改造顺序：</p>
+    <table>
+      <tr><th>维度</th><th>分级</th><th>改造优先级</th></tr>
+      <tr><td>读写风险</td><td>只读 / 可逆写 / 不可逆写（付款、删除、外发）</td><td>只读先行；不可逆写最后做，且必须带审批</td></tr>
+      <tr><td>语义密度</td><td>一目了然（get_user）/ 需要领域知识（settle_acct_v2）</td><td>语义越模糊，越需要重命名 + 补描述</td></tr>
+    </table>
+    <p>产出物：一张 API 清单，每行标注 <code class="inline">风险级 / 语义级 / 是否高频 / 返回体大小</code>。</p>
+
+    <h3>第 2 步：Agent-Ready 差距评估清单</h3>
+    <p>对每个候选接口逐项过一遍，打分排序：</p>
+    <ul class="checklist">
+      <li><b>名字能区分吗？</b><code class="inline">query_order</code> 和 <code class="inline">query_order_detail</code> 同时存在时，模型选错的概率有多大？</li>
+      <li><b>参数自解释吗？</b><code class="inline">type=3</code> 还是 <code class="inline">type="refund"</code>？枚举值写全了吗？</li>
+      <li><b>错误可恢复吗？</b>失败时返回 <code class="inline">500</code> 还是 <code class="inline">{error_type, field, expected, retryable}</code>？</li>
+      <li><b>返回体能进上下文吗？</b>一次调用吐 200KB JSON？需要 summary + 分页 + handle。</li>
+      <li><b>有幂等键吗？</b>模型重试时会不会重复下单？</li>
+      <li><b>粒度合适吗？</b>完成"查用户最近订单并判断是否超时"要调 5 次接口？该聚合了。</li>
+    </ul>
+
+    <h3>第 3 步：五个改造动作（按性价比排序）</h3>
+
+    <h4>动作 1 · 错误结构化 —— 性价比最高，一天能做</h4>
+    <div class="versus">
+      <div class="col bad">
+        <h4>❌ 改造前</h4>
+<pre style="margin:0;font-size:12.5px;padding:14px 16px;">{
+  <span class="s">"code"</span>: <span class="n">500</span>,
+  <span class="s">"msg"</span>: <span class="s">"error"</span>
+}</pre>
+        <p style="font-size:13.5px;color:var(--ink-soft)">模型只能瞎猜：改参数？重试？放弃？</p>
+      </div>
+      <div class="col good">
+        <h4>✅ 改造后：可自我恢复</h4>
+<pre style="margin:0;font-size:12px;padding:14px 16px;">{
+  <span class="s">"error_type"</span>: <span class="s">"invalid_argument"</span>,
+  <span class="s">"field"</span>: <span class="s">"start_date"</span>,
+  <span class="s">"expected"</span>: <span class="s">"YYYY-MM-DD..."</span>,
+  <span class="s">"received"</span>: <span class="s">"2026/08/08"</span>,
+  <span class="s">"retryable"</span>: <span class="k">true</span>
+}</pre>
+      </div>
+    </div>
+    <p>错误分五类分别对待：<b>参数可修复</b>（告诉怎么改）/ <b>临时错误</b>（有限重试）/ <b>权限不足</b>（请求授权）/ <b>状态失效</b>（重建 handle）/ <b>永久失败</b>（停止并说明原因）。</p>
+
+    <h4>动作 2 · 输出双视图</h4>
+<pre><span class="k">summary:</span>    <span class="s">"共 47 条订单，其中 3 条已超时，最早超时单 #A1023"</span>  <span class="c"># 给模型快速判断</span>
+<span class="k">structured:</span> { overdue: [...], total: <span class="n">47</span> }            <span class="c"># 给程序组合消费</span>
+<span class="k">resources:</span>  { list_cursor: <span class="s">"cur_8x2"</span>, full_export: <span class="s">"file_91m"</span> } <span class="c"># 大对象不进上下文</span>
+<span class="k">evidence:</span>   { source: <span class="s">"orders_db"</span>, as_of: <span class="s">"2026-08-09T13:00Z"</span> } <span class="c"># 供验证</span>
+<span class="k">control:</span>    { status: <span class="s">"completed"</span>, retryable: <span class="k">false</span> }</pre>
+
+    <h4>动作 3 · 粗粒度聚合接口</h4>
+    <p>把"要调 5 次才能完成"的常见任务合成 1 个 Façade 接口。判断标准（来自 Programmatic Tool Calling 原则）：</p>
+    <div class="decision">
+      <span class="q">步骤之间只需要结构化字段传递，不需要新的语义判断？</span>
+      <div class="branches">
+        <div class="b yes"><span class="cond">是 → 聚合</span><b>合成一个接口</b>批量、过滤、Join、汇总——确定性逻辑收进服务端，模型一次调用拿结果。</div>
+        <div class="b no"><span class="cond">否 → 保持分开</span><b>留给模型逐步调</b>每一步结果会改变下一步方向，拆开让模型逐步判断。</div>
+      </div>
+    </div>
+
+    <h4>动作 4 · 幂等与副作用声明</h4>
+    <p>写接口接受 <code class="inline">idempotency_key</code>，模型重试不会重复下单；Schema 里声明 <code class="inline">side_effect: "creates_record" / "sends_email" / "charges_money"</code>，让 Harness 能自动识别哪些调用需要审批。</p>
+
+    <h4>动作 5 · 大返回体资源化</h4>
+    <p>列表接口默认返回 summary + cursor；原始数据通过 resource handle 按需拉取。模型上下文里只放"当前工作集"。</p>
+
+    <h3>样例：订单系统四周改造路线</h3>
+    <table>
+      <tr><th>阶段</th><th>动作</th><th>Agent 体验变化</th></tr>
+      <tr><td>第 1 周</td><td>只读接口错误结构化 + 语义化命名</td><td>模型选错工具、瞎猜重试基本消失</td></tr>
+      <tr><td>第 2 周</td><td>高频场景聚合接口（order_health_check）</td><td>单次任务调用数 7 → 2，Token 降 60%</td></tr>
+      <tr><td>第 3 周</td><td>大列表接口 cursor 化 + 双视图</td><td>长任务不再爆上下文</td></tr>
+      <tr><td>第 4 周</td><td>写接口幂等键 + 审批点接入</td><td>低风险写操作开放给 Agent</td></tr>
+    </table>
+
+    <h3>第 4 步：度量——别凭感觉</h3>
+    <div class="flow">
+      <div class="step"><b>任务完成率</b><span>同一评测集改造前后对比</span></div>
+      <div class="step"><b>平均工具调用数</b><span>聚合是否生效</span></div>
+      <div class="step"><b>无效重试率</b><span>错误结构化是否生效</span></div>
+      <div class="step hl"><b>总 Token 消耗</b><span>双视图/资源化是否生效</span></div>
+    </div>
+    <div class="tip warn"><span class="icon">📋</span><div class="body"><strong>评测纪律</strong>评测时记录完整 Harness 配置（模型快照、工具列表、Schema 版本、reasoning 设置），否则指标变化无法归因——到底是接口改好了，还是模型换了？</div></div>
+
+    <div class="tip key"><span class="icon">📌</span><div class="body"><strong>一句话记住场景①</strong>老接口不动，加 Façade；先做错误结构化和语义命名（性价比最高），再聚合、资源化、幂等化；一切用四个指标验收。</div></div>
+  </section>
+
+  <!-- ============ 场景二 ============ -->
+  <section class="chapter" id="ch2">
+    <div class="chapter-head"><span class="num">场景 ②</span><h2>API / 工具融入 Skill 与 Agent</h2></div>
+
+    <div class="tip analogy">
+      <span class="icon">👷</span>
+      <div class="body"><strong>打个比方</strong>给新员工一台精密机床（工具正确），但不给操作手册（Skill），也不告诉安全规程（Harness）——然后他出了次品，你奇怪"机器明明没问题"。Agent 用不好你的 API，往往缺的不是工具，是<b>怎么用的知识</b>和<b>边界</b>。</div>
+    </div>
+
+    <h3>2.1 stdin / stdout：人与 AI 的读取差异</h3>
+    <p>接入现有 CLI / 脚本时最容易翻车的地方：<b>同一份输出，人和 AI 的需求几乎相反</b>。</p>
+    <table>
+      <tr><th>设计点</th><th>人类偏好</th><th>AI（Agent）需要</th></tr>
+      <tr><td>格式</td><td>对齐表格、颜色高亮、进度条</td><td>稳定 JSON / 结构化文本，禁止 ANSI 转义码</td></tr>
+      <tr><td>信息流向</td><td>全混在终端</td><td>数据走 stdout，诊断走 stderr，退出码语义化</td></tr>
+      <tr><td>交互</td><td>交互式确认 Are you sure? (y/n)</td><td>默认非交互；确认走显式参数 --yes 或审批层</td></tr>
+      <tr><td>截断</td><td>"显示前 20 行..."</td><td>明确告知总量与游标：total: 1240, cursor: "..."</td></tr>
+      <tr><td>时间/数字</td><td>本地化格式（"3 天前"）</td><td>ISO 8601、Unix 时间戳、无千分位</td></tr>
+      <tr><td>空结果</td><td>"No results"</td><td>结构化空 {"items": [], "total": 0}，并区分"无数据"与"查询失败"</td></tr>
+    </table>
+    <div class="card">
+      <h4 style="margin-top:0">🛠️ 实操做法</h4>
+      <ul>
+        <li>自己的 CLI：加 <code class="inline">--json</code> 机器视图，保留默认人类视图，Agent 侧只消费 <code class="inline">--json</code>；</li>
+        <li>没有源码的第三方 CLI：包一层 wrapper 把人类输出解析成结构化输出——但<b>优先找官方 API</b>，解析人类输出是下策（格式一变就挂）。</li>
+      </ul>
+    </div>
+
+    <h3>2.2 持久化：接入前必答的四个问题</h3>
+    <div class="quad">
+      <div class="q"><h4>① 状态存哪？</h4><p>会话状态（本次任务）→ Run/Task State；长期事实 → Durable Memory（经验证才写入）。<b>别把中间推理当长期记忆。</b></p></div>
+      <div class="q"><h4>② handle 谁负责？</h4><p>Stateful Tool 返回的 handle 要明确 TTL、失效信号（<code class="inline">error_type: "handle_expired"</code>）和重建方式。</p></div>
+      <div class="q"><h4>③ 重试会不会重复？</h4><p>所有写操作配幂等键；长任务提供 checkpoint，崩溃后从检查点恢复，而不是从头再来。</p></div>
+      <div class="q"><h4>④ 产物归谁？</h4><p>Agent 生成的文件/报告登记为 Artifact（ID、版本、所有者），后续任务按 ID 引用，而不是重新生成。</p></div>
+    </div>
+
+    <h3>2.3 Skill 化：把"老师傅经验"打包</h3>
+    <p>当一个任务需要<b>多个工具 + 判断规则 + 兜底策略</b>时，就该写成 Skill，而不是指望模型现场发挥：</p>
+<pre><span class="c"># 示例：invoice-reconciliation/SKILL.yaml（示意）</span>
+<span class="k">trigger:</span>  <span class="s">用户要求对账、核销发票、检查票账一致</span>
+<span class="k">boundary:</span> <span class="s">只读操作；发现差异时生成报告，不自动调账</span>
+<span class="k">steps:</span>
+  <span class="n">1.</span> 用 query_invoices 拉取周期内发票（summary 视图）
+  <span class="n">2.</span> 用 query_payments 拉取回款记录
+  <span class="n">3.</span> 程序化 Join 比对 <span class="c">（确定性规则，不进模型上下文）</span>
+  <span class="n">4.</span> 差异 &lt; 5 条 → 模型逐条语义判断；≥ 5 条 → 生成差异报告 Artifact
+<span class="k">fallback:</span>  <span class="s">handle_expired → 重建后继续；权限不足 → 停止并申请授权</span>
+<span class="k">acceptance:</span> <span class="s">输出差异清单 + 每条差异的证据链（evidence 视图）</span></pre>
+    <div class="tip warn"><span class="icon">⚠️</span><div class="body"><strong>两个容易漏的点</strong>① 渐进加载：先暴露 Skill 名称+描述，命中场景再加载全文（与 Tool Search 同理），别把几十份 SOP 全塞进系统提示。② 写清<b>停止条件</b>——没有明确停止条件的 Skill，是 Agent 无限循环的头号来源。</div></div>
+
+    <div class="tip key"><span class="icon">📌</span><div class="body"><strong>一句话记住场景②</strong>三层包装缺一不可：工具做正确（错误可恢复、双视图）、Skill 教用法（步骤+边界+停止条件）、Harness 管约束（审批、重试上限、状态存储）；CLI 接入记住"人机分流"——--json 给 AI，表格高亮给人。</div></div>
+  </section>
+
+  <!-- ============ 场景三 ============ -->
+  <section class="chapter" id="ch3">
+    <div class="chapter-head"><span class="num">场景 ③</span><h2>WebUI 应用 → Agent 对话式应用</h2></div>
+
+    <div class="tip warn">
+      <span class="icon">🕳️</span>
+      <div class="body"><strong>最大的坑：模拟点击</strong>"让 Agent 操作浏览器点按钮"看起来最快，但它脆弱（UI 改版即挂）、慢、无幂等、难审计。只能作为没有 API 时的临时过渡，<b>绝不能作为主路径</b>。正确方向是把 UI 背后的业务能力接口化。</div>
+    </div>
+
+    <h3>目标架构：同一能力层的两个消费者</h3>
+    <div class="arch">
+      <div class="row">
+        <div class="box"><b>🖥️ WebUI（给人用）</b><span>表单、按钮、可视化——保留</span></div>
+        <div class="box new"><b>🤖 MCP Tools（给 Agent 用）</b><span>结构化调用、双视图、幂等</span></div>
+      </div>
+      <div class="join">↓ 两个消费者，同一层能力 ↓</div>
+      <div class="box core"><b>业务能力层 → 数据 / 服务</b><span>UI 背后的业务动作才是资产，页面只是它的一种投影</span></div>
+    </div>
+
+    <h3>四步迁移法</h3>
+    <div class="flow">
+      <div class="step"><b>① 能力提取</b><span>页面 → 业务动作 → Tool</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>② Tool Search 组织</b><span>按用户意图分 namespace</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>③ SOP Skill 化</b><span>多工具场景写成流程</span></div>
+      <div class="arr">→</div>
+      <div class="step hl"><b>④ 人机分工</b><span>重新设计各自角色</span></div>
+    </div>
+
+    <h3>第 1 步：能力提取（从页面到工具）</h3>
+    <p>把每个核心页面倒推："这个页面到底在做什么业务动作？"以报销系统为例：</p>
+    <table>
+      <tr><th>WebUI 页面</th><th>用户实际操作</th><th>提取为 MCP Tool</th></tr>
+      <tr><td>报销列表页</td><td>按状态筛选、看金额汇总</td><td>query_expenses(status, period) → 双视图输出</td></tr>
+      <tr><td>报销填写页</td><td>填表单、传发票、提交</td><td>submit_expense(items[], attachments[]) → 幂等键 + 审批</td></tr>
+      <tr><td>制度查询页</td><td>搜索差旅标准</td><td>search_policy(keyword) → summary + evidence</td></tr>
+    </table>
+    <div class="tip analogy"><span class="icon">✂️</span><div class="body"><strong>粒度判断</strong>一个页面可能拆成多个 Tool（查询和提交必须分开），也可能多个页面聚合成一个 Tool（向导式五步表单 → 一个结构化提交接口）。标准还是那个：<b>步骤间是否需要新的语义判断</b>。</div></div>
+
+    <h3>第 2 步：Tool Search 组织</h3>
+    <p>工具超过 15 个后，按<b>用户意图</b>划 namespace，而不是按后端服务：</p>
+<pre><span class="k">namespace: expense</span>   <span class="c">— 报销相关（query / submit / cancel），高频</span>
+<span class="k">namespace: policy</span>    <span class="c">— 制度查询（只读，直接加载）</span>
+<span class="k">namespace: approval</span>  <span class="c">— 审批流（低频 + 高风险，defer_loading）</span></pre>
+    <p>高频只读工具直接加载；写操作和低频工具 <code class="inline">defer_loading</code>，模型需要时才加载完整 Schema——既省 Token，又减少误选。</p>
+
+    <h3>第 3 步：场景 SOP → Skill 化</h3>
+    <div class="card">
+      <h4 style="margin-top:0">📋 样例：差旅报销 SOP</h4>
+      <div class="flow" style="margin:14px 0 4px;">
+        <div class="step"><b>查行程</b><span>calendar tool</span></div>
+        <div class="arr">→</div>
+        <div class="step"><b>匹配制度</b><span>policy tool</span></div>
+        <div class="arr">→</div>
+        <div class="step"><b>生成草稿</b><span>expense tool</span></div>
+        <div class="arr">→</div>
+        <div class="step hl"><b>用户确认</b><span>审批点</span></div>
+        <div class="arr">→</div>
+        <div class="step"><b>提交</b><span>幂等键</span></div>
+        <div class="arr">→</div>
+        <div class="step"><b>返回 Artifact</b><span>单号+凭证</span></div>
+      </div>
+      <p style="font-size:14px;color:var(--ink-soft)">触发："帮我报销上周上海出差"。边界：单笔 &gt; 5000 元必须人工审批；缺发票时<b>停止</b>并列出缺失项，而不是编造或跳过。</p>
+    </div>
+
+    <h3>第 4 步：人机分工重新设计</h3>
+    <p>WebUI 不会消失，它的角色变了：</p>
+    <table>
+      <tr><th>角色</th><th>Agent 对话式</th><th>WebUI</th></tr>
+      <tr><td>信息收集、草拟、批量处理</td><td>✅ 主力</td><td>辅助</td></tr>
+      <tr><td>高风险确认、审批签字</td><td>发起请求</td><td>✅ 审批界面（保留）</td></tr>
+      <tr><td>复杂数据可视化浏览</td><td>摘要 + 引用</td><td>✅ 主力</td></tr>
+      <tr><td>审计追溯</td><td>写 Trace</td><td>✅ 查询入口</td></tr>
+    </table>
+
+    <h3>分阶段上线：风险控制</h3>
+    <div class="phases">
+      <div class="phase"><b>阶段 1 · 只读助手</b>查询/汇总/解释，出错成本≈0，快速验证工具设计</div>
+      <div class="phase"><b>阶段 2 · 草稿模式</b>Agent 生成草稿，人确认后提交——跑通审批点</div>
+      <div class="phase"><b>阶段 3 · 低风险直写</b>可逆、有幂等保障的写操作（改备注、加标签）</div>
+      <div class="phase"><b>阶段 4 · 高风险开放</b>付款/删除/外发——强制审批 + 完整审计 Trace</div>
+    </div>
+    <p>每个阶段用场景①的四个指标（完成率、调用数、无效重试率、Token）验收，<b>达标再进下一阶段</b>。</p>
+
+    <div class="tip key"><span class="icon">📌</span><div class="body"><strong>一句话记住场景③</strong>拒绝模拟点击，提取业务能力 MCP 化；工具按意图组织、按需加载；多工具场景写成 Skill；UI 退到"审批 + 可视化 + 审计"；上线走只读 → 草稿 → 低风险写 → 高风险审批四阶段。</div></div>
+  </section>
+
+  <!-- ============ 自测与总结 ============ -->
+  <section class="chapter" id="ch4">
+    <div class="chapter-head"><span class="num">✅</span><h2>学完了吗？六道题自测一下</h2></div>
+    <p>先自己作答，再点开看答案。</p>
+
+    <details class="quiz">
+      <summary>改造传统 API 给 Agent 用时，为什么不能直接改老接口的返回格式？</summary>
+      <div class="ans"><b>答：</b>老接口已有真实消费者（前端、脚本、合作方），直接改 = 生产事故。正确做法是新增 Agent-facing Façade 层，与老接口复用同一业务核心——"加一层，不改一层"，像老楼贴外墙加装电梯，不动承重结构。</div>
+    </details>
+    <details class="quiz">
+      <summary>五个改造动作里，哪个性价比最高、应该最先做？</summary>
+      <div class="ans"><b>答：</b>错误结构化。把 500/"error" 换成 {error_type, field, expected, received, retryable}，一天能做，模型立刻从"瞎猜重试"变成"自我恢复"。其次是语义化命名与描述。</div>
+    </details>
+    <details class="quiz">
+      <summary>接 CLI 工具给 Agent 用，stdout/stderr 应该怎么设计？</summary>
+      <div class="ans"><b>答：</b>数据走 stdout（稳定 JSON，加 --json 机器视图），诊断信息走 stderr，退出码语义化；默认非交互（确认走 --yes 参数或审批层）；截断必须带 total 和 cursor；时间用 ISO 8601；空结果返回结构化空并区分"无数据"与"查询失败"。</div>
+    </details>
+    <details class="quiz">
+      <summary>一个工具接入 Agent 前，持久化方面必须回答哪四个问题？</summary>
+      <div class="ans"><b>答：</b>① 状态存哪（会话态 → Task State，长期事实 → 验证后入 Durable Memory）；② handle 谁负责（TTL、失效信号、重建方式）；③ 重试是否安全（写操作幂等键、长任务 checkpoint）；④ 产物归谁（登记为 Artifact，按 ID 引用）。</div>
+    </details>
+    <details class="quiz">
+      <summary>WebUI 转 Agent 应用，为什么"模拟点击"是错误主路径？</summary>
+      <div class="ans"><b>答：</b>四个硬伤：脆弱（UI 改版即挂）、慢（整页渲染与等待）、无幂等（重复点击 = 重复提交）、难审计（动作不可追溯）。正确路径是把 UI 背后的业务能力接口化为 MCP Tools，WebUI 与 Agent 做同一能力层的两个消费者。</div>
+    </details>
+    <details class="quiz">
+      <summary>分阶段上线的四个阶段是什么？为什么是这个顺序？</summary>
+      <div class="ans"><b>答：</b>只读助手 → 草稿模式 → 低风险直写 → 高风险开放。顺序按"出错成本"递增：先用只读场景零风险验证工具设计，再通过草稿模式跑通审批链路，然后放开可逆、有幂等保障的写操作，最后才在强制审批+完整审计下开放付款/删除/外发。</div>
+    </details>
+
+    <h3>📄 一页纸总结</h3>
+    <div class="card" style="border-top:5px solid var(--accent);">
+      <ol style="margin-left:20px;">
+        <li><b>共同原则</b>：加一层，不改一层。老消费者与 Agent 各走各的入口，复用同一业务核心。</li>
+        <li><b>共同框架</b>：三层包装——工具做正确 → Skill 教用法 → Harness 管边界。只做第一层是"Agent 用不好"的头号原因。</li>
+        <li><b>场景① 传统 API</b>：盘点分级（读写风险 × 语义密度）→ Agent-Ready 清单 → 五动作（错误结构化 → 双视图 → 聚合 → 幂等 → 资源化）→ 四指标验收。</li>
+        <li><b>场景② 融入 Agent</b>：CLI 人机分流（--json + stdout/stderr 分离 + 非交互默认）；持久化四问；Skill 写清触发、边界、停止条件，渐进加载。</li>
+        <li><b>场景③ WebUI 转型</b>：拒绝模拟点击；能力提取 MCP 化 → 意图导向 Tool Search → 场景 SOP Skill 化 → 人机分工（UI 管审批/可视化/审计）。</li>
+        <li><b>上线节奏</b>：只读 → 草稿 → 低风险写 → 高风险审批，每阶段用完成率/调用数/重试率/Token 验收。</li>
+      </ol>
+    </div>
+
+    <blockquote class="quote">
+      Agent 化改造的本质，不是让 AI 去适应为人设计的系统，而是把系统的业务能力，用 AI 能消费的方式重新暴露一次。
+    </blockquote>
+  </section>
+
+  <footer class="refs">
+    <p>本讲义与以下材料同属一个系列：<br>
+    · 理论篇：《大模型推理接口与Agent协议演进.html》（原理 + ARC-AGI-3 案例）<br>
+    · 分享版：《agent-api-ppt/agent-api-evolution.pptx》（18 页 PPT）<br>
+    · 本文源文档：《agent化改造场景方法论.md》<br>
+    纯 HTML/CSS，无外部依赖，可离线打开。</p>
+  </footer>
+  </main>
+</div>
+
+<script>
+  const bar = document.getElementById('progress');
+  addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const p = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+    bar.style.width = p + '%';
+  }, {passive:true});
+</script>
+</body>
+</html>

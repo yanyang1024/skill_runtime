@@ -1,0 +1,138 @@
+pageType: table_of_contents
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 118, 320, 24]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$primary"
+      letterSpacing: 4
+      wrap: false
+      align: [left, middle]
+      text: CONTENTS
+  - elementId: toc-title
+    elementType: text
+    bounds: [70, 146, 360, 62]
+    content:
+      fontSize: 44
+      fontFamily: "alimamashuheiti"
+      color: "$ink"
+      wrap: false
+      align: [left, middle]
+      text: 学习路径
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 222, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: toc-desc
+    elementType: text
+    bounds: [70, 248, 330, 100]
+    content:
+      style: "$small"
+      fontSize: 14
+      align: [left, top]
+      text: 五段旅程：先建立直觉，再看清现状，用真实案例验证，最后带走一份能直接抄的实战清单。
+  - elementId: divider
+    elementType: shape
+    bounds: [452, 118, 0, 484]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: row-1-bg
+    elementType: shape
+    bounds: [500, 118, 710, 84]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: row-1-num
+    elementType: text
+    bounds: [526, 118, 64, 84]
+    content: {fontSize: 28, fontFamily: "alimamashuheiti", color: "$primary", wrap: false, align: [left, middle], text: "01"}
+  - elementId: row-1-title
+    elementType: text
+    bounds: [600, 132, 580, 28]
+    content: {fontSize: 19, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>认知重构</strong>}
+  - elementId: row-1-desc
+    elementType: text
+    bounds: [600, 162, 580, 22]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", wrap: false, align: [left, middle], text: 能力公式：模型只是六个变量之一}
+  - elementId: row-2-bg
+    elementType: shape
+    bounds: [500, 216, 710, 84]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: row-2-num
+    elementType: text
+    bounds: [526, 216, 64, 84]
+    content: {fontSize: 28, fontFamily: "alimamashuheiti", color: "$primary", wrap: false, align: [left, middle], text: "02"}
+  - elementId: row-2-title
+    elementType: text
+    bounds: [600, 230, 580, 28]
+    content: {fontSize: 19, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>接口现状</strong>}
+  - elementId: row-2-desc
+    elementType: text
+    bounds: [600, 260, 580, 22]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", wrap: false, align: [left, middle], text: 推理接口四次进化 · Tool 接口五级台阶}
+  - elementId: row-3-bg
+    elementType: shape
+    bounds: [500, 314, 710, 84]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: row-3-num
+    elementType: text
+    bounds: [526, 314, 64, 84]
+    content: {fontSize: 28, fontFamily: "alimamashuheiti", color: "$primary", wrap: false, align: [left, middle], text: "03"}
+  - elementId: row-3-title
+    elementType: text
+    bounds: [600, 328, 580, 28]
+    content: {fontSize: 19, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>协议层</strong>}
+  - elementId: row-3-desc
+    elementType: text
+    bounds: [600, 358, 580, 22]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", wrap: false, align: [left, middle], text: MCP · Skill · A2A · Policy/Memory 各管一段}
+  - elementId: row-4-bg
+    elementType: shape
+    bounds: [500, 412, 710, 84]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: row-4-num
+    elementType: text
+    bounds: [526, 412, 64, 84]
+    content: {fontSize: 28, fontFamily: "alimamashuheiti", color: "$primary", wrap: false, align: [left, middle], text: "04"}
+  - elementId: row-4-title
+    elementType: text
+    bounds: [600, 426, 580, 28]
+    content: {fontSize: 19, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>案例深扒</strong>}
+  - elementId: row-4-desc
+    elementType: text
+    bounds: [600, 456, 580, 22]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", wrap: false, align: [left, middle], text: ARC-AGI-3：同一个模型，分数如何翻三倍}
+  - elementId: row-5-bg
+    elementType: shape
+    bounds: [500, 510, 710, 84]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: row-5-num
+    elementType: text
+    bounds: [526, 510, 64, 84]
+    content: {fontSize: 28, fontFamily: "alimamashuheiti", color: "$primary", wrap: false, align: [left, middle], text: "05"}
+  - elementId: row-5-title
+    elementType: text
+    bounds: [600, 524, 580, 28]
+    content: {fontSize: 19, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>实战与未来</strong>}
+  - elementId: row-5-desc
+    elementType: text
+    bounds: [600, 554, 580, 22]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", wrap: false, align: [left, middle], text: 八个可直接抄的 Tricks · 下一代接口长什么样}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "02"}

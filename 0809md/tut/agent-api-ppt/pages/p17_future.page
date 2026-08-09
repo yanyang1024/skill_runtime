@@ -1,0 +1,134 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 05 · 实战与未来}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 未来：从 generate() 到 run()}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: past-label
+    elementType: text
+    bounds: [70, 140, 560, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$soft", wrap: false, align: [left, middle], text: 过去 · 生成接口}
+  - elementId: past-bg
+    elementType: shape
+    bounds: [70, 170, 560, 90]
+    shapeName: roundRect
+    adjustments: [9000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: past-code
+    elementType: text
+    bounds: [96, 170, 508, 90]
+    content:
+      fontSize: 17
+      fontFamily: "MiSans"
+      color: "$soft"
+      lineHeight: 1.5
+      align: [left, middle]
+      text: |
+        <p><strong>generate(messages) → text</strong></p>
+        <p><span style="font-size:13px;">输入消息，输出文本，仅此而已</span></p>
+  - elementId: future-label
+    elementType: text
+    bounds: [70, 286, 560, 24]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: 未来 · 任务运行时}
+  - elementId: future-bg
+    elementType: shape
+    bounds: [70, 316, 560, 240]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$night"}
+  - elementId: future-code
+    elementType: text
+    bounds: [96, 316, 508, 240]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "#C9C3FF"
+      lineHeight: 1.65
+      align: [left, middle]
+      text: |
+        <p><span style="color:#F2B98C;"><strong>run</strong></span>(</p>
+        <p>  task, state_refs,</p>
+        <p>  available_capabilities,</p>
+        <p>  policy, budget,</p>
+        <p>  output_contract</p>
+        <p>)</p>
+        <p>→ events + artifacts</p>
+        <p>  + evidence + checkpoint</p>
+  - elementId: vocab-note
+    elementType: text
+    bounds: [70, 576, 560, 64]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "$soft"
+      lineHeight: 1.55
+      align: [left, top]
+      text: 核心对象从 Message 扩展为：<strong>Task</strong>（目标与生命周期）、<strong>Item/Event</strong>、<strong>Artifact</strong>（交付物）、<strong>Checkpoint</strong>（恢复点）、<strong>Capability</strong>、<strong>Policy</strong>、<strong>Memory</strong>。
+  - elementId: tr1-bg
+    elementType: shape
+    bounds: [670, 140, 540, 152]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: tr1-head
+    elementType: text
+    bounds: [696, 156, 490, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>🔀 上层更语义化，下层更类型化</strong>}
+  - elementId: tr1-text
+    elementType: text
+    bounds: [696, 188, 490, 90]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: Agent 用自然语言表达目标、约束和成功标准；Runtime 将意图编译为可检查的类型化计划，校验权限、成本和副作用后再执行。Schema 还会表达前置条件、幂等性、审批要求。}
+  - elementId: tr2-bg
+    elementType: shape
+    bounds: [670, 308, 540, 152]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: tr2-head
+    elementType: text
+    bounds: [696, 324, 490, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>🗂️ 上下文 = 被调度的工作集</strong>}
+  - elementId: tr2-text
+    elementType: text
+    bounds: [696, 356, 490, 90]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 原始数据留在外部系统，用 handle / URI / cursor / Artifact ID 引用；按阶段以 summary / slice / query / raw 视图读取。更像一个 Context OS，而不是无限扩大的 Prompt。}
+  - elementId: tr3-bg
+    elementType: shape
+    bounds: [670, 476, 540, 152]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: tr3-head
+    elementType: text
+    bounds: [696, 492, 490, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>🧱 五层并存，协议边界不消失</strong>}
+  - elementId: tr3-text
+    elementType: text
+    bounds: [696, 524, 490, 90]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: Runtime / Skill / MCP / A2A / Policy-Memory 会共享身份、Schema、Artifact 和事件格式，也会相互引用——但"是否具备自主任务生命周期"这条 Tool 与 Agent 的分界线不会消失。}
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "17"}

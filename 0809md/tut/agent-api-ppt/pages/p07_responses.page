@@ -1,0 +1,215 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 02 · 接口现状}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: Responses API：把一次运行拆成"积木"}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: left-head
+    elementType: text
+    bounds: [70, 138, 540, 26]
+    content: {fontSize: 18, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>Chat API 的抽象与短板</strong>}
+  - elementId: chat-box-1
+    elementType: shape
+    bounds: [70, 178, 130, 54]
+    shapeName: roundRect
+    adjustments: [12000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: chat-txt-1
+    elementType: text
+    bounds: [70, 178, 130, 54]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: "messages[]"}
+  - elementId: chat-arr-1
+    elementType: text
+    bounds: [200, 178, 30, 54]
+    content: {fontSize: 20, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: chat-box-2
+    elementType: shape
+    bounds: [230, 178, 130, 54]
+    shapeName: roundRect
+    adjustments: [12000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: chat-txt-2
+    elementType: text
+    bounds: [230, 178, 130, 54]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: model}
+  - elementId: chat-arr-2
+    elementType: text
+    bounds: [360, 178, 30, 54]
+    content: {fontSize: 20, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: chat-box-3
+    elementType: shape
+    bounds: [390, 178, 150, 54]
+    shapeName: roundRect
+    adjustments: [12000]
+    fill: {type: solid, color: "$primarySoft"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: chat-txt-3
+    elementType: text
+    bounds: [390, 178, 150, 54]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: assistant message}
+  - elementId: warn-bg
+    elementType: shape
+    bounds: [70, 260, 540, 272]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$badSoft"}
+  - elementId: warn-title
+    elementType: text
+    bounds: [96, 276, 480, 24]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$bad", wrap: false, align: [left, middle], text: <strong>⚠️ Message 这个对象装不下什么？</strong>}
+  - elementId: warn-list
+    elementType: text
+    bounds: [96, 308, 490, 130]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.7
+      align: [left, top]
+      text: |
+        <ul>
+        <li>推理状态（模型"刚想到哪"）</li>
+        <li>工具执行到哪个阶段</li>
+        <li>压缩检查点（Compaction）</li>
+        <li>长任务的生命周期</li>
+        </ul>
+  - elementId: warn-note
+    elementType: text
+    bounds: [96, 446, 490, 70]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "$soft"
+      lineHeight: 1.5
+      align: [left, top]
+      text: 单轮问答差别不大；但几十次"观察—行动"循环的 Agent 任务，接口是否保留状态可能直接决定任务成败。
+  - elementId: right-head
+    elementType: text
+    bounds: [650, 138, 560, 26]
+    content: {fontSize: 18, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>Responses：一次运行 = 可组合的 Item</strong>}
+  - elementId: item-1
+    elementType: shape
+    bounds: [650, 178, 170, 46]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: item-1-txt
+    elementType: text
+    bounds: [650, 178, 170, 46]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: 💬 消息}
+  - elementId: item-2
+    elementType: shape
+    bounds: [830, 178, 170, 46]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$primarySoft"}
+    border: {style: solid, width: 1, color: "$primary"}
+  - elementId: item-2-txt
+    elementType: text
+    bounds: [830, 178, 170, 46]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: 🧠 reasoning}
+  - elementId: item-3
+    elementType: shape
+    bounds: [1010, 178, 170, 46]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: item-3-txt
+    elementType: text
+    bounds: [1010, 178, 170, 46]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: 🔧 tool call/output}
+  - elementId: item-4
+    elementType: shape
+    bounds: [650, 236, 170, 46]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: item-4-txt
+    elementType: text
+    bounds: [650, 236, 170, 46]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: 📦 compaction}
+  - elementId: item-5
+    elementType: shape
+    bounds: [830, 236, 170, 46]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: item-5-txt
+    elementType: text
+    bounds: [830, 236, 170, 46]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: 🖼️ 多模态内容}
+  - elementId: resp-formula-bg
+    elementType: shape
+    bounds: [650, 304, 560, 92]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$night"}
+  - elementId: resp-formula
+    elementType: text
+    bounds: [672, 304, 516, 92]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "#C9C3FF"
+      lineHeight: 1.55
+      align: [left, middle]
+      text: |
+        <p>input items + <span style="color:#F2B98C;"><strong>previous state</strong></span> + tools + policy</p>
+        <p>→ response items + <span style="color:#F2B98C;"><strong>new state</strong></span></p>
+  - elementId: resp-note
+    elementType: text
+    bounds: [650, 414, 560, 118]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$soft"
+      lineHeight: 1.6
+      align: [left, top]
+      text: OpenAI 官方建议：推理模型在多轮、Tool Calling 场景优先使用 Responses API，并可通过 reasoning.context 控制是否使用早期回合的推理状态（all_turns / current_turn / auto）。
+  - elementId: pitfall-bg
+    elementType: shape
+    bounds: [70, 556, 1140, 84]
+    shapeName: roundRect
+    adjustments: [12000]
+    fill: {type: solid, color: "$accentSoft"}
+  - elementId: pitfall-text
+    elementType: text
+    bounds: [100, 556, 1080, 84]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.5
+      align: [left, middle]
+      text: <strong>🚫 无状态模式的坑：</strong>使用 store=False 时，必须把上一轮返回的完整 response.output（含 reasoning、tool、program、compaction items）按原顺序放回下一轮 input——只保留可见文本，状态接力就断了。
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "07"}

@@ -1,0 +1,223 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 05 · 实战与未来}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 八个可以直接抄的实战 Tricks}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: t1-bg
+    elementType: shape
+    bounds: [70, 140, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t1-tag
+    elementType: shape
+    bounds: [92, 160, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t1-tag-txt
+    elementType: text
+    bounds: [92, 160, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "01"}
+  - elementId: t1-name
+    elementType: text
+    bounds: [92, 194, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>按需开启推理连续性</strong>}
+  - elementId: t1-desc
+    elementType: text
+    bounds: [92, 248, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 目标稳定的长程任务用 all_turns；目标变了、假设被推翻、要独立复核时，切 current_turn 或开新会话。}
+  - elementId: t2-bg
+    elementType: shape
+    bounds: [360, 140, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t2-tag
+    elementType: shape
+    bounds: [382, 160, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t2-tag-txt
+    elementType: text
+    bounds: [382, 160, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "02"}
+  - elementId: t2-name
+    elementType: text
+    bounds: [382, 194, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>Compaction 替代硬截断</strong>}
+  - elementId: t2-desc
+    elementType: text
+    bounds: [382, 248, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 目标、验收条件、Artifact ID 存外部 Task State；compaction item 不当可读记忆或审计日志。}
+  - elementId: t3-bg
+    elementType: shape
+    bounds: [650, 140, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t3-tag
+    elementType: shape
+    bounds: [672, 160, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t3-tag-txt
+    elementType: text
+    bounds: [672, 160, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "03"}
+  - elementId: t3-name
+    elementType: text
+    bounds: [672, 194, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>推理强度按阶段设置</strong>}
+  - elementId: t3-desc
+    elementType: text
+    bounds: [672, 248, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 路由/抽取 none-low；编码执行 low-medium；诊断研究 medium-high。全程拉满不保证更高完成率。}
+  - elementId: t4-bg
+    elementType: shape
+    bounds: [940, 140, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t4-tag
+    elementType: shape
+    bounds: [962, 160, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t4-tag-txt
+    elementType: text
+    bounds: [962, 160, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "04"}
+  - elementId: t4-name
+    elementType: text
+    bounds: [962, 194, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>工具定义按需加载</strong>}
+  - elementId: t4-desc
+    elementType: text
+    bounds: [962, 248, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 高频直接加载；大集合用 namespace；低频用 defer_loading；记录"模型看见了哪些工具"。}
+  - elementId: t5-bg
+    elementType: shape
+    bounds: [70, 398, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t5-tag
+    elementType: shape
+    bounds: [92, 418, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t5-tag-txt
+    elementType: text
+    bounds: [92, 418, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "05"}
+  - elementId: t5-name
+    elementType: text
+    bounds: [92, 452, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>区分直接与程序化调用</strong>}
+  - elementId: t5-desc
+    elementType: text
+    bounds: [92, 506, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 确定性规则走程序化；语义判断回模型；写入/付款/删除默认直接调用并保留审批点。}
+  - elementId: t6-bg
+    elementType: shape
+    bounds: [360, 398, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t6-tag
+    elementType: shape
+    bounds: [382, 418, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t6-tag-txt
+    elementType: text
+    bounds: [382, 418, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "06"}
+  - elementId: t6-name
+    elementType: text
+    bounds: [382, 452, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>输出提供"双视图"</strong>}
+  - elementId: t6-desc
+    elementType: text
+    bounds: [382, 506, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: summary 给模型、structured 给程序、resources 存大对象、evidence 供验证、control 标状态。}
+  - elementId: t7-bg
+    elementType: shape
+    bounds: [650, 398, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t7-tag
+    elementType: shape
+    bounds: [672, 418, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t7-tag-txt
+    elementType: text
+    bounds: [672, 418, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "07"}
+  - elementId: t7-name
+    elementType: text
+    bounds: [672, 452, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>错误支持自我恢复</strong>}
+  - elementId: t7-desc
+    elementType: text
+    bounds: [672, 506, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 区分可修复/临时/权限/状态失效/永久失败；显式给出 retryable；重试有上限并用幂等键。}
+  - elementId: t8-bg
+    elementType: shape
+    bounds: [940, 398, 270, 242]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: t8-tag
+    elementType: shape
+    bounds: [962, 418, 56, 24]
+    shapeName: roundRect
+    adjustments: [30000]
+    fill: {type: solid, color: "$primary"}
+  - elementId: t8-tag-txt
+    elementType: text
+    bounds: [962, 418, 56, 24]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [center, middle], text: "08"}
+  - elementId: t8-name
+    elementType: text
+    bounds: [962, 452, 226, 48]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", lineHeight: 1.4, align: [left, top], text: <strong>评测记录完整 Harness</strong>}
+  - elementId: t8-desc
+    elementType: text
+    bounds: [962, 506, 226, 120]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "$soft", lineHeight: 1.55, align: [left, top], text: 模型快照、接口类型、reasoning 配置、compaction 阈值、工具版本、沙箱——否则"能力变化"可能只是环境变了。}
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "16"}

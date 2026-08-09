@@ -1,0 +1,143 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 02 · 接口现状}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: Tool 接口五级台阶：越往上，模型搬的砖越少}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: rule-bg
+    elementType: shape
+    bounds: [70, 138, 1140, 96]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$accentSoft"}
+  - elementId: rule-text
+    elementType: text
+    bounds: [100, 138, 1080, 96]
+    content:
+      fontSize: 16
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.6
+      align: [left, middle]
+      text: |
+        <p><strong>判断口诀：</strong>下一步只依赖结构化字段和确定性规则？</p>
+        <p><span style="color:$good;"><strong>是 → 程序化调用</strong></span>（并行 / 过滤 / 聚合）　<span style="color:$accent;"><strong>否 → 回模型做语义判断</strong></span>　<strong>写入·付款·删除 → 直接调用 + 审批</strong></p>
+  - elementId: stair-1
+    elementType: shape
+    bounds: [70, 478, 200, 120]
+    shapeName: rect
+    fill: {type: solid, color: "#8A84F0"}
+  - elementId: stair-1-lv
+    elementType: text
+    bounds: [86, 490, 168, 18]
+    content: {fontSize: 11, fontFamily: "MiSans", color: "#FFFFFFB3", wrap: false, align: [left, middle], text: LEVEL 1}
+  - elementId: stair-1-name
+    elementType: text
+    bounds: [86, 510, 168, 24]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [left, middle], text: <strong>Function Calling</strong>}
+  - elementId: stair-1-desc
+    elementType: text
+    bounds: [86, 538, 168, 40]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFFD9", lineHeight: 1.4, align: [left, top], text: 按 Schema 生成工具名与参数}
+  - elementId: stair-2
+    elementType: shape
+    bounds: [286, 423, 200, 175]
+    shapeName: rect
+    fill: {type: solid, color: "#756EDE"}
+  - elementId: stair-2-lv
+    elementType: text
+    bounds: [302, 435, 168, 18]
+    content: {fontSize: 11, fontFamily: "MiSans", color: "#FFFFFFB3", wrap: false, align: [left, middle], text: LEVEL 2}
+  - elementId: stair-2-name
+    elementType: text
+    bounds: [302, 455, 168, 24]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [left, middle], text: <strong>Hosted Tool</strong>}
+  - elementId: stair-2-desc
+    elementType: text
+    bounds: [302, 483, 168, 60]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFFD9", lineHeight: 1.4, align: [left, top], text: 平台托管执行：搜索、代码解释器、Computer Use}
+  - elementId: stair-3
+    elementType: shape
+    bounds: [502, 368, 200, 230]
+    shapeName: rect
+    fill: {type: solid, color: "#5B54E8"}
+  - elementId: stair-3-lv
+    elementType: text
+    bounds: [518, 380, 168, 18]
+    content: {fontSize: 11, fontFamily: "MiSans", color: "#FFFFFFB3", wrap: false, align: [left, middle], text: LEVEL 3}
+  - elementId: stair-3-name
+    elementType: text
+    bounds: [518, 400, 168, 24]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [left, middle], text: <strong>Tool Search</strong>}
+  - elementId: stair-3-desc
+    elementType: text
+    bounds: [518, 428, 168, 60]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFFD9", lineHeight: 1.4, align: [left, top], text: 按需检索并加载工具定义，减少上下文污染}
+  - elementId: stair-4
+    elementType: shape
+    bounds: [718, 313, 200, 285]
+    shapeName: rect
+    fill: {type: solid, color: "#453BC9"}
+  - elementId: stair-4-lv
+    elementType: text
+    bounds: [734, 325, 168, 18]
+    content: {fontSize: 11, fontFamily: "MiSans", color: "#FFFFFFB3", wrap: false, align: [left, middle], text: LEVEL 4}
+  - elementId: stair-4-name
+    elementType: text
+    bounds: [734, 345, 168, 24]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [left, middle], text: <strong>Programmatic</strong>}
+  - elementId: stair-4-desc
+    elementType: text
+    bounds: [734, 373, 168, 80]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFFD9", lineHeight: 1.4, align: [left, top], text: 模型写受控程序，组合多个工具：并行、循环、过滤、聚合}
+  - elementId: stair-5
+    elementType: shape
+    bounds: [934, 258, 200, 340]
+    shapeName: rect
+    fill: {type: solid, color: "#322A9E"}
+  - elementId: stair-5-lv
+    elementType: text
+    bounds: [950, 270, 168, 18]
+    content: {fontSize: 11, fontFamily: "MiSans", color: "#FFFFFFB3", wrap: false, align: [left, middle], text: LEVEL 5}
+  - elementId: stair-5-name
+    elementType: text
+    bounds: [950, 290, 168, 24]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [left, middle], text: <strong>Stateful Tool</strong>}
+  - elementId: stair-5-desc
+    elementType: text
+    bounds: [950, 318, 168, 80]
+    content: {fontSize: 12, fontFamily: "MiSans", color: "#FFFFFFD9", lineHeight: 1.4, align: [left, top], text: 返回 handle，跨调用操作同一对象，不再搬运原始数据}
+  - elementId: stairs-base
+    elementType: shape
+    bounds: [70, 602, 1140, 6]
+    shapeName: rect
+    fill: {type: solid, color: "$night"}
+  - elementId: stairs-caption
+    elementType: text
+    bounds: [70, 622, 1140, 24]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", wrap: false, align: [center, middle], text: 演进方向：让模型少搬砖、多动脑——中间结果与原始数据尽量不进入模型上下文}
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "08"}

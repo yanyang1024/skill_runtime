@@ -1,0 +1,148 @@
+pageType: cover
+background:
+  type: gradient
+  gradientType: linear
+  angle: 135
+  stops:
+    - {position: 0, color: "#26233F"}
+    - {position: 1, color: "#3D3580"}
+elements:
+  - elementId: deco-circle-1
+    elementType: shape
+    bounds: [1060, 16, 170, 170]
+    shapeName: ellipse
+    fill: {type: solid, color: "#FFFFFF09"}
+  - elementId: deco-circle-2
+    elementType: shape
+    bounds: [1130, 584, 110, 110]
+    shapeName: ellipse
+    fill: {type: solid, color: "#FFFFFF07"}
+  - elementId: deco-line
+    elementType: shape
+    bounds: [92, 148, 56, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: kicker
+    elementType: text
+    bounds: [90, 168, 860, 26]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "#B9B4E0"
+      letterSpacing: 4
+      wrap: false
+      align: [left, middle]
+      text: 技术分享 · 大模型推理接口与 AGENT 协议演进
+  - elementId: main-title
+    elementType: text
+    bounds: [90, 206, 1120, 128]
+    content:
+      fontSize: 44
+      fontFamily: "alimamashuheiti"
+      color: "#FFFFFF"
+      lineHeight: 1.35
+      align: [left, middle]
+      text: |
+        <p>从 Chat API 到 Agent Runtime</p>
+        <p>接口如何解锁模型的隐藏能力</p>
+  - elementId: subtitle
+    elementType: text
+    bounds: [90, 352, 920, 62]
+    content:
+      fontSize: 17
+      fontFamily: "MiSans"
+      color: "#CFCAE8"
+      lineHeight: 1.6
+      align: [left, top]
+      text: 同一个模型，不换权重、不重新训练——只改接口与状态管理方式，基准测试得分翻了近三倍。这份分享讲清楚它为什么有效，以及你该怎么用。
+  - elementId: chip-1-bg
+    elementType: shape
+    bounds: [90, 456, 350, 108]
+    shapeName: roundRect
+    adjustments: [12000]
+    fill: {type: solid, color: "#FFFFFF10"}
+    border: {style: solid, width: 1, color: "#FFFFFF26"}
+  - elementId: chip-1-num
+    elementType: text
+    bounds: [116, 474, 302, 40]
+    content:
+      fontSize: 30
+      fontFamily: "alimamashuheiti"
+      color: "#F2B98C"
+      wrap: false
+      align: [left, middle]
+      text: 13.3% → 38.3%
+  - elementId: chip-1-label
+    elementType: text
+    bounds: [116, 520, 302, 22]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "#CFCAE8"
+      wrap: false
+      align: [left, middle]
+      text: ARC-AGI-3 公开集得分（同一模型）
+  - elementId: chip-2-bg
+    elementType: shape
+    bounds: [465, 456, 350, 108]
+    shapeName: roundRect
+    adjustments: [12000]
+    fill: {type: solid, color: "#FFFFFF10"}
+    border: {style: solid, width: 1, color: "#FFFFFF26"}
+  - elementId: chip-2-num
+    elementType: text
+    bounds: [491, 474, 302, 40]
+    content:
+      fontSize: 30
+      fontFamily: "alimamashuheiti"
+      color: "#F2B98C"
+      wrap: false
+      align: [left, middle]
+      text: ≈ 1/6
+  - elementId: chip-2-label
+    elementType: text
+    bounds: [491, 520, 302, 22]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "#CFCAE8"
+      wrap: false
+      align: [left, middle]
+      text: 输出 Token 消耗（相对原 Harness）
+  - elementId: chip-3-bg
+    elementType: shape
+    bounds: [840, 456, 350, 108]
+    shapeName: roundRect
+    adjustments: [12000]
+    fill: {type: solid, color: "#FFFFFF10"}
+    border: {style: solid, width: 1, color: "#FFFFFF26"}
+  - elementId: chip-3-num
+    elementType: text
+    bounds: [866, 474, 302, 40]
+    content:
+      fontSize: 30
+      fontFamily: "alimamashuheiti"
+      color: "#F2B98C"
+      wrap: false
+      align: [left, middle]
+      text: 0 次
+  - elementId: chip-3-label
+    elementType: text
+    bounds: [866, 520, 302, 22]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "#CFCAE8"
+      wrap: false
+      align: [left, middle]
+      text: 模型重新训练（权重完全没变）
+  - elementId: footer
+    elementType: text
+    bounds: [90, 646, 1000, 22]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "#8F8AB0"
+      wrap: false
+      align: [left, middle]
+      text: 基于技术文档《大模型推理接口与 Agent 协议演进》（2026-08）重组 · 附同名 HTML 交互讲义

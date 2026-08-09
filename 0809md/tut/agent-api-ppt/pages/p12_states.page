@@ -1,0 +1,93 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 03 · 协议层}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: Policy/Memory：四种状态必须分开放}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: state-table
+    elementType: table
+    bounds: [70, 140, 1140, 268]
+    columnWidths: [0.20, 0.44, 0.36]
+    rowHeights: [0.16, 0.21, 0.21, 0.21, 0.21]
+    style: "$default"
+    rows:
+      - - content: {text: 状态类型, fontSize: 14}
+        - content: {text: 主要用途, fontSize: 14}
+        - content: {text: 是否应直接长期保存, fontSize: 14}
+      - - content: {text: Reasoning State, fontSize: 13, align: [left, middle]}
+        - content: {text: 当前模型的推理连续性, fontSize: 13, align: [left, middle]}
+        - content: {text: ❌ 通常不应直接作为长期记忆, fontSize: 13, align: [left, middle]}
+      - - content: {text: Run / Task State, fontSize: 13, align: [left, middle]}
+        - content: {text: 当前目标、进度、阻塞与恢复点, fontSize: 13, align: [left, middle]}
+        - content: {text: 保存到任务结束或审计期, fontSize: 13, align: [left, middle]}
+      - - content: {text: Artifact State, fontSize: 13, align: [left, middle]}
+        - content: {text: 文件、代码、报告、数据及版本, fontSize: 13, align: [left, middle]}
+        - content: {text: 按业务生命周期保存, fontSize: 13, align: [left, middle]}
+      - - content: {text: Durable Memory, fontSize: 13, align: [left, middle]}
+        - content: {text: 经确认的偏好、事实和环境经验, fontSize: 13, align: [left, middle]}
+        - content: {text: ✅ 经筛选、验证后才保存, fontSize: 13, align: [left, middle]}
+  - elementId: sec-bg
+    elementType: shape
+    bounds: [70, 432, 555, 208]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$badSoft"}
+  - elementId: sec-head
+    elementType: text
+    bounds: [96, 450, 500, 26]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$bad", wrap: false, align: [left, middle], text: <strong>🔐 MCP 的一个安全细节</strong>}
+  - elementId: sec-text
+    elementType: text
+    bounds: [96, 486, 503, 130]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.65
+      align: [left, top]
+      text: MCP 没有统一的协议级状态会话——handle 在协议层只是普通字符串。因此服务端必须在<strong>每次调用时重新验证调用者权限</strong>，不能因为"上次验证过"就放行。
+  - elementId: merge-bg
+    elementType: shape
+    bounds: [655, 432, 555, 208]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: merge-head
+    elementType: text
+    bounds: [681, 450, 500, 26]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>🧱 为什么不合并成万能协议？</strong>}
+  - elementId: merge-text
+    elementType: text
+    bounds: [681, 486, 503, 130]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$soft"
+      lineHeight: 1.65
+      align: [left, top]
+      text: MCP 面向相对原子的能力与数据访问；A2A 面向有自主性的远程执行者和长生命周期任务。一个 Agent 可以同时用 MCP 调数据库、用 A2A 委托另一个 Agent——统一底层传输格式，消除不了语义差异。
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "12"}

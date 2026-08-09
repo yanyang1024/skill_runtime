@@ -1,0 +1,212 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 03 · 协议层}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 五层地图：思考、经验、外设、外包、规矩}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: l1-name
+    elementType: shape
+    bounds: [70, 140, 210, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "#322A9E"}
+  - elementId: l1-name-txt
+    elementType: text
+    bounds: [86, 140, 178, 88]
+    content:
+      fontSize: 16
+      fontFamily: "MiSans"
+      color: "#FFFFFF"
+      lineHeight: 1.4
+      align: [left, middle]
+      text: |
+        <p><strong>🧠 Responses</strong></p>
+        <p><span style="font-size:12px; color:#FFFFFFB3;">认知运行时</span></p>
+  - elementId: l1-desc
+    elementType: shape
+    bounds: [288, 140, 490, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: l1-desc-txt
+    elementType: text
+    bounds: [308, 140, 450, 88]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, middle], text: 单个模型的推理与工具循环：状态连续性、Compaction、模型内 Tool Loop}
+  - elementId: l2-name
+    elementType: shape
+    bounds: [70, 238, 210, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "#453BC9"}
+  - elementId: l2-name-txt
+    elementType: text
+    bounds: [86, 238, 178, 88]
+    content:
+      fontSize: 16
+      fontFamily: "MiSans"
+      color: "#FFFFFF"
+      lineHeight: 1.4
+      align: [left, middle]
+      text: |
+        <p><strong>📦 Skill</strong></p>
+        <p><span style="font-size:12px; color:#FFFFFFB3;">可装载的经验包</span></p>
+  - elementId: l2-desc
+    elementType: shape
+    bounds: [288, 238, 490, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: l2-desc-txt
+    elementType: text
+    bounds: [308, 238, 450, 88]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, middle], text: 按需加载的操作知识：触发条件、步骤、Tool 组合、脚本模板、验收与兜底}
+  - elementId: l3-name
+    elementType: shape
+    bounds: [70, 336, 210, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "#5B54E8"}
+  - elementId: l3-name-txt
+    elementType: text
+    bounds: [86, 336, 178, 88]
+    content:
+      fontSize: 16
+      fontFamily: "MiSans"
+      color: "#FFFFFF"
+      lineHeight: 1.4
+      align: [left, middle]
+      text: |
+        <p><strong>🔌 MCP</strong></p>
+        <p><span style="font-size:12px; color:#FFFFFFB3;">设备驱动与 I/O 总线</span></p>
+  - elementId: l3-desc
+    elementType: shape
+    bounds: [288, 336, 490, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: l3-desc-txt
+    elementType: text
+    bounds: [308, 336, 450, 88]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, middle], text: Agent 与 Tool/Data 之间的能力总线：能力发现、参数调用、资源引用、结果传输}
+  - elementId: l4-name
+    elementType: shape
+    bounds: [70, 434, 210, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$accent"}
+  - elementId: l4-name-txt
+    elementType: text
+    bounds: [86, 434, 178, 88]
+    content:
+      fontSize: 16
+      fontFamily: "MiSans"
+      color: "#FFFFFF"
+      lineHeight: 1.4
+      align: [left, middle]
+      text: |
+        <p><strong>🤝 A2A</strong></p>
+        <p><span style="font-size:12px; color:#FFFFFFB3;">分布式任务协作</span></p>
+  - elementId: l4-desc
+    elementType: shape
+    bounds: [288, 434, 490, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: l4-desc-txt
+    elementType: text
+    bounds: [308, 434, 450, 88]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, middle], text: Agent 之间的任务协议：委托、Task 生命周期、流式进度、Artifact 交付}
+  - elementId: l5-name
+    elementType: shape
+    bounds: [70, 532, 210, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$night"}
+  - elementId: l5-name-txt
+    elementType: text
+    bounds: [86, 532, 178, 88]
+    content:
+      fontSize: 16
+      fontFamily: "MiSans"
+      color: "#FFFFFF"
+      lineHeight: 1.4
+      align: [left, middle]
+      text: |
+        <p><strong>🛡️ Policy/Memory</strong></p>
+        <p><span style="font-size:12px; color:#FFFFFFB3;">横向治理层</span></p>
+  - elementId: l5-desc
+    elementType: shape
+    bounds: [288, 532, 490, 88]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: l5-desc-txt
+    elementType: text
+    bounds: [308, 532, 450, 88]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.5, align: [left, middle], text: 贯穿所有层：身份与租户、授权、审批、审计、Artifact 所有权、持久记忆}
+  - elementId: ana-bg
+    elementType: shape
+    bounds: [810, 140, 400, 300]
+    shapeName: roundRect
+    adjustments: [6000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: ana-head
+    elementType: text
+    bounds: [834, 158, 352, 26]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>一句话比喻</strong>}
+  - elementId: ana-list
+    elementType: text
+    bounds: [834, 194, 352, 230]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$soft"
+      lineHeight: 1.65
+      align: [left, top]
+      text: |
+        <p><span style="color:$ink;"><strong>MCP</strong></span> = USB 总线：外设即插即用</p>
+        <p><span style="color:$ink;"><strong>A2A</strong></span> = 外包合同：查进度、可取消、验收交付物</p>
+        <p><span style="color:$ink;"><strong>Skill</strong></span> = 老师傅的经验打包</p>
+        <p><span style="color:$ink;"><strong>Runtime</strong></span> = 大脑本身</p>
+        <p><span style="color:$ink;"><strong>Policy</strong></span> = 贯穿全程的规矩</p>
+  - elementId: boundary-bg
+    elementType: shape
+    bounds: [810, 460, 400, 160]
+    shapeName: roundRect
+    adjustments: [8000]
+    fill: {type: solid, color: "$primarySoft"}
+  - elementId: boundary-txt
+    elementType: text
+    bounds: [834, 460, 352, 160]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.6
+      align: [left, middle]
+      text: <strong>关键分界：</strong>是否具备"自主任务生命周期"，是 Tool 与 Agent 的分界线——也是 MCP 与 A2A 长期不会合并的根本原因。
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "11"}

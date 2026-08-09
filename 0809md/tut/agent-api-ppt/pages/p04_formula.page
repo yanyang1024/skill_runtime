@@ -1,0 +1,153 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 01 · 认知重构}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 能力公式：模型只是六个变量之一}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: formula-bg
+    elementType: shape
+    bounds: [70, 142, 1140, 104]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$night"}
+  - elementId: formula-text
+    elementType: text
+    bounds: [100, 142, 1080, 104]
+    content:
+      fontSize: 19
+      fontFamily: "MiSans"
+      color: "#C9C3FF"
+      lineHeight: 1.5
+      align: [center, middle]
+      text: |
+        <p>Observed Capability = F( <span style="color:#F2B98C;"><strong>Model</strong></span>, Inference API, Reasoning State,</p>
+        <p>Context Policy, Tools, Harness )</p>
+  - elementId: v1-bg
+    elementType: shape
+    bounds: [70, 272, 360, 92]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: v1-name
+    elementType: text
+    bounds: [92, 284, 316, 24]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: <strong>① Model</strong>}
+  - elementId: v1-desc
+    elementType: text
+    bounds: [92, 312, 316, 40]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.4, align: [left, top], text: 模型权重与固有能力——只是六项之一}
+  - elementId: v2-bg
+    elementType: shape
+    bounds: [460, 272, 360, 92]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: v2-name
+    elementType: text
+    bounds: [482, 284, 316, 24]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: <strong>② Inference API</strong>}
+  - elementId: v2-desc
+    elementType: text
+    bounds: [482, 312, 316, 40]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.4, align: [left, top], text: Chat / Responses / Realtime / Async 的选择}
+  - elementId: v3-bg
+    elementType: shape
+    bounds: [850, 272, 360, 92]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: v3-name
+    elementType: text
+    bounds: [872, 284, 316, 24]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: <strong>③ Reasoning State</strong>}
+  - elementId: v3-desc
+    elementType: text
+    bounds: [872, 312, 316, 40]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.4, align: [left, top], text: 跨回合的推理连续性是否被保留}
+  - elementId: v4-bg
+    elementType: shape
+    bounds: [70, 380, 360, 92]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: v4-name
+    elementType: text
+    bounds: [92, 392, 316, 24]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: <strong>④ Context Policy</strong>}
+  - elementId: v4-desc
+    elementType: text
+    bounds: [92, 420, 316, 40]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.4, align: [left, top], text: 压缩、截断与回放策略}
+  - elementId: v5-bg
+    elementType: shape
+    bounds: [460, 380, 360, 92]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: v5-name
+    elementType: text
+    bounds: [482, 392, 316, 24]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: <strong>⑤ Tools</strong>}
+  - elementId: v5-desc
+    elementType: text
+    bounds: [482, 420, 316, 40]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.4, align: [left, top], text: 工具的定义、加载与执行方式}
+  - elementId: v6-bg
+    elementType: shape
+    bounds: [850, 380, 360, 92]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$paper"}
+  - elementId: v6-name
+    elementType: text
+    bounds: [872, 392, 316, 24]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$primary", wrap: false, align: [left, middle], text: <strong>⑥ Harness</strong>}
+  - elementId: v6-desc
+    elementType: text
+    bounds: [872, 420, 316, 40]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "$soft", lineHeight: 1.4, align: [left, top], text: 重试、审批、沙箱等执行环境}
+  - elementId: analogy-bg
+    elementType: shape
+    bounds: [70, 500, 1140, 136]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$accentSoft"}
+  - elementId: analogy-title
+    elementType: text
+    bounds: [100, 516, 400, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$accent", wrap: false, align: [left, middle], text: <strong>🧑‍🍳 打个比方（全场最重要的类比）</strong>}
+  - elementId: analogy-text
+    elementType: text
+    bounds: [100, 548, 1080, 76]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.55
+      align: [left, top]
+      text: 把模型想成一位厨艺精湛的厨师。Chat API = 你站在厨房门口口头点单，厨师做完一道就忘；Agent Runtime = 给厨师一间自己的厨房：记事本（推理状态）、储物架（上下文管理）、工具架（Tools）和操作规范（Policy）。厨师还是同一个，你吃到的菜却完全不是一个水平。
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "04"}

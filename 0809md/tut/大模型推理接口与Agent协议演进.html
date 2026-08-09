@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从 Chat API 到 Agent Runtime · 交互式学习讲义</title>
+<style>
+  :root{
+    --bg:#f7f6f3;
+    --paper:#ffffff;
+    --ink:#23252d;
+    --ink-soft:#5c5f6b;
+    --line:#e6e3dc;
+    --accent:#5b54e8;
+    --accent-soft:#eeecfd;
+    --warm:#e8863a;
+    --warm-soft:#fdeee0;
+    --green:#2e9e6b;
+    --green-soft:#e3f4ec;
+    --red:#d5544f;
+    --red-soft:#fbe9e8;
+    --code-bg:#1e1f2b;
+    --code-ink:#e8e6f0;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.85;font-size:16.5px;
+  }
+  /* ---------- 顶部进度条 ---------- */
+  #progress{position:fixed;top:0;left:0;height:4px;width:0%;background:linear-gradient(90deg,var(--accent),var(--warm));z-index:999;transition:width .1s;}
+  /* ---------- 布局 ---------- */
+  .layout{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:250px 1fr;gap:36px;padding:0 28px;}
+  main{min-width:0;padding-bottom:120px;}
+  /* ---------- 侧边目录 ---------- */
+  nav.toc{position:sticky;top:32px;align-self:start;padding:26px 0;height:fit-content;max-height:calc(100vh - 60px);overflow:auto;}
+  nav.toc h4{font-size:12px;letter-spacing:2px;color:var(--ink-soft);text-transform:uppercase;margin-bottom:14px;}
+  nav.toc a{display:block;padding:7px 12px;margin:2px 0;font-size:13.5px;color:var(--ink-soft);text-decoration:none;border-left:2px solid var(--line);transition:all .2s;}
+  nav.toc a:hover{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;}
+  @media(max-width:960px){.layout{grid-template-columns:1fr;}nav.toc{display:none;}}
+  /* ---------- Hero ---------- */
+  .hero{padding:90px 0 60px;}
+  .hero .kicker{display:inline-block;font-size:13px;font-weight:600;letter-spacing:2px;color:var(--accent);background:var(--accent-soft);padding:5px 14px;border-radius:99px;margin-bottom:22px;}
+  .hero h1{font-size:clamp(30px,4.5vw,48px);line-height:1.25;font-weight:800;letter-spacing:-.5px;}
+  .hero h1 em{font-style:normal;color:var(--accent);}
+  .hero .sub{margin-top:18px;font-size:18px;color:var(--ink-soft);max-width:760px;}
+  .hero .meta{margin-top:14px;font-size:13px;color:#9a9daa;}
+  /* ---------- 关键数字横幅 ---------- */
+  .stat-banner{margin-top:44px;display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;background:linear-gradient(135deg,#26233f,#3d3580);color:#fff;border-radius:var(--radius);padding:30px 34px;box-shadow:0 14px 40px -12px rgba(61,53,128,.45);}
+  .stat-banner .nums{display:flex;align-items:center;gap:16px;font-weight:800;}
+  .stat-banner .n1{font-size:40px;color:#ffb98a;text-decoration:line-through;text-decoration-thickness:3px;opacity:.85;}
+  .stat-banner .arrow{font-size:30px;color:#9f97ff;}
+  .stat-banner .n2{font-size:52px;color:#8ef0c1;}
+  .stat-banner p{font-size:14.5px;color:#cfcae8;line-height:1.7;}
+  @media(max-width:700px){.stat-banner{grid-template-columns:1fr;}}
+  /* ---------- 章节 ---------- */
+  section.chapter{margin-top:80px;scroll-margin-top:24px;}
+  .chapter-head{display:flex;align-items:baseline;gap:16px;border-bottom:3px solid var(--ink);padding-bottom:12px;margin-bottom:30px;}
+  .chapter-head .num{font-size:15px;font-weight:800;color:#fff;background:var(--ink);border-radius:8px;padding:3px 11px;}
+  .chapter-head h2{font-size:27px;font-weight:800;letter-spacing:-.3px;}
+  h3{font-size:20px;font-weight:700;margin:38px 0 14px;display:flex;align-items:center;gap:10px;}
+  h3::before{content:"";width:9px;height:22px;background:var(--accent);border-radius:4px;}
+  h4{font-size:16.5px;font-weight:700;margin:26px 0 10px;}
+  p{margin:12px 0;}
+  ul,ol{margin:12px 0 12px 24px;}
+  li{margin:6px 0;}
+  code.inline{font-family:"JetBrains Mono","SF Mono",Consolas,monospace;font-size:.88em;background:var(--accent-soft);color:#4338ca;padding:2px 7px;border-radius:6px;}
+  a.src{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--accent);font-size:.9em;}
+  /* ---------- 卡片与盒子 ---------- */
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:26px 30px;margin:22px 0;box-shadow:0 4px 18px -8px rgba(35,37,45,.08);}
+  /* 老师口吻的三种提示盒 */
+  .tip{display:flex;gap:16px;border-radius:var(--radius);padding:20px 24px;margin:22px 0;border:1px solid;}
+  .tip .icon{font-size:24px;line-height:1.4;flex-shrink:0;}
+  .tip .body{flex:1;font-size:15.5px;}
+  .tip .body strong{display:block;margin-bottom:4px;font-size:15px;}
+  .tip.analogy{background:var(--warm-soft);border-color:#f2cfae;}
+  .tip.analogy strong{color:var(--warm);}
+  .tip.warn{background:var(--red-soft);border-color:#f0c0bd;}
+  .tip.warn strong{color:var(--red);}
+  .tip.key{background:var(--green-soft);border-color:#bfe3d2;}
+  .tip.key strong{color:var(--green);}
+  /* ---------- 表格 ---------- */
+  table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14.5px;background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 12px -4px rgba(35,37,45,.08);}
+  th{background:#26233f;color:#fff;text-align:left;padding:12px 16px;font-weight:600;font-size:13.5px;}
+  td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#faf9f7;}
+  td:first-child{font-weight:600;white-space:nowrap;}
+  /* ---------- 代码块 ---------- */
+  pre{background:var(--code-bg);color:var(--code-ink);border-radius:var(--radius);padding:22px 26px;overflow:auto;font-family:"JetBrains Mono","SF Mono",Consolas,monospace;font-size:13.5px;line-height:1.7;margin:18px 0;}
+  pre .c{color:#7c7f96;}
+  pre .k{color:#b5a6ff;}
+  pre .s{color:#8ef0c1;}
+  pre .n{color:#ffb98a;}
+  /* ---------- 流程箭头图 ---------- */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:24px 0;}
+  .flow .step{flex:1;min-width:130px;background:var(--paper);border:2px solid var(--line);border-radius:12px;padding:16px 14px;text-align:center;position:relative;display:flex;flex-direction:column;justify-content:center;}
+  .flow .step b{font-size:14.5px;display:block;}
+  .flow .step span{font-size:12.5px;color:var(--ink-soft);display:block;margin-top:4px;line-height:1.5;}
+  .flow .arr{align-self:center;padding:0 8px;color:var(--accent);font-size:22px;font-weight:800;flex-shrink:0;}
+  .flow .step.hl{border-color:var(--accent);background:var(--accent-soft);}
+  /* ---------- 循环图 ---------- */
+  .loop{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-items:center;margin:24px 0;}
+  .loop .node{background:var(--paper);border:2px solid var(--accent);border-radius:12px;padding:14px 8px;text-align:center;font-weight:700;font-size:14px;position:relative;}
+  .loop .node small{display:block;font-weight:400;font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+  .loop .chev{text-align:center;color:var(--accent);font-size:20px;font-weight:800;}
+  .loop .back{grid-column:1/-1;text-align:center;color:var(--warm);font-size:13px;font-weight:600;background:var(--warm-soft);border-radius:8px;padding:7px;}
+  @media(max-width:700px){.loop{grid-template-columns:1fr 30px 1fr;}.loop .chev{transform:none;}}
+  /* ---------- 阶梯图（Tool 五形态） ---------- */
+  .stairs{display:flex;align-items:flex-end;gap:10px;margin:30px 0 10px;}
+  .stair{flex:1;border-radius:12px 12px 0 0;padding:16px 12px 14px;color:#fff;position:relative;min-width:0;}
+  .stair .lv{font-size:11px;opacity:.8;letter-spacing:1px;}
+  .stair b{display:block;font-size:14px;line-height:1.35;margin:4px 0;}
+  .stair span{font-size:11.5px;opacity:.85;line-height:1.5;display:block;}
+  .stair:nth-child(1){height:110px;background:#8a84f0;}
+  .stair:nth-child(2){height:150px;background:#756ede;}
+  .stair:nth-child(3){height:190px;background:#5b54e8;}
+  .stair:nth-child(4){height:230px;background:#453bc9;}
+  .stair:nth-child(5){height:270px;background:#322a9e;}
+  .stairs-base{height:6px;background:#26233f;border-radius:3px;margin-bottom:6px;}
+  @media(max-width:820px){.stairs{flex-direction:column;align-items:stretch;}.stair{height:auto!important;border-radius:12px;}}
+  /* ---------- 分层架构图 ---------- */
+  .stack{display:flex;flex-direction:column;gap:12px;margin:26px 0;}
+  .layer{display:grid;grid-template-columns:200px 1fr;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--paper);transition:transform .15s, box-shadow .15s;}
+  .layer:hover{transform:translateX(6px);box-shadow:0 8px 24px -8px rgba(35,37,45,.18);}
+  .layer .name{padding:18px 20px;color:#fff;font-weight:700;display:flex;flex-direction:column;justify-content:center;}
+  .layer .name small{font-weight:400;font-size:11.5px;opacity:.85;margin-top:3px;}
+  .layer .desc{padding:16px 22px;font-size:14px;color:var(--ink-soft);display:flex;align-items:center;line-height:1.7;}
+  .layer .desc b{color:var(--ink);}
+  .l1 .name{background:#322a9e;} .l2 .name{background:#453bc9;} .l3 .name{background:#5b54e8;}
+  .l4 .name{background:#e8863a;} .l5 .name{background:#26233f;}
+  @media(max-width:700px){.layer{grid-template-columns:1fr;}}
+  /* ---------- 对比双栏 ---------- */
+  .versus{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0;}
+  .versus .col{border-radius:var(--radius);padding:22px 24px;border:2px solid;}
+  .versus .col.bad{border-color:#efc4c2;background:#fdf6f5;}
+  .versus .col.good{border-color:#bfe3d2;background:#f5fbf8;}
+  .versus .col h4{margin-top:0;display:flex;align-items:center;gap:8px;}
+  .versus .bad h4{color:var(--red);} .versus .good h4{color:var(--green);}
+  .versus .col ul{margin-left:18px;font-size:14.5px;}
+  @media(max-width:700px){.versus{grid-template-columns:1fr;}}
+  /* ---------- 柱状对比图 ---------- */
+  .barchart{margin:28px 0;}
+  .bar-row{display:grid;grid-template-columns:190px 1fr 70px;align-items:center;gap:14px;margin:14px 0;font-size:14px;}
+  .bar-row .label{text-align:right;font-weight:600;font-size:13.5px;}
+  .bar-track{background:#eceaf5;border-radius:8px;height:34px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:12px;color:#fff;font-weight:700;font-size:13px;white-space:nowrap;}
+  .bar-fill.old{width:35%;background:#b9b4d6;}
+  .bar-fill.new{width:100%;background:linear-gradient(90deg,#5b54e8,#8a5cf6);}
+  .bar-val{font-weight:800;font-size:17px;}
+  @media(max-width:640px){.bar-row{grid-template-columns:110px 1fr 56px;}}
+  /* ---------- Tricks 网格 ---------- */
+  .tricks{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0;}
+  .trick{background:var(--paper);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:12px;padding:18px 20px;}
+  .trick h4{margin:0 0 8px;font-size:15.5px;}
+  .trick h4 .tag{display:inline-block;background:var(--accent);color:#fff;font-size:11px;border-radius:6px;padding:1px 8px;margin-right:8px;vertical-align:2px;}
+  .trick p, .trick ul{font-size:13.8px;color:var(--ink-soft);margin:6px 0;}
+  .trick ul{margin-left:16px;}
+  @media(max-width:760px){.tricks{grid-template-columns:1fr;}}
+  /* ---------- 公式 ---------- */
+  .formula{background:#26233f;color:#fff;border-radius:var(--radius);padding:28px 30px;margin:24px 0;text-align:center;font-size:15px;overflow-x:auto;}
+  .formula .fx{font-family:"JetBrains Mono",monospace;font-size:15.5px;color:#c9c3ff;white-space:nowrap;}
+  .formula .fx b{color:#8ef0c1;}
+  .formula p{color:#a9a4cf;font-size:13.5px;margin:10px 0 0;}
+  /* ---------- 引用金句 ---------- */
+  blockquote.quote{border:none;background:linear-gradient(135deg,var(--accent-soft),#fdf2e7);border-radius:var(--radius);padding:28px 32px;margin:30px 0;font-size:19px;font-weight:700;line-height:1.7;position:relative;}
+  blockquote.quote::before{content:"“";position:absolute;top:-6px;left:18px;font-size:64px;color:var(--accent);opacity:.35;font-family:Georgia,serif;}
+  blockquote.quote footer{margin-top:10px;font-size:13px;font-weight:400;color:var(--ink-soft);}
+  /* ---------- 自测题 ---------- */
+  details.quiz{background:var(--paper);border:1px solid var(--line);border-radius:12px;margin:12px 0;overflow:hidden;}
+  details.quiz summary{cursor:pointer;padding:16px 22px;font-weight:700;font-size:15px;list-style:none;display:flex;gap:10px;align-items:center;}
+  details.quiz summary::before{content:"Q";background:var(--ink);color:#fff;border-radius:6px;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  details.quiz summary:hover{background:#faf9f7;}
+  details.quiz .ans{padding:0 22px 18px 56px;font-size:14.5px;color:var(--ink-soft);}
+  details.quiz .ans b{color:var(--green);}
+  /* ---------- 决策小流程 ---------- */
+  .decision{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:26px;margin:22px 0;text-align:center;}
+  .decision .q{display:inline-block;background:var(--ink);color:#fff;border-radius:10px;padding:12px 26px;font-weight:700;font-size:15px;}
+  .decision .branches{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:0;}
+  .decision .branches .b{border-radius:10px;padding:16px;font-size:14px;margin-top:14px;position:relative;}
+  .decision .b.yes{background:var(--green-soft);border:1.5px solid #bfe3d2;}
+  .decision .b.no{background:var(--warm-soft);border:1.5px solid #f2cfae;}
+  .decision .b b{display:block;margin-bottom:4px;}
+  .decision .b .cond{display:inline-block;font-weight:800;font-size:13px;border-radius:99px;padding:1px 12px;margin-bottom:8px;}
+  .decision .b.yes .cond{background:var(--green);color:#fff;}
+  .decision .b.no .cond{background:var(--warm);color:#fff;}
+  @media(max-width:640px){.decision .branches{grid-template-columns:1fr;}}
+  /* ---------- 演化时间轴 ---------- */
+  .evo{display:flex;gap:0;margin:26px 0;align-items:stretch;}
+  .evo .era{flex:1;padding:20px 18px;border-radius:12px;background:var(--paper);border:1px solid var(--line);position:relative;}
+  .evo .era + .era{margin-left:26px;}
+  .evo .era + .era::before{content:"→";position:absolute;left:-23px;top:50%;transform:translateY(-50%);color:var(--accent);font-weight:800;font-size:18px;}
+  .evo .era .yr{font-size:12px;color:var(--accent);font-weight:700;letter-spacing:1px;}
+  .evo .era b{display:block;font-size:15px;margin:4px 0;}
+  .evo .era span{font-size:12.5px;color:var(--ink-soft);line-height:1.55;display:block;}
+  @media(max-width:820px){.evo{flex-direction:column;}.evo .era + .era{margin-left:0;margin-top:26px;}.evo .era + .era::before{left:50%;top:-22px;transform:translateX(-50%) rotate(90deg);}}
+  footer.refs{margin-top:90px;border-top:2px solid var(--line);padding:34px 0 60px;font-size:13.5px;color:var(--ink-soft);}
+  footer.refs ol{margin-left:20px;}
+  footer.refs a{color:var(--accent);text-decoration:none;}
+  footer.refs a:hover{text-decoration:underline;}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<div class="layout">
+  <!-- ============ 侧边目录 ============ -->
+  <nav class="toc">
+    <h4>学习路径</h4>
+    <a href="#ch0">🎯 开场：一个反直觉的实验</a>
+    <a href="#ch1">① 推理接口的四次进化</a>
+    <a href="#ch2">② Tool 接口的五级台阶</a>
+    <a href="#ch3">③ 协议全家桶：各管一段</a>
+    <a href="#ch4">④ 案例：分数如何翻三倍</a>
+    <a href="#ch5">⑤ 八个实战 Tricks</a>
+    <a href="#ch6">⑥ 未来接口长什么样</a>
+    <a href="#ch7">✅ 自测与一页纸总结</a>
+    <a href="#refs">📚 参考资料</a>
+  </nav>
+
+  <main>
+  <!-- ============ Hero ============ -->
+  <header class="hero">
+    <span class="kicker">交互式学习讲义 · 基于技术文档重组</span>
+    <h1>从 Chat API 到 Agent Runtime：<br>大模型接口如何<em>解锁</em>模型的隐藏能力</h1>
+    <p class="sub">同一个模型，不换权重、不重新训练，只改接口与状态管理方式，基准得分翻了近三倍。这份讲义带你搞懂：接口到底改了什么，为什么会有效，以及你该怎么用。</p>
+    <p class="meta">原文档日期：2026-08-08 ｜ 范围：推理接口 · Tool 接口 · MCP · Skill · A2A · Policy/Memory Plane</p>
+    <div class="stat-banner">
+      <div class="nums">
+        <span class="n1">13.3%</span>
+        <span class="arrow">➜</span>
+        <span class="n2">38.3%</span>
+      </div>
+      <p>ARC-AGI-3 公开集上，同一个 GPT-5.6 Sol 的得分变化。没有重新训练，只是换了 Harness（保留推理状态 + 压缩上下文）。同时输出 Token 降到原来的约 1/6。<br><b style="color:#fff">这就是本讲义要解释的"魔法"——而它其实完全是工程。</b></p>
+    </div>
+  </header>
+
+  <!-- ============ 第 0 章 ============ -->
+  <section class="chapter" id="ch0">
+    <div class="chapter-head"><span class="num">开场</span><h2>先建立一个直觉：模型 ≠ 你观察到的能力</h2></div>
+
+    <div class="tip analogy">
+      <span class="icon">🧑‍🍳</span>
+      <div class="body">
+        <strong>打个比方（全讲义最重要的一个类比）</strong>
+        把大模型想象成一位厨艺精湛的厨师。Chat API 相当于你每道菜都站在厨房门口<strong>口头点单</strong>：厨师做完一道，你把盘子端走，下次再来时他已经忘了刚才做过什么、尝出什么味道。而 Agent Runtime 相当于给厨师一间<strong>自己的厨房</strong>：有记事本（推理状态）、有冰箱和储物架（上下文管理）、有顺手的工具架（Tools）、还有食品安全规范（Policy）。<br>
+        <b>厨师还是同一个厨师，但你吃到的菜完全不是一个水平。</b>
+      </div>
+    </div>
+
+    <p>传统 Chat API 暴露的是模型的「<b>说话能力</b>」；下一代 Agent API 进一步暴露的是：</p>
+    <ul>
+      <li>在多轮、多次工具调用之间<b>保持推理连续性</b>；</li>
+      <li>上下文增长后<b>压缩</b>而不是简单截断历史；</li>
+      <li><b>按需发现</b>并调用 Tool；</li>
+      <li>把可确定的工具循环<b>交给程序执行</b>；</li>
+      <li>以 Task、Event、Artifact、Checkpoint 表达<b>长程工作</b>；</li>
+      <li>在授权、审计、租户隔离和持久记忆的<b>约束</b>下完成任务。</li>
+    </ul>
+
+    <p>所以，你在生产环境里实际看到的能力，是一个多变量函数：</p>
+    <div class="formula">
+      <div class="fx">Observed Capability = F( <b>Model</b>, Inference API, Reasoning State, Context Policy, Tools, Harness )</div>
+      <p>模型权重只是六个变量之一。其余五个全是接口与工程——这就是"不换模型也能变强"的数学表达。</p>
+    </div>
+
+    <div class="tip key">
+      <span class="icon">🧭</span>
+      <div class="body"><strong>本讲义的学习路线</strong>
+      我们先看清现状（第 1~3 章：推理接口 → 工具接口 → 协议层），再用 ARC-AGI-3 案例亲眼验证"接口改变能力"（第 4 章），然后收走可以直接抄的实战 Tricks（第 5 章），最后展望未来（第 6 章）。建议按顺序读，每章末尾都有"一句话记住"。</div>
+    </div>
+  </section>
+
+  <!-- ============ 第 1 章 ============ -->
+  <section class="chapter" id="ch1">
+    <div class="chapter-head"><span class="num">第 1 章</span><h2>推理接口的四次进化</h2></div>
+
+    <p>大模型推理接口沿着一条主线演化：<b>从"一次性问答"走向"持续工作的运行时"</b>。先看全景时间轴，再逐个拆解。</p>
+
+    <div class="evo">
+      <div class="era">
+        <div class="yr">第一代</div>
+        <b>Chat / Message API</b>
+        <span>messages 进，message 出。简单、兼容好，但推理状态随响应一起被丢弃。</span>
+      </div>
+      <div class="era">
+        <div class="yr">第二代</div>
+        <b>Responses-like API</b>
+        <span>把一次运行拆成可组合的 Item，状态可以跨回合保留与回放。</span>
+      </div>
+      <div class="era">
+        <div class="yr">第三条轴</div>
+        <b>Realtime API</b>
+        <span>优化持续连接、低延迟与打断——改变的是"交互节奏"，不是推理强度。</span>
+      </div>
+      <div class="era">
+        <div class="yr">第四条轴</div>
+        <b>Async / Background</b>
+        <span>优化长耗时执行、断线恢复——改变的是"任务能活多久"。</span>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>接口形态</th><th>典型代表</th><th>核心对象</th><th>状态管理</th><th>适合场景</th></tr>
+      <tr><td>Chat/Message API</td><td>OpenAI Chat Completions、Anthropic Messages、Gemini generateContent</td><td>Message / Content</td><td>通常由客户端重传消息历史</td><td>单轮问答、普通多轮聊天、分类、抽取、改写</td></tr>
+      <tr><td>Responses-like API</td><td>OpenAI Responses API</td><td>Message、Reasoning、Tool Call、Tool Output、Compaction 等 Item</td><td>previous_response_id、Conversation 或完整 Item 回放</td><td>多步推理、复杂 Tool Use、长程 Agent</td></tr>
+      <tr><td>Realtime API</td><td>WebSocket / WebRTC 实时接口</td><td>连续音频、文本、事件和工具调用</td><td>连接级实时状态</td><td>语音助手、实时客服、低延迟交互</td></tr>
+      <tr><td>Async/Background API</td><td>Background、Batch、异步任务接口</td><td>Job / Task / Event</td><td>服务端任务状态</td><td>深度研究、批处理、长耗时任务</td></tr>
+    </table>
+
+    <h3>1.1 Chat API：一位"健忘但健谈"的助手</h3>
+    <p>Chat API 的基本抽象一句话就能说完：</p>
+    <div class="flow">
+      <div class="step"><b>messages[]</b><span>客户端组装全部历史</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>model</b><span>推理（状态用完即弃）</span></div>
+      <div class="arr">→</div>
+      <div class="step hl"><b>assistant message</b><span>只返回可见文本</span></div>
+    </div>
+    <p>它简单、兼容性好，适合一次请求就能完成的任务。问题不在于"无状态"本身，而在于 <b>Message 这个对象装不下太多东西</b>：推理状态、工具执行阶段、压缩检查点、长任务生命周期，都表达不了。</p>
+    <div class="tip warn">
+      <span class="icon">⚠️</span>
+      <div class="body"><strong>什么时候这个差异会咬人？</strong>
+      普通问答差别不大。但如果任务需要连续几十次「观察—行动」循环（比如 Agent 写代码、打游戏、做研究），接口保不保留推理与工具状态，<b>可能直接决定任务能不能完成</b>。第 4 章的案例会让你看到这个差距有多大。</div>
+    </div>
+
+    <h3>1.2 Responses-like API：把一次运行拆成"积木"</h3>
+    <p>核心变化：不再只吐一段文本，而是把一次模型运行拆成可组合的 <b>Item</b>：</p>
+    <div class="flow">
+      <div class="step"><b>💬 消息</b><span>用户 / 助手</span></div>
+      <div class="arr">+</div>
+      <div class="step"><b>🧠 reasoning</b><span>私有、不可见</span></div>
+      <div class="arr">+</div>
+      <div class="step"><b>🔧 tool call / output</b><span>工具调用与结果</span></div>
+      <div class="arr">+</div>
+      <div class="step"><b>📦 compaction</b><span>压缩检查点</span></div>
+      <div class="arr">+</div>
+      <div class="step"><b>🖼️ 多模态</b><span>文件 / 图像</span></div>
+    </div>
+    <p>抽象也因此从"消息进、消息出"变成了：</p>
+    <div class="formula">
+      <div class="fx">input items + <b>previous state</b> + tools + context policy<br>→ response items + <b>new state</b></div>
+    </div>
+    <p>OpenAI 官方文档明确建议：推理模型在多轮、Tool Calling 场景中优先使用 Responses API，并允许通过 <code class="inline">reasoning.context</code> 控制是否使用早期回合的推理状态。<a class="src" href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank">Reasoning models ↗</a></p>
+
+    <h3>1.3 Realtime 与异步接口：解决另外两个维度</h3>
+    <div class="versus">
+      <div class="col good" style="border-color:#c9c4f2;background:#f7f6fe;">
+        <h4 style="color:var(--accent)">⚡ Realtime：节奏维度</h4>
+        <ul><li>持续连接、低延迟、可打断</li><li>语音助手、实时客服</li><li>改变"交互体验"，不改变单次推理强度</li></ul>
+      </div>
+      <div class="col good" style="border-color:#c9c4f2;background:#f7f6fe;">
+        <h4 style="color:var(--accent)">⏳ Async / Background：寿命维度</h4>
+        <ul><li>长耗时执行、断线恢复、轮询或通知</li><li>深度研究、批处理</li><li>改变"Agent 能否持续工作，用户能否观察、取消、恢复"</li></ul>
+      </div>
+    </div>
+    <div class="tip key"><span class="icon">📌</span><div class="body"><strong>一句话记住第 1 章</strong>Chat API 是"健忘的话痨"，Responses API 是"有记事本的工作者"；Realtime 管节奏，Async 管寿命。选型先问：我的任务需要跨回合的推理连续性吗？</div></div>
+  </section>
+
+  <!-- ============ 第 2 章 ============ -->
+  <section class="chapter" id="ch2">
+    <div class="chapter-head"><span class="num">第 2 章</span><h2>Tool 接口的五级台阶</h2></div>
+
+    <p>Tool 接口也在升级：从"模型每次点一次名"的单次 Function Calling，进化成一个多层工具运行时。五种形态像五级台阶，<b>越往上，模型上下文里需要搬运的东西越少</b>：</p>
+
+    <div class="stairs">
+      <div class="stair"><div class="lv">LEVEL 1</div><b>Function Calling</b><span>模型生成符合 Schema 的工具名与参数</span></div>
+      <div class="stair"><div class="lv">LEVEL 2</div><b>Hosted Tool</b><span>平台托管执行：搜索、代码解释器、Computer Use</span></div>
+      <div class="stair"><div class="lv">LEVEL 3</div><b>Tool Search</b><span>按需检索并加载工具定义</span></div>
+      <div class="stair"><div class="lv">LEVEL 4</div><b>Programmatic Calling</b><span>模型写程序，组合多个工具</span></div>
+      <div class="stair"><div class="lv">LEVEL 5</div><b>Stateful Tool</b><span>返回 handle，跨调用操作同一对象</span></div>
+    </div>
+    <div class="stairs-base"></div>
+
+    <table>
+      <tr><th>Tool 形态</th><th>优点</th><th>主要限制</th></tr>
+      <tr><td>Function Calling</td><td>通用、容易接入现有 API</td><td>每次调用通常需要模型与应用往返</td></tr>
+      <tr><td>Hosted Tool</td><td>平台负责执行与回传</td><td>平台绑定较强，权限与数据边界需单独评估</td></tr>
+      <tr><td>Tool Search</td><td>减少上下文污染与工具选择干扰</td><td>需要良好的 namespace 和工具描述</td></tr>
+      <tr><td>Programmatic Tool Calling</td><td>可并行、循环、过滤、聚合；中间结果不进模型上下文</td><td>不适合每步都需要新语义判断或审批的任务</td></tr>
+      <tr><td>Stateful Tool</td><td>避免模型搬运大量原始数据</td><td>handle 生命周期、权限和失效恢复必须明确</td></tr>
+    </table>
+
+    <h3>2.1 Function Calling：Schema 是模型理解工具的"说明书"</h3>
+    <p>Function Calling 的价值是分工：<b>模型负责理解意图和填参数，传统程序负责执行</b>。但 Tool Schema 不只是技术参数定义，它也在教模型怎么理解这个工具：</p>
+    <ul>
+      <li>名称能否区分相近工具？必填字段是否明确？</li>
+      <li>枚举与格式约束是否足够？</li>
+      <li>是否说明前置条件、副作用和失败方式？</li>
+      <li>错误能否指导模型改参数后重试？</li>
+    </ul>
+    <div class="versus">
+      <div class="col bad">
+        <h4>❌ 不友好的工具</h4>
+        <p style="font-family:monospace;font-size:14px;background:#fff;padding:10px 14px;border-radius:8px;border:1px solid #efc4c2;">400 Bad Request</p>
+        <p style="font-size:13.5px;color:var(--ink-soft)">模型只知道"失败了"，不知道怎么修，只能瞎猜重试。</p>
+      </div>
+      <div class="col good">
+        <h4>✅ Agent-friendly 的工具</h4>
+<pre style="margin:0;font-size:12.5px;padding:14px 16px;">{
+  <span class="s">"error_type"</span>: <span class="s">"invalid_argument"</span>,
+  <span class="s">"field"</span>: <span class="s">"start_date"</span>,
+  <span class="s">"expected"</span>: <span class="s">"YYYY-MM-DD and not earlier than today"</span>,
+  <span class="s">"received"</span>: <span class="s">"2026/08/08"</span>,
+  <span class="s">"retryable"</span>: <span class="k">true</span>
+}</pre>
+      </div>
+    </div>
+
+    <h3>2.2 Tool Search：别把整本工具手册拍在模型脸上</h3>
+    <div class="tip analogy">
+      <span class="icon">📚</span>
+      <div class="body"><strong>打个比方</strong>考试时可以带一本 500 页的工具手册进考场——但每次答题前都把手册全翻一遍，既慢又容易看串行。聪明的做法是先看<b>目录</b>（namespace 的名称和一句话描述），确定章节再翻正文。Tool Search 干的就是这件事。</div>
+    </div>
+    <p>当工具数量增多时，把全部 JSON Schema 塞进每次请求会消耗 Token，还增加模型选错工具的概率。OpenAI Tool Search 已支持对 Function、Namespace 和 MCP Server <b>延迟加载</b>：模型开始只看到高层名称与描述，需要时再加载具体定义。<a class="src" href="https://developers.openai.com/api/docs/guides/tools-tool-search" target="_blank">Tool search ↗</a></p>
+    <div class="card">
+      <h4 style="margin-top:0">🧰 实用原则（可以直接抄）</h4>
+      <ul>
+        <li>按<b>用户意图</b>划分 namespace，而不是按后端微服务划分；</li>
+        <li>namespace 描述要<b>短而有区分度</b>；</li>
+        <li>低频、Schema 大的工具用 <code class="inline">defer_loading</code>；</li>
+        <li>单个 namespace 尽量保持在约 <b>10 个以内</b>；</li>
+        <li>高频、关键工具直接加载，省掉一次搜索步骤。</li>
+      </ul>
+    </div>
+
+    <h3>2.3 Programmatic Tool Calling：把"体力活"移出模型大脑</h3>
+    <p>模型编写受控 JavaScript，在运行时内完成并行调用、循环、条件、过滤、Join、去重和聚合，<b>只把缩减后的结果交回模型</b>。<a class="src" href="https://developers.openai.com/api/docs/guides/tools-programmatic-tool-calling" target="_blank">Programmatic Tool Calling ↗</a> 那什么时候交给程序、什么时候留给模型？用这个判断图：</p>
+    <div class="decision">
+      <span class="q">下一步只依赖结构化字段和确定性规则吗？</span>
+      <div class="branches">
+        <div class="b yes">
+          <span class="cond">是 → 程序化</span>
+          <b>交给程序做</b>
+          批量查询多个对象；排序、过滤、去重、聚合；根据结构化返回值生成下次调用参数；有明确次数上限的重试。
+        </div>
+        <div class="b no">
+          <span class="cond">否 → 回模型</span>
+          <b>留给模型逐步判断</b>
+          搜索结果会改变研究方向；每个结果都要语义判断；涉及写入、付款、删除、对外发送；需要保留原始引用；执行前必须用户审批。
+        </div>
+      </div>
+    </div>
+    <div class="tip key"><span class="icon">📌</span><div class="body"><strong>一句话记住第 2 章</strong>工具的演进方向是"让模型少搬砖、多动脑"：Schema 教会模型用工具，Tool Search 按需给手册，程序化调用外包体力活，Stateful Tool 用 handle 代替搬运原始数据。</div></div>
+  </section>
+
+  <!-- ============ 第 3 章 ============ -->
+  <section class="chapter" id="ch3">
+    <div class="chapter-head"><span class="num">第 3 章</span><h2>协议全家桶：MCP、Skill、A2A 各管一段</h2></div>
+
+    <p>这几个名词经常被笼统叫作"Agent 接口"，但它们解决的问题完全不同。先看一张分层地图，建立全局观：</p>
+
+    <div class="stack">
+      <div class="layer l1">
+        <div class="name">🧠 Responses-like Runtime<small>单个模型的认知运行时</small></div>
+        <div class="desc">面向<b>单个模型 / Agent Runtime</b> 的推理与工具循环：状态连续性、Compaction、模型内 Tool Loop。</div>
+      </div>
+      <div class="layer l2">
+        <div class="name">📦 Skill<small>可装载的软件包</small></div>
+        <div class="desc">按需加载的<b>操作知识</b>：告诉模型在当前环境里"怎么做一类事"——步骤、判断原则、脚本、模板、失败处理。</div>
+      </div>
+      <div class="layer l3">
+        <div class="name">🔌 MCP<small>设备驱动与 I/O 总线</small></div>
+        <div class="desc">Agent 与 Tool/Data 之间的<b>能力总线</b>：能力发现、参数调用、资源引用、结果传输。</div>
+      </div>
+      <div class="layer l4">
+        <div class="name">🤝 A2A<small>分布式任务协作协议</small></div>
+        <div class="desc">Agent 与 Agent 之间的<b>任务协议</b>：委托、Task 生命周期、流式进度、Artifact 交付。</div>
+      </div>
+      <div class="layer l5">
+        <div class="name">🛡️ Policy / Memory Plane<small>治理与持久化层（横向贯穿）</small></div>
+        <div class="desc">为以上所有层提供<b>身份、授权、审批、审计、租户隔离和持久记忆</b>。</div>
+      </div>
+    </div>
+
+    <h3>3.1 MCP：Agent 世界的"USB 总线"</h3>
+    <div class="tip analogy">
+      <span class="icon">🔌</span>
+      <div class="body"><strong>打个比方</strong>MCP 就像电脑主板上的总线 + 设备驱动：文件、数据库、搜索、企业服务都是"外设"，MCP 让不同 Agent Runtime 用相对一致的方式即插即用。它管"怎么连、怎么传数据"，<b>不管整个任务怎么规划</b>。</div>
+    </div>
+    <p>MCP 的核心对象是 <b>Tools、Resources 和 Prompts</b>。当前已支持输入/输出 Schema、结构化结果、可供模型自我修正的 Tool Execution Error，以及通过显式 handle 维护跨调用状态。</p>
+    <div class="tip warn">
+      <span class="icon">🔐</span>
+      <div class="body"><strong>一个容易忽视的安全细节</strong>MCP 本身没有统一的协议级状态会话——handle 在协议层只是普通字符串。因此<b>服务端必须在每次调用时重新验证调用者权限</b>，不能因为"上次验证过"就放行。<a class="src" href="https://modelcontextprotocol.io/specification/2026-07-28/server/tools" target="_blank">MCP Tools specification ↗</a></div>
+    </div>
+
+    <h3>3.2 Skill：把"老师傅的经验"打包给模型</h3>
+    <p>Skill 不是远程调用协议，更接近<b>可装载的软件包</b>。它描述模型在当前环境中应如何使用已有资源完成一类任务，通常包含：</p>
+    <div class="flow">
+      <div class="step"><b>触发条件</b><span>什么时候用我</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>操作步骤</b><span>判断原则 + Tool 组合</span></div>
+      <div class="arr">→</div>
+      <div class="step"><b>资源包</b><span>文档 / 脚本 / 模板</span></div>
+      <div class="arr">→</div>
+      <div class="step hl"><b>验收与兜底</b><span>验证方式、失败处理、停止条件</span></div>
+    </div>
+    <p>Skill 的主要价值不是新增一个能力端点，而是把个人、团队或垂直场景的<b>操作经验</b>变成模型可按需消费的流程。理想的加载方式和 Tool Search 一样：先暴露名称与描述，命中场景后再读完整说明。</p>
+
+    <h3>3.3 A2A：Agent 之间的"外包合同"</h3>
+    <p>A2A 的核心对象不是 Tool Call，而是 <b>Agent Card、Message、Task、Task State 和 Artifact</b>：</p>
+    <ul>
+      <li>远程 Agent 可以返回即时 <b>Message</b>，也可以创建一个可查询、可流式订阅、可取消、可恢复的 <b>Task</b>；</li>
+      <li>任务成果通过 <b>Artifact</b> 表达；</li>
+      <li>Streaming 区分状态事件与 Artifact 更新，适合分钟、小时级的异步任务。<a class="src" href="https://a2a-protocol.org/latest/specification/" target="_blank">A2A specification ↗</a> <a class="src" href="https://a2a-protocol.org/latest/topics/streaming-and-async/" target="_blank">Streaming & Async ↗</a></li>
+    </ul>
+    <div class="tip analogy">
+      <span class="icon">📋</span>
+      <div class="body"><strong>打个比方</strong>MCP 是"叫外卖"——点一道菜（一次工具调用），送达就结束。A2A 是"找装修公司"——签一个任务合同，对方有自主性，工期可能很长，你要能查进度、中途改需求、验收交付物（Artifact）。</div>
+    </div>
+
+    <h3>3.4 Policy / Memory Plane：看不见但缺了会出事的一层</h3>
+    <p>它不是单一协议，却是企业 Agent 不可缺少的一层：身份与租户、授权、高风险操作审批、调用日志与审计、Artifact 所有权、数据分类与跨境策略、持久记忆的写入审核。</p>
+    <p>特别地，<b>四种状态必须分开放</b>，不能一股脑存成"记忆"：</p>
+    <table>
+      <tr><th>状态类型</th><th>主要用途</th><th>是否应直接长期保存</th></tr>
+      <tr><td>Reasoning State</td><td>当前模型推理连续性</td><td>通常不应直接作为长期记忆</td></tr>
+      <tr><td>Run / Task State</td><td>当前目标、进度、阻塞与恢复点</td><td>保存到任务结束或审计期</td></tr>
+      <tr><td>Artifact State</td><td>文件、代码、报告、数据及版本</td><td>按业务生命周期保存</td></tr>
+      <tr><td>Durable Memory</td><td>经确认的偏好、事实和环境经验</td><td>经过筛选、验证后才保存</td></tr>
+    </table>
+
+    <h3>3.5 为什么 MCP 和 A2A 不会合并成一个"万能协议"</h3>
+    <div class="card">
+      <p style="margin-top:0">因为它们面向的抽象根本不同：</p>
+      <ul>
+        <li><b>MCP</b> → 相对原子的能力与数据访问；</li>
+        <li><b>A2A</b> → 有自主性的远程执行者和长生命周期任务；</li>
+        <li><b>Skill</b> → 可加载的操作知识与场景适配；</li>
+        <li><b>Responses-like API</b> → 单个模型的推理与工具循环；</li>
+        <li><b>Policy/Memory Plane</b> → 跨所有层的治理与持续状态。</li>
+      </ul>
+      <p>一个 Agent 可以<b>同时</b>通过 MCP 调数据库、通过 A2A 委托另一个 Agent；被委托的 Agent 内部还可以加载 Skill、继续调自己的 MCP Tools。统一底层传输格式，消除不了这些语义差异——<b>是否具备自主任务生命周期，就是 Tool 与 Agent 的分界线</b>。</p>
+    </div>
+    <div class="tip key"><span class="icon">📌</span><div class="body"><strong>一句话记住第 3 章</strong>Runtime 管思考，Skill 管经验，MCP 管外设，A2A 管外包，Policy/Memory 管规矩。它们是协同的五层，不是互相替代的竞争者。</div></div>
+  </section>
+
+  <!-- ============ 第 4 章 ============ -->
+  <section class="chapter" id="ch4">
+    <div class="chapter-head"><span class="num">第 4 章</span><h2>案例深扒：ARC-AGI-3 分数如何翻三倍</h2></div>
+
+    <p>理论讲完了，现在看真刀真枪的实验。这是全讲义最有说服力的一章——它证明了前面所有概念不是纸上谈兵。</p>
+
+    <h3>4.1 这是一个什么测试？</h3>
+    <p>ARC-AGI-3 是一系列<b>规则未知的二维交互游戏</b>。模型不会预先拿到规则说明书，必须像人类玩家一样边玩边摸索：</p>
+    <div class="loop">
+      <div class="node">👀 观察画面<small>当前状态</small></div>
+      <div class="chev">→</div>
+      <div class="node">💡 形成假设<small>规则猜想</small></div>
+      <div class="chev">→</div>
+      <div class="node">🎮 选择动作<small>验证猜想</small></div>
+      <div class="node">🖼️ 新画面<small>动作结果</small></div>
+      <div class="chev">→</div>
+      <div class="node">🔧 修正假设<small>更新认知</small></div>
+      <div class="back">↺ 循环几十甚至上百步——早期发现的规则，后期还要持续用</div>
+    </div>
+    <p>注意它的本质：这是<b>长程闭环任务</b>，不是一问一答。所以它对"状态连续性"极其敏感——恰好打在了老接口的软肋上。</p>
+
+    <h3>4.2 原始 Harness 的两个致命伤</h3>
+    <div class="versus">
+      <div class="col bad">
+        <h4>🩹 致命伤 ①：每步之后丢弃私有推理</h4>
+        <p style="font-size:14px">模型能看到过去的动作记录，却<b>无法继续使用产生这些动作时的内部推理状态</b>。刚发现的游戏机制、待验证的假设，下一步要重新推导。</p>
+        <ul>
+          <li>每步花大量 Token 重新解释游戏</li>
+          <li>已验证的规律不能稳定复用</li>
+          <li>策略在相邻动作间不连贯</li>
+          <li>探索难以累计成长期知识</li>
+        </ul>
+      </div>
+      <div class="col bad">
+        <h4>🩹 致命伤 ②：滚动截断早期历史</h4>
+        <p style="font-size:14px">上下文超阈值后直接<b>删除最早的动作和观察</b>。模型不仅失去过去的推理，还逐渐失去"过去发生过什么"。</p>
+        <ul>
+          <li>不只是减少信息量</li>
+          <li>更会<b>破坏因果链</b>：后期决策依赖的早期规则发现，已经从上下文里消失了</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tip analogy">
+      <span class="icon">🧩</span>
+      <div class="body"><strong>打个比方</strong>想象你在玩一个密室逃脱：每解开一个机关，管理员就让你忘掉刚才的推理过程（致命伤①）；房间快记满时，就把你最早的笔记撕掉（致命伤②）。你的智商没变，但你永远走不出这个密室。</div>
+    </div>
+
+    <h3>4.3 新 Harness 只做对了两件事</h3>
+    <div class="versus">
+      <div class="col good">
+        <h4>🔧 调整 ①：Retained Reasoning</h4>
+        <p style="font-size:14px">通过 Responses API 的 <code class="inline">previous_response_id</code> 和 persisted reasoning，让模型在后续动作中<b>继续使用兼容的 reasoning items</b>。保留的不是公开的 Chain-of-Thought，而是不透明的内部推理状态。GPT-5.6 提供三档：</p>
+        <ul>
+          <li><code class="inline">all_turns</code>：用更早回合的推理状态</li>
+          <li><code class="inline">current_turn</code>：只用当前回合（避免旧推理干扰新任务）</li>
+          <li><code class="inline">auto</code>：模型默认，GPT-5.6 相当于 all_turns</li>
+        </ul>
+      </div>
+      <div class="col good">
+        <h4>🗜️ 调整 ②：Compaction</h4>
+        <p style="font-size:14px">上下文到阈值后，不再删除最早记录，而是生成一个不透明的 <b>compaction item</b>，用更少 Token 承载后续仍需要的状态与推理。<a class="src" href="https://developers.openai.com/api/docs/guides/compaction" target="_blank">Compaction ↗</a></p>
+        <ul>
+          <li>更像"有损但面向继续执行的工作状态检查点"</li>
+          <li><b>不是</b>普通对话摘要</li>
+          <li><b>不能替代</b>可审计的原始 Trace 或业务数据库</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>4.4 结果：能力与效率同时提升</h3>
+    <div class="card">
+      <h4 style="margin-top:0">公开集得分（同一 GPT-5.6 Sol，未重新训练）</h4>
+      <div class="barchart">
+        <div class="bar-row">
+          <div class="label">ARC 官方 Harness</div>
+          <div class="bar-track"><div class="bar-fill old">13.3%</div></div>
+          <div class="bar-val" style="color:#8a84b0">13.3%</div>
+        </div>
+        <div class="bar-row">
+          <div class="label">Retained Reasoning + Compaction</div>
+          <div class="bar-track"><div class="bar-fill new">38.3%　≈ ×2.9</div></div>
+          <div class="bar-val" style="color:var(--accent)">38.3%</div>
+        </div>
+      </div>
+      <p style="font-size:14.5px;color:var(--ink-soft)">同时输出 Token 降到原来的约 <b style="color:var(--ink)">1/6</b>。更少"从头思考"，反而策略更连贯——<b>收益来自减少重复推理和状态丢失，而不是思考次数越多越好</b>。</p>
+    </div>
+    <div class="tip warn">
+      <span class="icon">🧪</span>
+      <div class="body"><strong>科学解读：别过度外推</strong>接口没有凭空创造三倍通用智能——是原接口<b>严重限制了模型展开已有能力</b>。单轮生成、分类、简单问答不会获得同等收益；收益最明显的是<b>目标持续稳定、反馈连续、需要跨多次 Tool Call 累计发现</b>的任务。</div>
+    </div>
+
+    <h3>4.5 可以直接参考的 Responses 配置</h3>
+    <p>用于"目标稳定、长程、多轮"任务的简化示例（<code class="inline">compact_threshold</code> 是示意值，应根据模型上下文、平均 Tool 输出和预留输出空间通过评测确定）：</p>
+<pre><span class="k">from</span> openai <span class="k">import</span> OpenAI
+
+client = OpenAI()
+
+response = client.responses.create(
+    model=<span class="s">"gpt-5.6"</span>,
+    input=<span class="s">"分析这个项目，定位故障并给出经过验证的修复。"</span>,
+    reasoning={
+        <span class="s">"effort"</span>: <span class="s">"medium"</span>,
+        <span class="s">"context"</span>: <span class="s">"all_turns"</span>,   <span class="c"># 保留跨回合推理状态</span>
+    },
+    context_management=[
+        {<span class="s">"type"</span>: <span class="s">"compaction"</span>, <span class="s">"compact_threshold"</span>: <span class="n">200_000</span>}
+    ],
+)
+
+<span class="c"># 后续只提交新增输入，并引用上一轮 Response：</span>
+response = client.responses.create(
+    model=<span class="s">"gpt-5.6"</span>,
+    previous_response_id=response.id,   <span class="c"># ← 状态接力的关键</span>
+    input=<span class="s">"继续执行，并检查刚才的修改是否通过测试。"</span>,
+    reasoning={<span class="s">"effort"</span>: <span class="s">"medium"</span>, <span class="s">"context"</span>: <span class="s">"all_turns"</span>},
+    context_management=[
+        {<span class="s">"type"</span>: <span class="s">"compaction"</span>, <span class="s">"compact_threshold"</span>: <span class="n">200_000</span>}
+    ],
+)</pre>
+    <div class="tip warn">
+      <span class="icon">🚫</span>
+      <div class="body"><strong>无状态模式的坑</strong>如果用 <code class="inline">store=False</code> 或无状态模式，就不能只保留可见文本——要把上一轮返回的<b>完整 <code class="inline">response.output</code></b>（含 reasoning、tool、program、compaction items）按原顺序加入下一轮 input，否则状态接力就断了。</div>
+    </div>
+    <div class="tip key"><span class="icon">📌</span><div class="body"><strong>一句话记住第 4 章</strong>ARC-AGI-3 证明：评测的对象不是"模型"，而是"模型 + API + Harness"。丢推理状态 = 反复从头思考；硬截断 = 破坏因果链；保留推理 + 压缩 = 三倍分数 + 六分之一 Token。</div></div>
+  </section>
+
+  <!-- ============ 第 5 章 ============ -->
+  <section class="chapter" id="ch5">
+    <div class="chapter-head"><span class="num">第 5 章</span><h2>八个可以直接抄的实战 Tricks</h2></div>
+    <p>把前面的原理浓缩成八条操作清单。每条都可以独立使用，不用全部上。</p>
+
+    <div class="tricks">
+      <div class="trick">
+        <h4><span class="tag">Trick 1</span>先判断任务是否需要推理连续性</h4>
+        <table style="box-shadow:none;font-size:13px;margin:8px 0;">
+          <tr><th>任务类型</th><th>建议设置</th></tr>
+          <tr><td>分类、抽取、短改写</td><td>Chat 或 Responses；none/low；无需 retained reasoning</td></tr>
+          <tr><td>多轮 Tool Use、Agent Coding</td><td>Responses；medium/high；目标稳定用 all_turns</td></tr>
+          <tr><td>独立复核、反方验证</td><td>新 Session 或 current_turn，避免路径依赖</td></tr>
+          <tr><td>超长研究 / 数据处理</td><td>Responses + Compaction + 外部 Task State</td></tr>
+          <tr><td>高风险写操作</td><td>直接 Tool Call + 显式审批，别藏进自动循环</td></tr>
+        </table>
+        <p>Retained reasoning 不是常开最好。目标变了、假设被推翻了、要独立验证时，切到 current_turn、开新分支或新会话。</p>
+      </div>
+      <div class="trick">
+        <h4><span class="tag">Trick 2</span>用 Compaction 替代硬截断，但保留外部权威状态</h4>
+        <ul>
+          <li>在接近上下文极限<b>之前</b>触发 compaction；</li>
+          <li>用 <code class="inline">previous_response_id</code> 时别再手工裁剪历史；</li>
+          <li>无状态回放时保留最近 compaction item 及其后完整 Item；</li>
+          <li>目标、验收条件、关键事实、Artifact ID、未完成事项存<b>外部 Task State</b>；</li>
+          <li>别把 compaction item 当可读、可审计、可复用的持久记忆。</li>
+        </ul>
+      </div>
+      <div class="trick">
+        <h4><span class="tag">Trick 3</span>推理强度按阶段设，别全程拉满</h4>
+        <ul>
+          <li>路由、抽取、格式转换 → <code class="inline">none/low</code></li>
+          <li>普通 Tool Use、编码执行 → <code class="inline">low/medium</code></li>
+          <li>复杂诊断、规划、研究 → <code class="inline">medium/high</code></li>
+          <li><code class="inline">xhigh/max/pro</code> → 只在评测证明显著收益时用</li>
+        </ul>
+        <p>更高 effort 不保证更高完成率，可能增加延迟、让模型在错误方向上探索更久。比较配置时同时看：完成率、总 Token、重复工具调用、延迟、证据覆盖率。</p>
+      </div>
+      <div class="trick">
+        <h4><span class="tag">Trick 4</span>别把全部工具定义预先塞入上下文</h4>
+        <ul>
+          <li>高频基础工具直接加载；</li>
+          <li>大型工具集合用 namespace 分组；</li>
+          <li>低频工具走 Tool Search + <code class="inline">defer_loading</code>；</li>
+          <li>名称和描述要强调工具之间的<b>区别</b>；</li>
+          <li>记录"模型看见了哪些工具"，否则实验无法复现。</li>
+        </ul>
+      </div>
+      <div class="trick">
+        <h4><span class="tag">Trick 5</span>区分直接调用与程序化调用</h4>
+        <p>判断标准一句话：<b>下一步是否只依赖结构化字段和确定性规则？</b>是 → 程序化（并行、过滤、聚合）；否 → 回模型做语义判断。</p>
+        <p>写入、删除、付款、发布、对外发送——默认走直接调用，并保留审批点。</p>
+      </div>
+      <div class="trick">
+        <h4><span class="tag">Trick 6</span>Tool 输出提供"双视图"</h4>
+<pre style="font-size:12px;padding:14px;margin:8px 0;"><span class="k">summary:</span>    <span class="c">供模型快速判断的精简结论</span>
+<span class="k">structured:</span> <span class="c">供程序消费、经 output schema 校验</span>
+<span class="k">resources:</span>  <span class="c">原始文件、游标或对象 handle</span>
+<span class="k">evidence:</span>   <span class="c">来源、版本、时间与校验信息</span>
+<span class="k">control:</span>
+  status: completed
+  retryable: <span class="k">false</span></pre>
+        <p>Markdown 适合阅读，结构化数据适合组合，handle 适合存大对象，evidence 适合验证——别把一切都转成 Markdown，也别把原始数据全塞给模型。</p>
+      </div>
+      <div class="trick">
+        <h4><span class="tag">Trick 7</span>错误信息要支持模型自我恢复</h4>
+        <p>把错误分成五类，分别处理：</p>
+        <ul>
+          <li>参数可修复 → 告诉模型怎么改；</li>
+          <li>临时错误 → 有限重试；</li>
+          <li>权限不足 → 请求用户或系统授权；</li>
+          <li>状态失效 → 重建 handle；</li>
+          <li>永久失败 → 停止并说明原因。</li>
+        </ul>
+        <p>错误结果应显式包含 <code class="inline">retryable</code>、错误字段、期望格式、建议动作。重试必须有上限，并用 idempotency key 避免重复副作用。</p>
+      </div>
+      <div class="trick">
+        <h4><span class="tag">Trick 8</span>评测记录 Harness，不只记模型名</h4>
+        <p>至少记录：模型快照、接口类型、reasoning mode/effort/context、store 与回放方式、compaction 阈值与策略、Tool 列表与 Schema 版本、direct/programmatic 调用方式、retry/stop/approval 规则、Sandbox 与依赖版本。</p>
+        <p><b>否则所谓的"模型能力变化"，可能只是接口和执行环境变了。</b></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 第 6 章 ============ -->
+  <section class="chapter" id="ch6">
+    <div class="chapter-head"><span class="num">第 6 章</span><h2>未来：接口会长成什么样</h2></div>
+
+    <h3>6.1 从 generate() 到 run()：生成接口 → 任务运行时</h3>
+    <div class="versus">
+      <div class="col bad" style="border-color:var(--line);background:#faf9f7;">
+        <h4 style="color:var(--ink-soft)">过去：生成接口</h4>
+        <p style="font-family:monospace;font-size:15px;font-weight:700;">generate(messages) → text</p>
+        <p style="font-size:13.5px;color:var(--ink-soft)">输入消息，输出文本。仅此而已。</p>
+      </div>
+      <div class="col good" style="border-color:#c9c4f2;background:#f7f6fe;">
+        <h4 style="color:var(--accent)">未来：任务运行时</h4>
+<pre style="margin:0;font-size:12px;padding:12px 14px;">run(
+  task, state_refs,
+  available_capabilities,
+  policy, budget,
+  output_contract
+)
+→ events + artifacts
+  + evidence + checkpoint</pre>
+      </div>
+    </div>
+    <p>接口的核心对象将从 Message 扩展为一整个"任务词汇表"：</p>
+    <table>
+      <tr><th>对象</th><th>含义</th></tr>
+      <tr><td>Task</td><td>要完成的目标与生命周期</td></tr>
+      <tr><td>Item / Event</td><td>一次运行中的消息、推理、工具和状态事件</td></tr>
+      <tr><td>Artifact</td><td>真正交付给用户或下游系统的结果</td></tr>
+      <tr><td>Checkpoint</td><td>任务恢复点</td></tr>
+      <tr><td>Capability</td><td>可发现、可授权的工具或 Agent</td></tr>
+      <tr><td>Policy</td><td>谁可以在什么条件下执行什么动作</td></tr>
+      <tr><td>Memory</td><td>哪些经验证的信息可以跨任务复用</td></tr>
+    </table>
+
+    <h3>6.2 五层接口将长期并存（各自行进化）</h3>
+    <table>
+      <tr><th>层</th><th>核心职责</th><th>演进方向</th></tr>
+      <tr><td>Responses-like Model API</td><td>推理、状态连续性、Compaction、模型内 Tool Loop</td><td>更细粒度状态控制、自动上下文管理、任务级预算与恢复</td></tr>
+      <tr><td>MCP</td><td>Agent 与 Tool/Data 的能力总线</td><td>动态发现、结构化结果、异步 Task、权限与企业治理扩展</td></tr>
+      <tr><td>Skill</td><td>按需加载的环境操作知识</td><td>标准 Manifest、依赖与权限声明、测试、版本与兼容性</td></tr>
+      <tr><td>A2A</td><td>Agent 间任务委托、状态与 Artifact</td><td>Agent 发现、异步任务、流式进度、跨组织授权</td></tr>
+      <tr><td>Policy/Memory Plane</td><td>授权、审计、租户、持久记忆与数据治理</td><td>细粒度委托、Memory 写入门槛、数据谱系、跨 Agent 审计</td></tr>
+    </table>
+
+    <h3>6.3 另外三个值得记住的趋势</h3>
+    <div class="card">
+      <h4 style="margin-top:0">🔀 上层更语义化，下层更类型化</h4>
+      <p>未来接口不会全面变成自然语言 API，而是两阶段：① Agent 用自然语言表达目标、约束和成功标准；② Runtime 把意图<b>编译成可检查的类型化计划</b>，校验权限、成本、副作用后再执行。"Agent-friendly"不等于弱化 Schema——Schema 还会表达前置条件、副作用与风险等级、幂等性与补偿操作、授权范围、成本延迟、结果证据。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">🗂️ 上下文会变成"被调度的工作集"</h4>
+      <p>即使上下文窗口继续扩大，模型也不该当搬运工。未来更像一个 <b>Context OS</b>：原始数据留在外部系统；Agent 用 handle / URI / cursor / Artifact ID 引用；按阶段以 summary / slice / query / raw 视图读取；Tool Schema 和 Skill 按需加载；Compaction 只维护当前任务的工作集；Durable Memory 只存验证过的信息。</p>
+    </div>
+    <div class="card">
+      <h4 style="margin-top:0">🧱 协议边界不会消失</h4>
+      <p>MCP（I/O 总线）、A2A（分布式协作）、Skill（软件包）、Responses-like API（认知运行时）、Policy/Memory（治理层）会共享身份、Schema、Artifact 和事件格式，也会相互引用——但<b>是否具备自主任务生命周期</b>这条 Tool 与 Agent 的分界线不会消失。</p>
+    </div>
+
+    <blockquote class="quote">
+      Chat API 暴露模型的"说话能力"；下一代 Agent API 暴露的是模型在一个受控世界中持续工作、恢复状态、调用能力并交付可验证结果的能力。
+      <footer>—— 全文核心结论</footer>
+    </blockquote>
+  </section>
+
+  <!-- ============ 第 7 章：自测 ============ -->
+  <section class="chapter" id="ch7">
+    <div class="chapter-head"><span class="num">✅</span><h2>学完了吗？六道题自测一下</h2></div>
+    <p>先自己作答，再点开看答案。能答对 5 题以上，说明你已经掌握了这份材料的主干。</p>
+
+    <details class="quiz">
+      <summary>为什么 ARC-AGI-3 上同一个模型换 Harness 后得分能从 13.3% 涨到 38.3%？</summary>
+      <div class="ans"><b>答：</b>不是模型变强了，而是原 Harness 丢掉了两个关键状态：① 每步后丢弃私有推理，模型被迫反复从头推导；② 滚动截断早期历史，破坏了"早期规则发现 → 后期决策"的因果链。新 Harness 用 Retained Reasoning 保留推理状态、用 Compaction 替代硬截断，让模型已有能力得以展开，还顺带把输出 Token 降到约 1/6。</div>
+    </details>
+    <details class="quiz">
+      <summary>Chat API 的问题仅仅是"无状态"吗？</summary>
+      <div class="ans"><b>答：</b>不是。真正的问题是 <b>Message 这个抽象装不下关键对象</b>：推理状态、工具执行阶段、压缩检查点和长任务生命周期都无法表达。对单轮问答无所谓，但对几十次观察—行动循环的 Agent 任务可能直接影响完成率。</div>
+    </details>
+    <details class="quiz">
+      <summary>MCP 和 A2A 既然都是"Agent 接口"，为什么不会合并？</summary>
+      <div class="ans"><b>答：</b>它们面向的抽象不同：MCP 面向相对原子的能力与数据访问（像设备驱动 / I/O 总线），A2A 面向有自主性的远程执行者和长生命周期任务（像分布式协作协议）。"是否具备自主任务生命周期"是 Tool 与 Agent 的分界线，统一传输格式消除不了语义差异。</div>
+    </details>
+    <details class="quiz">
+      <summary>一个工具返回 "400 Bad Request"，对 Agent 来说问题在哪？</summary>
+      <div class="ans"><b>答：</b>模型不知道错在哪、能不能重试、该怎么修，只能瞎猜。Agent-friendly 的错误应包含 error_type、出错字段、期望格式、实际收到值、是否 retryable 和建议动作，让模型能自我恢复。</div>
+    </details>
+    <details class="quiz">
+      <summary>什么时候应该把 retained reasoning 关掉（用 current_turn 或新会话）？</summary>
+      <div class="ans"><b>答：</b>三种情况：① 用户目标改变了；② 早期假设已被推翻，旧推理会误导；③ 需要真正独立的验证（如反方复核）——继承原执行者的推理会产生路径依赖，让"复核"形同虚设。</div>
+    </details>
+    <details class="quiz">
+      <summary>Compaction item 可以当作长期记忆或审计日志来用吗？</summary>
+      <div class="ans"><b>答：</b>不行。Compaction 是"有损、不透明、面向继续执行的工作状态检查点"，不是可读可审计的记录。目标、验收条件、关键事实应保存在外部 Task State；审计要靠原始 Trace 和业务数据库；跨任务复用要靠经过筛选验证的 Durable Memory。</div>
+    </details>
+
+    <h3>📄 一页纸总结</h3>
+    <div class="card" style="border-top:5px solid var(--accent);">
+      <ol style="margin-left:20px;">
+        <li><b>能力公式</b>：观察到的能力 = F(模型, 推理API, 推理状态, 上下文策略, 工具, Harness)。模型只是六分之一。</li>
+        <li><b>推理接口</b>：Chat API 健忘；Responses-like API 以 Item 为单位保留状态；Realtime 管节奏；Async 管任务寿命。</li>
+        <li><b>工具接口</b>：五级台阶——Function Calling → Hosted → Tool Search → 程序化调用 → Stateful（handle）。方向是让模型少搬砖。</li>
+        <li><b>协议层</b>：Runtime 管思考、Skill 管经验、MCP 管外设、A2A 管外包、Policy/Memory 管规矩。五层并存，不会合并。</li>
+        <li><b>ARC-AGI-3 铁证</b>：保留推理 + 压缩替代截断，同模型得分 13.3% → 38.3%，Token 降至 1/6。评测对象是"模型 + API + Harness"。</li>
+        <li><b>实战</b>：按需开推理连续性；Compaction 前先备好外部 Task State；推理强度按阶段调；工具按需加载；危险操作走审批；错误信息要可恢复；评测记录全量 Harness 配置。</li>
+        <li><b>未来</b>：generate() → run()；上下文变成被调度的工作集（Context OS）；上层语义化、下层类型化。</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ 参考资料 ============ -->
+  <footer class="refs" id="refs">
+    <h4 style="font-size:15px;color:var(--ink);margin-bottom:12px;">📚 参考资料（来自原文档）</h4>
+    <ol>
+      <li><a href="https://openai.com/index/how-two-settings-tripled-our-arc-agi-3-scores/" target="_blank">OpenAI：How enabling two settings tripled our scores on the ARC-AGI-3 benchmark</a></li>
+      <li><a href="https://developers.openai.com/api/docs/guides/reasoning" target="_blank">OpenAI API：Reasoning models</a></li>
+      <li><a href="https://developers.openai.com/api/docs/guides/compaction" target="_blank">OpenAI API：Compaction</a></li>
+      <li><a href="https://developers.openai.com/api/docs/guides/tools-tool-search" target="_blank">OpenAI API：Tool search</a></li>
+      <li><a href="https://developers.openai.com/api/docs/guides/tools-programmatic-tool-calling" target="_blank">OpenAI API：Programmatic Tool Calling</a></li>
+      <li><a href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp" target="_blank">OpenAI API：MCP and Connectors</a></li>
+      <li><a href="https://modelcontextprotocol.io/specification/2026-07-28/server/tools" target="_blank">Model Context Protocol：Tools specification</a></li>
+      <li><a href="https://a2a-protocol.org/latest/specification/" target="_blank">A2A Protocol：Specification</a></li>
+      <li><a href="https://a2a-protocol.org/latest/topics/streaming-and-async/" target="_blank">A2A Protocol：Streaming and Asynchronous Operations</a></li>
+    </ol>
+    <p style="margin-top:22px;">本页面由 Markdown 技术文档《从 Chat API 到 Agent Runtime》（2026-08-08）重组改写而成 · 纯 HTML/CSS，无外部依赖，可离线打开。</p>
+  </footer>
+  </main>
+</div>
+
+<script>
+  // 顶部阅读进度条
+  const bar = document.getElementById('progress');
+  addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const p = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
+    bar.style.width = p + '%';
+  }, {passive:true});
+</script>
+</body>
+</html>

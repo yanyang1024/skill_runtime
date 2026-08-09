@@ -1,0 +1,175 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 04 · 案例深扒}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1000, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 规则未知的游戏：长程闭环任务的软肋}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: loop-n1
+    elementType: shape
+    bounds: [85, 142, 190, 58]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1.5, color: "$primary"}
+  - elementId: loop-t1
+    elementType: text
+    bounds: [85, 142, 190, 58]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: <strong>👀 观察画面</strong>}
+  - elementId: loop-a1
+    elementType: text
+    bounds: [275, 142, 40, 58]
+    content: {fontSize: 20, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: loop-n2
+    elementType: shape
+    bounds: [315, 142, 190, 58]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1.5, color: "$primary"}
+  - elementId: loop-t2
+    elementType: text
+    bounds: [315, 142, 190, 58]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: <strong>💡 形成假设</strong>}
+  - elementId: loop-a2
+    elementType: text
+    bounds: [505, 142, 40, 58]
+    content: {fontSize: 20, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: loop-n3
+    elementType: shape
+    bounds: [545, 142, 190, 58]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1.5, color: "$primary"}
+  - elementId: loop-t3
+    elementType: text
+    bounds: [545, 142, 190, 58]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: <strong>🎮 选择动作</strong>}
+  - elementId: loop-a3
+    elementType: text
+    bounds: [735, 142, 40, 58]
+    content: {fontSize: 20, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: loop-n4
+    elementType: shape
+    bounds: [775, 142, 190, 58]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$paper"}
+    border: {style: solid, width: 1.5, color: "$primary"}
+  - elementId: loop-t4
+    elementType: text
+    bounds: [775, 142, 190, 58]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: <strong>🖼️ 新画面</strong>}
+  - elementId: loop-a4
+    elementType: text
+    bounds: [965, 142, 40, 58]
+    content: {fontSize: 20, fontFamily: "MiSans", color: "$primary", wrap: false, align: [center, middle], text: →}
+  - elementId: loop-n5
+    elementType: shape
+    bounds: [1005, 142, 190, 58]
+    shapeName: roundRect
+    adjustments: [14000]
+    fill: {type: solid, color: "$primarySoft"}
+    border: {style: solid, width: 1.5, color: "$primary"}
+  - elementId: loop-t5
+    elementType: text
+    bounds: [1005, 142, 190, 58]
+    content: {fontSize: 15, fontFamily: "MiSans", color: "$ink", wrap: false, align: [center, middle], text: <strong>🔧 修正假设</strong>}
+  - elementId: loop-back
+    elementType: text
+    bounds: [85, 212, 1110, 26]
+    content: {fontSize: 14, fontFamily: "MiSans", color: "$accent", wrap: false, align: [center, middle], text: <strong>↺ 循环几十甚至上百步——早期发现的规则后期还要用，对"状态连续性"极其敏感</strong>}
+  - elementId: bad1-bg
+    elementType: shape
+    bounds: [70, 264, 555, 264]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$badSoft"}
+  - elementId: bad1-head
+    elementType: text
+    bounds: [96, 282, 500, 26]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$bad", wrap: false, align: [left, middle], text: <strong>🩹 致命伤 ①：每步丢弃私有推理</strong>}
+  - elementId: bad1-text
+    elementType: text
+    bounds: [96, 318, 503, 196]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.65
+      align: [left, top]
+      text: |
+        <p>模型能看到过去的动作记录，却无法继续使用产生这些动作时的<strong>内部推理状态</strong>：</p>
+        <ul>
+        <li>每一步都花大量 Token 重新解释游戏</li>
+        <li>已验证的规律不能稳定复用</li>
+        <li>策略在相邻动作间不连贯</li>
+        <li>探索难以累计成长期知识</li>
+        </ul>
+  - elementId: bad2-bg
+    elementType: shape
+    bounds: [655, 264, 555, 264]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$badSoft"}
+  - elementId: bad2-head
+    elementType: text
+    bounds: [681, 282, 500, 26]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$bad", wrap: false, align: [left, middle], text: <strong>🩹 致命伤 ②：滚动截断早期历史</strong>}
+  - elementId: bad2-text
+    elementType: text
+    bounds: [681, 318, 503, 196]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.65
+      align: [left, top]
+      text: |
+        <p>上下文超阈值后直接<strong>删除最早的动作和观察</strong>，模型逐渐失去"过去发生过什么"：</p>
+        <ul>
+        <li>不只是减少信息量</li>
+        <li>更会破坏因果链——后期决策依赖很早的规则发现</li>
+        <li>而这些记录已经不在上下文中</li>
+        </ul>
+  - elementId: ana-bg
+    elementType: shape
+    bounds: [70, 552, 1140, 88]
+    shapeName: roundRect
+    adjustments: [10000]
+    fill: {type: solid, color: "$accentSoft"}
+  - elementId: ana-text
+    elementType: text
+    bounds: [100, 552, 1080, 88]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.55
+      align: [left, middle]
+      text: <strong>🧩 打个比方：</strong>密室逃脱里，每解开一个机关就被要求忘掉刚才的推理过程（致命伤①）；笔记记满了就把最早的几页撕掉（致命伤②）。你的智商没变——但你永远走不出这个密室。
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "14"}

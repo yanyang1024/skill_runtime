@@ -1,0 +1,136 @@
+pageType: content
+background:
+  type: solid
+  color: "$bg"
+elements:
+  - elementId: kicker
+    elementType: text
+    bounds: [70, 40, 700, 22]
+    content: {style: "$kicker", wrap: false, align: [left, middle], text: PART 04 · 案例深扒}
+  - elementId: title
+    elementType: text
+    bounds: [70, 66, 1060, 42]
+    content: {style: "$title", wrap: false, align: [left, middle], text: 只做对两件事：保留推理 + 压缩替代截断}
+  - elementId: title-bar
+    elementType: shape
+    bounds: [70, 118, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: fix1-bg
+    elementType: shape
+    bounds: [70, 140, 540, 222]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$goodSoft"}
+  - elementId: fix1-head
+    elementType: text
+    bounds: [96, 158, 490, 26]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$good", wrap: false, align: [left, middle], text: <strong>🔧 调整 ①：Retained Reasoning</strong>}
+  - elementId: fix1-text
+    elementType: text
+    bounds: [96, 192, 490, 156]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.6
+      align: [left, top]
+      text: |
+        <p>用 previous_response_id + persisted reasoning，让模型继续使用兼容的 reasoning items（不透明的内部状态，非公开 CoT）。三档控制：</p>
+        <ul>
+        <li><strong>all_turns</strong>：用更早回合的推理状态</li>
+        <li><strong>current_turn</strong>：只用当前回合，避免旧推理干扰</li>
+        <li><strong>auto</strong>：默认，GPT-5.6 相当于 all_turns</li>
+        </ul>
+  - elementId: fix2-bg
+    elementType: shape
+    bounds: [70, 378, 540, 218]
+    shapeName: roundRect
+    adjustments: [7000]
+    fill: {type: solid, color: "$goodSoft"}
+  - elementId: fix2-head
+    elementType: text
+    bounds: [96, 396, 490, 26]
+    content: {fontSize: 17, fontFamily: "MiSans", color: "$good", wrap: false, align: [left, middle], text: <strong>🗜️ 调整 ②：Compaction</strong>}
+  - elementId: fix2-text
+    elementType: text
+    bounds: [96, 430, 490, 152]
+    content:
+      fontSize: 13
+      fontFamily: "MiSans"
+      color: "$ink"
+      lineHeight: 1.6
+      align: [left, top]
+      text: |
+        <p>上下文到阈值后不再删除最早记录，而是生成不透明的 compaction item，用更少 Token 承载后续仍需要的状态与推理。</p>
+        <p>= 有损但面向继续执行的<strong>工作状态检查点</strong></p>
+        <p>≠ 普通对话摘要　≠ 可审计的原始 Trace</p>
+  - elementId: chart-title
+    elementType: text
+    bounds: [650, 140, 560, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "$ink", wrap: false, align: [left, middle], text: <strong>公开集得分（同一 GPT-5.6 Sol，未重新训练）</strong>}
+  - elementId: score-chart
+    elementType: chart
+    bounds: [650, 176, 560, 296]
+    type: bar
+    data:
+      - {harness: "ARC 官方 Harness", score: 13.3}
+      - {harness: "Reasoning + Compaction", score: 38.3}
+    x: harness
+    y: [score]
+    names: ["得分 (%)"]
+    colors: ["#4A44C6"]
+    options:
+      direction: horizontal
+      fontFamily: "MiSans"
+      barWidth: 0.5
+    legend: false
+    dataLabels:
+      show: true
+      fontSize: 14
+      color: "#23252D"
+    xAxis:
+      min: 0
+      max: 45
+      label: {fontSize: 12, color: "#5C5F6B"}
+    yAxis:
+      label: {fontSize: 12, color: "#23252D"}
+  - elementId: chart-note
+    elementType: text
+    bounds: [650, 488, 560, 108]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "$soft"
+      lineHeight: 1.6
+      align: [left, top]
+      text: 同时输出 Token 降到原来的约 <strong>1/6</strong>。更少"从头思考"，策略反而更连贯——收益来自减少重复推理和状态丢失，而不是思考次数越多越好。
+  - elementId: takeaway-bg
+    elementType: shape
+    bounds: [70, 616, 1140, 44]
+    shapeName: roundRect
+    adjustments: [16000]
+    fill: {type: solid, color: "$primarySoft"}
+  - elementId: takeaway
+    elementType: text
+    bounds: [100, 616, 1080, 44]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "$ink"
+      wrap: false
+      align: [left, middle]
+      text: <strong>📌 评测对象 = 模型 + API + Harness。</strong>接口没有创造三倍智能，是原接口限制了已有能力——勿外推到单轮任务。
+  - elementId: footer-line
+    elementType: shape
+    bounds: [70, 676, 1140, 0]
+    shapeName: straightConnector1
+    border: {style: solid, width: 1, color: "$line"}
+  - elementId: footer-left
+    elementType: text
+    bounds: [70, 686, 500, 20]
+    content: {style: "$small", wrap: false, align: [left, middle], text: 从 Chat API 到 Agent Runtime · 技术分享}
+  - elementId: page-num
+    elementType: text
+    bounds: [1130, 686, 80, 20]
+    content: {style: "$small", wrap: false, align: [right, middle], text: "15"}

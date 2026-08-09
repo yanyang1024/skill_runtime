@@ -1,0 +1,85 @@
+pageType: final
+background:
+  type: gradient
+  gradientType: linear
+  angle: 135
+  stops:
+    - {position: 0, color: "#26233F"}
+    - {position: 1, color: "#3D3580"}
+elements:
+  - elementId: deco-circle
+    elementType: shape
+    bounds: [740, 584, 110, 110]
+    shapeName: ellipse
+    fill: {type: solid, color: "#FFFFFF08"}
+  - elementId: kicker
+    elementType: text
+    bounds: [90, 120, 500, 24]
+    content:
+      fontSize: 14
+      fontFamily: "MiSans"
+      color: "#B9B4E0"
+      letterSpacing: 4
+      wrap: false
+      align: [left, middle]
+      text: 结语 · KEY TAKEAWAY
+  - elementId: quote-bar
+    elementType: shape
+    bounds: [90, 164, 64, 5]
+    shapeName: rect
+    fill: {type: solid, color: "$accent"}
+  - elementId: quote
+    elementType: text
+    bounds: [90, 196, 640, 240]
+    content:
+      fontSize: 25
+      fontFamily: "alimamashuheiti"
+      color: "#FFFFFF"
+      lineHeight: 1.65
+      align: [left, top]
+      text: |
+        <p>「Chat API 暴露模型的『说话能力』；下一代 Agent API 暴露的，是模型在一个受控世界中持续工作、恢复状态、调用能力并交付可验证结果的能力。」</p>
+  - elementId: quote-sub
+    elementType: text
+    bounds: [90, 456, 620, 60]
+    content:
+      fontSize: 15
+      fontFamily: "MiSans"
+      color: "#CFCAE8"
+      lineHeight: 1.6
+      align: [left, top]
+      text: 接口设计不再只是工程兼容问题——它直接决定模型在长程任务中的有效能力、Token 消耗和可靠性。
+  - elementId: footer-note
+    elementType: text
+    bounds: [90, 640, 640, 22]
+    content: {fontSize: 13, fontFamily: "MiSans", color: "#8F8AB0", wrap: false, align: [left, middle], text: 配套：同名 HTML 交互讲义（含自测题与一页纸总结）· 2026-08}
+  - elementId: refs-bg
+    elementType: shape
+    bounds: [790, 120, 400, 480]
+    shapeName: roundRect
+    adjustments: [5000]
+    fill: {type: solid, color: "#FFFFFF0D"}
+    border: {style: solid, width: 1, color: "#FFFFFF22"}
+  - elementId: refs-head
+    elementType: text
+    bounds: [818, 142, 344, 26]
+    content: {fontSize: 16, fontFamily: "MiSans", color: "#FFFFFF", wrap: false, align: [left, middle], text: <strong>📚 参考资料</strong>}
+  - elementId: refs-list
+    elementType: text
+    bounds: [818, 180, 348, 400]
+    content:
+      fontSize: 12
+      fontFamily: "MiSans"
+      color: "#B9B4E0"
+      lineHeight: 1.9
+      align: [left, top]
+      text: |
+        <p>1. <a href="https://openai.com/index/how-two-settings-tripled-our-arc-agi-3-scores/">OpenAI：两个设置让 ARC-AGI-3 得分翻三倍</a></p>
+        <p>2. <a href="https://developers.openai.com/api/docs/guides/reasoning">OpenAI API：Reasoning models</a></p>
+        <p>3. <a href="https://developers.openai.com/api/docs/guides/compaction">OpenAI API：Compaction</a></p>
+        <p>4. <a href="https://developers.openai.com/api/docs/guides/tools-tool-search">OpenAI API：Tool search</a></p>
+        <p>5. <a href="https://developers.openai.com/api/docs/guides/tools-programmatic-tool-calling">OpenAI API：Programmatic Tool Calling</a></p>
+        <p>6. <a href="https://developers.openai.com/api/docs/guides/tools-connectors-mcp">OpenAI API：MCP and Connectors</a></p>
+        <p>7. <a href="https://modelcontextprotocol.io/specification/2026-07-28/server/tools">MCP：Tools specification</a></p>
+        <p>8. <a href="https://a2a-protocol.org/latest/specification/">A2A Protocol：Specification</a></p>
+        <p>9. <a href="https://a2a-protocol.org/latest/topics/streaming-and-async/">A2A：Streaming and Async</a></p>
