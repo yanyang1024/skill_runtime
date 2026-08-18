@@ -1,0 +1,1024 @@
+基于你现在的描述，我会先下一个判断：**你当前最值得优化的地方，不是继续给 LLM 塞更多统计特征，而是把“任务语义、可评价边界、LLM 与程序的分工”再切干净一点。**
+
+你现在已经做对了一个很重要的基础设计：**预测 Agent 与 GT 物理隔离，预测和评估分开**。下一步我建议从“lookahead trajectory prediction”稍微改成“state → action → transition → replan”的形式。
+
+---
+
+# 1. 先重新定义你真正要预测的东西
+
+目前隐含模型大概是：
+
+```text
+截至 Phase t 的知识
+      ↓
+预测未来 Phase t+1 ... Phase 7
+      ↓
+预测 knob sequence
+      ↓
+预测 metric trajectory
+      ↓
+拿真实 Phase t+1...7 全轨迹评估
+```
+
+这里有一个根本问题。
+
+假设模型在 P2 预测：
+
+```text
+P3: 调 A
+P4: 调 B
+P5: 调 C
+```
+
+但真实工程师在 P3 调的是 D。
+
+那么从 P3 开始，真实系统状态已经进入：
+
+```text
+S2 --D--> S3'
+```
+
+而模型预测的是：
+
+```text
+S2 --A--> S3
+```
+
+此时再拿真实 P4/P5 去评价模型预测的 B/C 后果，其实已经没有严格意义。
+
+所以我建议把核心任务正式定义为：
+
+```text
+State S_t
+    ↓
+选择 Action A_t
+    ↓
+预测 Transition ΔY_(t+1)
+    ↓
+观察真实结果
+    ↓
+Replan
+```
+
+也就是一个非常轻量的 **receding horizon / MPC 式 Agent Loop**。
+
+不需要真的做复杂控制算法，只借它的任务结构。
+
+---
+
+# 2. 你现在任务里其实混了三个不同问题
+
+目前一个 `semantic_forecast.json` 同时在做：
+
+### A. 决策预测
+
+> 下一步应该调什么？
+
+```text
+P(A_t | S_t)
+```
+
+### B. 工艺响应预测
+
+> 如果这么调，指标会怎么变化？
+
+```text
+P(ΔY | S_t, A_t)
+```
+
+### C. 多步策略 rollout
+
+> 后面几步会怎么继续调？
+
+```text
+A_t → Y_t+1 → A_t+1 → Y_t+2...
+```
+
+这三个难度完全不同。
+
+我建议**核心 benchmark 先只保证 A+B 做好**。
+
+多步 C 留着，但从“硬预测未来 sequence”降级成：
+
+```text
+conditional rollout
+```
+
+例如：
+
+```text
+现在：
+ME2B +0.3
+
+预计：
+DVC -0.2 ~ -0.4
+Gouging +0.1 ~ +0.2
+
+下一步条件：
+IF DVC 已进窗口 AND gouging恶化:
+    调 HT OE ↓
+ELSE IF DVC改善不足:
+    ME2B 再 +0.1
+ELSE:
+    STOP
+```
+
+这比：
+
+```text
+P3 ME2B+
+P4 HT OE-
+P5 RR+
+P6 ...
+```
+
+更符合真实调试过程。
+
+因为未来 action 本来就应该依赖未来 observation。
+
+---
+
+# 3. 目前输入中，我认为最重要的缺失不是 mechanism，而是 `target gap`
+
+你现在有：
+
+```text
+knowhow
+mechanism
+response_coef
+run history
+remain_window
+next_plan
+```
+
+但真正决定“下一步调什么”的核心变量应该显式存在：
+
+```text
+当前指标状态
++
+距离目标还有多少
++
+哪些是 hard constraint
++
+哪个指标当前优先级最高
+```
+
+例如不要只告诉模型：
+
+```text
+DVC 本阶段 -0.3
+CD +0.1
+```
+
+而应该给：
+
+```json
+{
+  "metric": "DVC",
+  "current": 5.8,
+  "target": [5.0, 5.3],
+  "gap_to_target": -0.5,
+  "priority": "high"
+}
+```
+
+否则 Agent 很容易变成：
+
+> “根据历史趋势猜工程师下一步干什么”
+
+而不是：
+
+> “根据目标状态决定下一步应该干什么”。
+
+这两个任务是不一样的。
+
+---
+
+# 4. `next_plan` 和 `output_plan.json` 要特别小心
+
+这是我认为你整个 benchmark 里**最值得检查的潜在风险点**。
+
+你现在把：
+
+```text
+current_window_plan
+output_plan.json
+```
+
+都给 predictor。
+
+尤其 `output_plan.json` 又包含：
+
+```text
+predicted_knob_sequence
+predicted_reach
+predicted_trajectory_delta
+```
+
+而且这些字段目前还是：
+
+> “原始数据提炼 / 手写”
+
+那么你实际上很难知道最终效果来自：
+
+```text
+LLM reasoning
+```
+
+还是：
+
+```text
+人已经把答案提示得差不多了
+```
+
+甚至有更隐蔽的风险：
+
+虽然 `ground_truth.json` 被隔离了，但如果 `PREDICTED_KNOB_SEQ` 是看完整 PPT / 后续调试过程后整理出来的，那么属于：
+
+> **semantic leakage，而不是 filesystem leakage。**
+
+物理隔离解决不了。
+
+---
+
+## 我更建议把 `output_plan.json` 改成：
+
+```text
+candidate_actions.json
+```
+
+例如程序根据当前数据算：
+
+```json
+[
+  {
+    "action": "ME2B +0.2",
+    "empirical_effect": {
+      "DVC": -0.25,
+      "Gouging": 0.12
+    },
+    "confidence": "medium"
+  },
+  {
+    "action": "HT_OE -0.1",
+    "empirical_effect": {
+      "DVC": -0.08,
+      "Gouging": -0.20
+    },
+    "confidence": "low"
+  }
+]
+```
+
+然后让 LLM 做：
+
+> **选择 + trade-off reasoning + regime adjustment**
+
+而不是让 LLM 看一个已经写好的未来 trajectory 再修改。
+
+这样能非常清楚地测：
+
+```text
+程序 baseline
+vs
+程序 + LLM
+```
+
+---
+
+# 5. 我会把你的数据流改成这个最小版本
+
+你目前是：
+
+```text
+Raw
+ ↓
+task_spec
+ ↓
+大量 cumulative feature
+ ↓
+output_plan
+ ↓
+LLM
+```
+
+我更推荐：
+
+```text
+Control Table / CH Recipe / PPT
+            ↓
+      phase_event.json
+            ↓
+    deterministic compiler
+            ↓
+     decision_packet.json
+       ↙             ↘
+candidate_actions   evidence
+       \             /
+        Predictor LLM
+             ↓
+       forecast.json
+             ↓
+          freeze
+             ↓
+       load GroundTruth
+             ↓
+ deterministic evaluator
+             ↓
+ semantic postmortem
+```
+
+其中每一个 phase 最好统一成一个 event：
+
+```json
+{
+  "phase": 3,
+
+  "context": {
+    "wafer": "...",
+    "recipe": "...",
+    "chamber": "..."
+  },
+
+  "state_before": {...},
+
+  "action": {
+    "param": "ME2B",
+    "process_step": "...",
+    "knob_delta": 0.2,
+    "unit": "..."
+  },
+
+  "state_after": {...},
+
+  "metric_delta": {...},
+
+  "engineer_observation": "...",
+
+  "next_plan_as_of_phase": "..."
+}
+```
+
+尤其注意一个字段：
+
+```text
+knob_delta
+```
+
+你现在的输出 schema 里强调了：
+
+```text
+param / step / direction / unit / at
+```
+
+但如果没有**明确的 knob 调节幅度**：
+
+```text
+Δknob
+```
+
+那么：
+
+> metric magnitude prediction 本身就缺一个必要自变量。
+
+`ME2B ↑` 和 `ME2B +0.1` / `+0.8` 不可能应该对应同样的 Δmetric。
+
+---
+
+# 6. 对 25 knob × 9 metric knowhow，我会重新分三类知识
+
+现在不要继续增加很多新字段，只做三层。
+
+## Layer 1：静态物理先验
+
+就是你准备加入的 `mechanism_prior`。
+
+回答：
+
+> 为什么可能这样？
+
+例如：
+
+```text
+knob
+→ plasma / etch / deposition intermediate state
+→ metric
+```
+
+重点加入：
+
+```text
+direction
+regime condition
+tradeoff
+confidence
+source
+```
+
+特别重要的是 `regime condition`：
+
+```text
+通常 DVC ↓
+BUT 当 xxx 状态时可能饱和/反转
+```
+
+否则 mechanism prior 只是更高级一点的“方向 lookup table”。
+
+---
+
+## Layer 2：本 run 已观测经验
+
+回答：
+
+> 在这个具体 wafer / recipe / 当前状态下，实际上发生过什么？
+
+例如：
+
+```text
+ME2B +0.2
+→ DVC -0.28
+→ gouging +0.11
+```
+
+这是 magnitude 最重要的数据。
+
+---
+
+## Layer 3：当前 state
+
+回答：
+
+> 现在处于什么工艺 regime？
+
+包括：
+
+```text
+current metric
+target gap
+最近 knob
+最近 response
+remaining window
+constraints
+```
+
+---
+
+然后给 LLM 一个非常简单的优先级：
+
+```text
+物理 prior：
+    负责方向合理性、trade-off、反转可能性
+
+local empirical response：
+    负责 magnitude baseline
+
+current state：
+    判断这次是不是还处在之前的 regime
+```
+
+这样 mechanism prior 就真正有用了。
+
+---
+
+# 7. 我甚至建议 LLM 不直接“拍脑袋预测数值”
+
+这是很适合你这个任务的一个 Agentic 分工。
+
+现在：
+
+```text
+LLM → ΔDVC = -0.37
+```
+
+这种数字其实很容易产生虚假的精确感。
+
+可以改成：
+
+### 程序先算 baseline
+
+```text
+base_delta =
+historical_response_coef × knob_delta
+```
+
+例如：
+
+```text
+DVC baseline = -0.30
+```
+
+### LLM 只判断语义修正
+
+```json
+{
+  "regime": "near_saturation",
+  "magnitude_modifier": 0.6,
+  "reason": "...",
+  "direction_reversal": false
+}
+```
+
+然后程序计算：
+
+```text
+-0.30 × 0.6 = -0.18
+```
+
+甚至 modifier 先离散化：
+
+```text
+0
+0.5
+1.0
+1.5
+```
+
+这样非常符合：
+
+> **LLM 做语义 / 程序做数值。**
+
+LLM 最擅长的是：
+
+```text
+这里是不是到了 saturation？
+当前 trade-off 是否变得更重要？
+历史数据和机理冲突应该信谁？
+```
+
+而不是计算：
+
+```text
+0.137 × 0.83 × ...
+```
+
+---
+
+# 8. v2 统计字段我会做减法
+
+目前：
+
+```text
+coef_stats
+metric_trajectory_stats
+metric_correlation
+baseline_shift
+```
+
+不是都没有价值，但现在 7 个 phase 太少。
+
+尤其：
+
+### `metric_correlation`
+
+几个 phase 的 Pearson：
+
+```text
+DVC ↔ Gouging = -0.73
+```
+
+非常容易被：
+
+* 同时改 knob
+* phase regime change
+* 一个极端点
+* wafer / recipe context
+
+影响。
+
+而 LLM 看到 `-0.73` 往往会把它当成非常正式的知识。
+
+所以我会：
+
+### 保留在程序侧
+
+用于：
+
+```text
+debug
+postmortem
+异常提醒
+```
+
+但默认不全部放进 prompt。
+
+LLM 看到的反而可以是：
+
+```text
+Observed examples:
+P2: ME2B +0.2 → DVC -0.3, Gouging +0.1
+P3: ME2B +0.1 → DVC -0.1, Gouging +0.2
+```
+
+**LLM 很擅长 case-based semantic reasoning。**
+
+很多时候原始的 2~3 个转移案例，比：
+
+```text
+mean
+std
+Pearson
+convergence
+```
+
+更容易正确使用。
+
+---
+
+# 9. 你当前 scoring 里最应该改的是“第一分叉点”
+
+我建议引入一个特别简单的概念：
+
+# `on_policy_horizon`
+
+假设模型预测：
+
+```text
+P3 A+
+P4 B-
+P5 C+
+```
+
+真实：
+
+```text
+P3 A+
+P4 B-
+P5 D+
+```
+
+那么：
+
+```text
+on_policy_horizon = 2
+```
+
+P3、P4 可以正常评估：
+
+```text
+action
+direction
+magnitude
+trajectory
+```
+
+但 P5 之后：
+
+```text
+COUNTERFACTUAL_UNOBSERVED
+```
+
+不要再用真实 P6、P7 来评价模型假想的 C 路径。
+
+这样你的“跨阶段越多且越正确”仍然可以保留：
+
+> **连续预测对真实调试 policy 的 horizon 越长，分越高。**
+
+但不会把 off-policy GT 当成 counterfactual GT。
+
+这是我非常推荐你加的一个小改动。
+
+---
+
+# 10. `root_cause_verdict` 也应该多一个状态
+
+现在：
+
+```text
+CONFIRMED
+REFINED
+REFUTED
+```
+
+建议加：
+
+```text
+NOT_TESTED
+```
+
+例如模型认为：
+
+```text
+ME2B ↑
+→ DVC ↓
+因为 xxx mechanism
+```
+
+但工程师下一步根本没调 ME2B。
+
+那么真实 phase 的结果**不能 REFUTE 这个 mechanism**。
+
+正确结果应该是：
+
+```text
+NOT_TESTED
+```
+
+只有：
+
+```text
+对应 knob 实际发生
++
+regime 大致一致
++
+实际 response 可以观察
+```
+
+才能：
+
+```text
+CONFIRMED / REFINED / REFUTED
+```
+
+否则你的 mechanism memory 很容易被错误 GT 更新。
+
+---
+
+# 11. `cross_step_saving` 建议改名，不要先作为硬指标
+
+你最终真正关心：
+
+> 能不能少打一片 wafer / 少跑一个 phase。
+
+这个目标完全正确。
+
+但你的 retrospective 数据并不能证明：
+
+```text
+如果按照模型建议做
+一定可以省 phase
+```
+
+因为没有真实执行模型的动作。
+
+所以当前可以叫：
+
+```text
+estimated_skip_opportunity
+```
+
+或者：
+
+```text
+potential_step_saving
+```
+
+它是一个：
+
+> 离线 proxy。
+
+真正的 `experiment saving` 最终还是需要 prospective / shadow / A-B 式运行验证。
+
+否则容易把：
+
+```text
+预测 engineer future
+```
+
+误认为：
+
+```text
+能够替 engineer 少做实验。
+```
+
+---
+
+# 12. Agent 结构我反而建议继续保持很简单
+
+我不会因为这是 Agentic 工艺预测就搞：
+
+```text
+physics agent
+statistics agent
+recipe agent
+critic agent
+planner agent
+...
+```
+
+现在没有必要。
+
+保留两个逻辑角色就够了。
+
+---
+
+## Primary Agent：Orchestrator
+
+它不负责“聪明预测”。
+
+职责只有：
+
+```text
+1. build current decision packet
+2. 检查 as-of / leakage
+3. 调 deterministic candidate generator
+4. 调 predictor subagent
+5. schema validation
+6. freeze artifact
+7. 才允许 GT 出现
+8. deterministic evaluation
+9. semantic postmortem
+```
+
+Primary 的核心提示词甚至可以很机械：
+
+```text
+你是任务编排器，不负责自行修改 predictor 的预测。
+
+预测前：
+- 只允许加载 available_at <= current_phase 的证据
+- 调用 deterministic builder
+- 调用 predictor
+
+预测生成后：
+- 校验 schema
+- 固化 prediction artifact
+- 禁止在看到 GT 后修改任何 prediction 字段
+
+只有 artifact 固化后：
+- 加载 GT
+- 调 evaluator
+- 输出 assessment
+```
+
+---
+
+# 13. Predictor Subagent 的 prompt 建议大幅缩短
+
+现在不要让它“理解所有东西然后自由预测未来七步”。
+
+可以改成这种逻辑：
+
+```text
+你是工艺 tuning decision forecaster。
+
+目标：
+根据当前 state 选择下一次最合理的 tuning action，
+并预测该 action 对关键指标的响应。
+
+推理优先级：
+
+1. 首先判断当前离 target 最大的 gap。
+2. 从 candidate actions 中选择一个 primary action。
+3. empirical response 用于 magnitude baseline。
+4. mechanism prior 用于判断：
+   - sign 是否合理
+   - trade-off
+   - saturation / reversal
+5. 如果经验和 mechanism 冲突：
+   明确输出 uncertainty，不强行统一。
+6. 不得因为缺证据编造精确数值。
+7. 最多输出：
+   - 一个 primary action
+   - 一个 fallback action
+8. 后续阶段只输出 conditional policy，
+   不输出无条件固定 knob sequence。
+```
+
+输出：
+
+```json
+{
+  "primary_action": {
+    "param": "...",
+    "process_step": "...",
+    "knob_delta": 0.2,
+    "unit": "..."
+  },
+
+  "expected_response": {
+    "DVC": {
+      "direction": "-",
+      "baseline": -0.3,
+      "modifier": 0.5,
+      "predicted": -0.15,
+      "confidence": "medium"
+    }
+  },
+
+  "tradeoffs": [
+    "gouging may increase"
+  ],
+
+  "fallback": {
+    "condition": "DVC improvement < 0.1",
+    "action": "..."
+  },
+
+  "stop_condition": "all critical metrics inside target window"
+}
+```
+
+这个输出我认为比现在的 6 个未来 knob sequence 更接近 Agent 真正在现场应该提供的能力。
+
+---
+
+# 14. 最后再说你的 mechanism prior
+
+我赞成你加。
+
+但我会把优先级排成：
+
+```text
+P0
+先解决：
+task semantics
+leakage
+action magnitude
+target gap
+off-policy evaluation
+
+P1
+再做：
+decision_packet
+candidate_actions
+LLM/program numeric split
+
+P2
+最后加入：
+mechanism_prior
+```
+
+因为：
+
+> **如果 benchmark 本身把不可观察的反事实当 GT，那么即便 mechanism prior 变得非常强，也可能无法让评分真正反映模型有没有变聪明。**
+
+---
+
+# 15. 我建议你下一轮实验直接做三个版本，不要再堆更多 variant
+
+非常简单：
+
+| Version | 内容                                          | 测什么          |
+| ------- | ------------------------------------------- | ------------ |
+| B0      | deterministic response / candidate baseline | 程序本身能做到多少    |
+| B1      | B0 + LLM semantic selection                 | LLM 到底带来多少增益 |
+| B2      | B1 + mechanism prior                        | 物理先验是否真正带来增益 |
+
+暂时把：
+
+```text
+Pearson
+trajectory classification
+baseline shift
+复杂 statistical hints
+```
+
+从 predictor prompt 里拿掉。
+
+如果 B2 明显优于 B1，再逐个把统计特征加回来。
+
+这样你才能知道：
+
+```text
+增益来自哪里。
+```
+
+而不是：
+
+```text
+v3 信息更多了，但不知道为什么好/为什么坏。
+```
+
+---
+
+## 最终我会把整个任务重新概括成一句话
+
+你现在是：
+
+> **让 LLM 根据截至当前阶段的信息，猜未来整条调试轨迹。**
+
+我更建议变成：
+
+> **让程序把当前工艺状态和可行动作整理成一个可推理的局部世界，让 LLM 判断“现在最值得尝试什么、为什么、可能发生什么”；实验结果回来以后重新规划。**
+
+也就是：
+
+```text
+Observe
+  ↓
+Build state
+  ↓
+Generate candidates     ← 程序
+  ↓
+Reason / choose         ← LLM
+  ↓
+Predict local response  ← 程序 baseline + LLM semantic modifier
+  ↓
+Execute / GT
+  ↓
+Evaluate                ← 程序
+  ↓
+Update evidence
+  ↓
+Replan
+```
+
+这其实比现在“强行让 Agent 一口气预测 Phase 3~7”**更 agentic**，因为 Agent 的优势恰恰不是一次把未来猜完，而是**利用新的 observation 持续修正内部状态和下一步决策**。
+
+如果只让我从你现有系统里选 **3 个最可能马上提高实验质量的改动**，我会选：
+
+1. **删掉/隐藏手写 `output_plan`，换成 deterministic `candidate_actions`，先解决 anchoring 和潜在泄漏。**
+2. **加入明确的 `current metric + target gap + knob_delta`，把任务变成完整的 state-action-transition。**
+3. **加入 `on_policy_horizon`：动作第一次分叉后不再用未来 GT 评价预测状态轨迹。**
+
+这三项的重要性，我认为目前都高于继续增加统计特征。
