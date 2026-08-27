@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多智能体教学：设计正确的能力与上下文边界</title>
+<style>
+/* ============ 设计基座：严格单色蓝体系，纸面白，无外链资源 ============ */
+:root{
+  --blue:#0000ff;
+  --ink:#14142e;
+  --soft:#5c5c7a;
+  --paper:#ffffff;
+  --wash:#f4f4ff;
+  --wash2:#ececfd;
+  --line:#cfcfe8;
+  --ok:#0a7d3b;
+  --bad:#c22020;
+  --warn:#9a6200;
+  --mono:"SF Mono","Cascadia Code",Consolas,"JetBrains Mono","Courier New",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  background:var(--paper);
+  font-size:16.5px;
+  line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+::selection{background:var(--blue);color:#fff}
+
+/* ============ 三栏编辑式布局 ============ */
+.shell{display:flex;align-items:flex-start;max-width:1560px;margin:0 auto}
+.toc{
+  position:fixed;top:0;left:0;bottom:0;width:264px;
+  padding:28px 18px 40px 26px;overflow-y:auto;
+  border-right:1px solid var(--line);background:var(--paper);z-index:50;
+}
+.toc .toc-brand{font-size:12px;letter-spacing:.18em;color:var(--soft);text-transform:uppercase;margin-bottom:6px}
+.toc .toc-title{font-size:15px;font-weight:700;line-height:1.5;margin-bottom:20px;color:var(--blue)}
+.toc ol{list-style:none}
+.toc li{margin:2px 0}
+.toc a{
+  display:flex;gap:8px;align-items:baseline;padding:4px 8px;
+  color:var(--ink);text-decoration:none;font-size:13.5px;line-height:1.5;
+  border-left:2px solid transparent;
+}
+.toc a .no{font-family:var(--mono);font-size:11px;color:var(--soft);flex:none;width:20px}
+.toc a:hover{background:var(--wash)}
+.toc a.active{background:var(--blue);color:#fff;border-left-color:var(--blue)}
+.toc a.active .no{color:#cfd0ff}
+.toc .toc-sub{margin-left:28px;font-size:12px;color:var(--soft)}
+
+.main{
+  margin-left:264px;flex:1;min-width:0;
+  padding:0 40px 120px 48px;
+  display:flex;justify-content:center;
+}
+.article{width:100%;max-width:720px;position:relative}
+
+/* ============ 页首 ============ */
+.hero{padding:72px 0 40px;border-bottom:1px solid var(--blue);margin-bottom:48px}
+.hero .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.24em;color:var(--blue);text-transform:uppercase;margin-bottom:18px}
+.hero h1{font-size:38px;line-height:1.3;font-weight:800;letter-spacing:-.01em;margin-bottom:18px}
+.hero h1 .thin{color:var(--blue)}
+.hero .lede{font-size:17px;color:var(--soft);max-width:560px;margin-bottom:26px}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px 22px;font-family:var(--mono);font-size:12px;color:var(--soft)}
+.hero .meta b{color:var(--ink);font-weight:600}
+
+/* ============ 章节标题：超大序号 + 吸顶条 ============ */
+section.chapter{margin-bottom:72px;scroll-margin-top:24px}
+.chap-head{position:sticky;top:0;background:var(--paper);z-index:20;padding:14px 0 10px;border-bottom:1px solid var(--blue);margin-bottom:28px;display:flex;align-items:baseline;gap:16px}
+.chap-head .num{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--blue);line-height:1;flex:none}
+.chap-head h2{font-size:22px;font-weight:800;letter-spacing:-.01em;line-height:1.35}
+h3{font-size:18px;font-weight:700;margin:36px 0 14px;scroll-margin-top:80px}
+h3 .h3-no{font-family:var(--mono);color:var(--blue);font-size:14px;margin-right:8px}
+h4{font-size:15.5px;font-weight:700;margin:26px 0 10px}
+p{margin:14px 0}
+ul,ol{margin:14px 0 14px 24px}
+li{margin:5px 0}
+strong{font-weight:700}
+em{font-style:normal;background:linear-gradient(transparent 62%,var(--wash2) 62%);font-weight:600}
+
+/* 关键论断 */
+blockquote{
+  margin:22px 0;padding:14px 20px;
+  border-left:3px solid var(--blue);background:var(--wash);
+  color:var(--ink);font-weight:600;font-size:16px;
+}
+blockquote p{margin:0}
+
+/* 净收益公式 */
+.formula{
+  margin:26px 0;padding:26px 24px;border:1px solid var(--blue);
+  text-align:center;font-size:18px;font-weight:700;
+}
+.formula .f-label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--soft);margin-bottom:10px}
+.formula .plus{color:var(--ok)}.formula .minus{color:var(--bad)}
+
+/* ============ 表格 ============ */
+.tablewrap{overflow-x:auto;margin:20px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{border:1px solid var(--blue);padding:8px 12px;text-align:left;vertical-align:top;line-height:1.6}
+th{background:var(--blue);color:#fff;font-weight:600;white-space:nowrap}
+tr:nth-child(even) td{background:var(--wash)}
+
+/* ============ 代码块（亮色，可编辑区区分） ============ */
+.code{
+  position:relative;margin:20px 0;border:1px solid var(--line);
+  background:var(--wash);
+}
+.code .code-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 12px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--soft);letter-spacing:.08em;
+}
+.code .copybtn{
+  border:1px solid var(--blue);background:transparent;color:var(--blue);
+  font-family:var(--mono);font-size:11px;padding:1px 10px;cursor:pointer;
+}
+.code .copybtn:hover{background:var(--blue);color:#fff}
+.code pre{padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--ink)}
+.code code{font-family:inherit}
+p code,li code,td code{
+  font-family:var(--mono);font-size:.88em;background:var(--wash2);
+  padding:1px 5px;border:1px solid var(--line);
+}
+
+/* ============ 讲师批注（右侧边栏注） ============ */
+.note{
+  float:right;clear:right;width:238px;margin:6px -290px 18px 24px;
+  border-top:2px solid var(--blue);padding:10px 2px;
+  font-size:13px;line-height:1.75;color:var(--soft);
+}
+.note .note-tag{
+  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--blue);margin-bottom:6px;
+}
+.note p{margin:0}
+
+/* ============ 流程图 ============ */
+.diagram{margin:24px 0;border:1px solid var(--line);background:#fff;padding:18px 10px 12px;overflow-x:auto}
+.diagram .d-cap{font-family:var(--mono);font-size:11px;color:var(--soft);text-align:center;margin-top:8px;letter-spacing:.06em}
+.diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* ============ 截图占位槽 & 可编辑区 ============ */
+.fieldset{
+  margin:28px 0;padding:18px 18px 14px;border:1.5px dashed var(--blue);
+  background:repeating-linear-gradient(45deg,#fdfdff,#fdfdff 10px,var(--wash) 10px,var(--wash) 11px);
+}
+.fieldset > .fs-title{
+  display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;margin-bottom:4px;
+}
+.fieldset > .fs-title .fs-badge{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;background:var(--blue);color:#fff;padding:2px 8px;flex:none;
+}
+.fieldset > .fs-desc{font-size:13px;color:var(--soft);margin-bottom:14px}
+.shot-slot{
+  border:1.5px dashed var(--line);background:#fff;min-height:150px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;padding:22px;margin:12px 0;text-align:center;
+}
+.shot-slot .ss-icon{width:34px;height:34px;color:var(--line)}
+.shot-slot .ss-title{font-weight:700;font-size:14px}
+.shot-slot .ss-hint{font-size:12.5px;color:var(--soft);max-width:420px;line-height:1.7}
+.edit-slot{
+  border:1px solid var(--line);border-left:3px solid var(--blue);background:#fff;
+  padding:14px 16px;margin:12px 0;min-height:90px;outline:none;
+  font-size:14px;line-height:1.8;
+}
+.edit-slot:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--wash2)}
+.edit-slot:empty::before{content:attr(data-ph);color:#a3a3c0}
+.edit-tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--blue);margin-bottom:4px}
+
+/* ============ 状态徽标 ============ */
+.st{font-family:var(--mono);font-size:.82em;font-weight:700;padding:1px 8px;border:1px solid currentColor;white-space:nowrap}
+.st-pass{color:var(--ok)}.st-fail{color:var(--bad)}.st-blocked{color:var(--warn)}
+
+/* ============ 误区列表 ============ */
+.pitfall{border-top:1px solid var(--line);padding:16px 0 4px}
+.pitfall .pf-h{display:flex;gap:12px;align-items:baseline}
+.pitfall .pf-no{font-family:var(--mono);font-size:13px;color:var(--bad);flex:none}
+.pitfall h4{margin:0 0 6px}
+
+/* ============ 总结章：蓝底反白 ============ */
+.invert{background:var(--blue);color:#fff;padding:56px 34px;margin:0 -34px 72px}
+.invert .chap-head{background:transparent;border-bottom-color:#fff}
+.invert .chap-head .num,.invert h2,.invert h3{color:#fff}
+.invert blockquote{background:transparent;border-left-color:#fff;color:#fff}
+.invert .final-q{font-size:21px;font-weight:800;line-height:1.7;border:1px solid #fff;padding:24px;margin-top:28px;text-align:center}
+.invert li::marker{color:#cfd0ff}
+
+/* ============ 页脚 ============ */
+footer{border-top:1px solid var(--blue);padding:28px 0 60px;font-size:13.5px;color:var(--soft)}
+footer .ref{font-family:var(--mono);font-size:12px;margin:4px 0}
+footer .offline-note{margin-top:14px;padding:10px 14px;border:1px solid var(--line);background:var(--wash);font-size:12.5px}
+
+/* ============ 响应式 ============ */
+@media (max-width:1280px){
+  .note{float:none;width:auto;margin:16px 0;border:1px solid var(--line);border-top:2px solid var(--blue);padding:10px 14px;background:var(--wash)}
+}
+@media (max-width:960px){
+  .toc{position:static;width:auto;border-right:none;border-bottom:1px solid var(--line);padding:18px 20px}
+  .shell{flex-direction:column}
+  .main{margin-left:0;padding:0 20px 80px}
+  .hero h1{font-size:28px}
+  .invert{margin:0 -20px 60px;padding:40px 22px}
+}
+@media print{
+  .toc,.copybtn{display:none}
+  .main{margin-left:0}
+  .chap-head{position:static}
+  .edit-slot,.shot-slot{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ============ 左侧大纲 ============ -->
+<nav class="toc" id="toc">
+  <div class="toc-brand">Teaching Notes</div>
+  <div class="toc-title">多智能体：设计正确的能力与上下文边界</div>
+  <ol>
+    <li><a href="#ch0"><span class="no">00</span>这节课要回答什么</a></li>
+    <li><a href="#ch1"><span class="no">01</span>为什么需要多智能体</a></li>
+    <li><a href="#ch2"><span class="no">02</span>Skill、Agent 与 Multi-Agent</a></li>
+    <li><a href="#ch3"><span class="no">03</span>核心：Agent 调用 Agent</a></li>
+    <li><a href="#ch4"><span class="no">04</span>实现一：V1 推理接口</a></li>
+    <li><a href="#ch5"><span class="no">05</span>实现二：OpenCode 主从</a></li>
+    <li><a href="#ch6"><span class="no">06</span>串行与并行</a></li>
+    <li><a href="#ch7"><span class="no">07</span>如何设计好系统</a></li>
+    <li><a href="#ch8"><span class="no">08</span>常见误区</a></li>
+    <li><a href="#ch9"><span class="no">09</span>设计决策流程</a></li>
+    <li><a href="#ch10"><span class="no">10</span>两个课堂演示</a></li>
+    <li><a href="#ch11"><span class="no">11</span>最小可观测性</a></li>
+    <li><a href="#ch12"><span class="no">12</span>课程总结</a></li>
+    <li><a href="#appA"><span class="no">A</span>术语表</a></li>
+    <li><a href="#appB"><span class="no">B</span>设计自检清单</a></li>
+    <li><a href="#appC"><span class="no">C</span>课后练习</a></li>
+    <li><a href="#appD"><span class="no">D</span>课堂 FAQ</a></li>
+  </ol>
+</nav>
+
+<div class="main">
+<article class="article">
+
+<!-- ============ 页首 ============ -->
+<header class="hero">
+  <div class="kicker">Multi-Agent Systems · 教学讲稿</div>
+  <h1>多智能体不是把一个模型复制很多份，<br>而是<span class="thin">设计正确的能力与上下文边界</span></h1>
+  <p class="lede">一份从问题出发的多智能体教学稿：先找单 Agent 的真实缺陷，再决定要不要拆、怎么拆。</p>
+  <div class="meta">
+    <span><b>时长</b> 50 分钟讲授 + 20 分钟演示</span>
+    <span><b>对象</b> 已用过单 Agent 工具的工程师</span>
+    <span><b>形式</b> 离线单文件 · 可直接投影</span>
+  </div>
+</header>
+
+<!-- ============ 00 ============ -->
+<section class="chapter" id="ch0">
+  <div class="chap-head"><span class="num">00</span><h2>这节课要回答什么</h2></div>
+  <p>谈到多智能体，很多人的第一反应是：让多个 Agent 分别扮演产品经理、架构师、开发者和测试人员，再让它们开会协作。</p>
+  <p>这种做法看起来像一个团队，但它不一定真的提升任务质量。几个 Agent 如果使用相同模型、读取相同上下文、拥有相同工具，只是换了不同角色名称，很可能只是把一次推理拆成了多次相似推理，同时增加成本、延迟和沟通损耗。</p>
+  <p>因此，这节课不从"应该创建哪些角色"开始，而从三个更基本的问题开始：</p>
+  <ol>
+    <li>单个 Agent 到底缺少什么？</li>
+    <li>哪些信息应该共享，哪些上下文必须隔离？</li>
+    <li>子任务之间存在依赖，还是可以真正并行？</li>
+  </ol>
+  <div class="formula">
+    <span class="f-label">MULTI-AGENT NET GAIN</span>
+    多智能体净收益 = <span class="plus">能力互补 + 上下文隔离收益 + 并行收益</span> <span class="minus">− 协调成本</span>
+  </div>
+  <p>只有三项收益中的至少一项足够明显、且大于协调成本时，多智能体才值得使用。协调成本不只是多花的 token，还包括任务包构造、输出契约对齐、失败排查和汇总规则设计——它随 Agent 数量超线性增长。</p>
+  <div class="note"><span class="note-tag">讲师提示</span><p>开场先问学员："你们用过'多 Agent 角色扮演'的提示词吗？效果如何？"收集 2~3 个回答后再亮出净收益公式，学员更容易把公式和自己的挫败经验对上号。</p></div>
+  <p><strong>学完本课后，你应当能够：</strong></p>
+  <ul>
+    <li>判断一个任务是否真的需要多智能体；</li>
+    <li>区分 Skill、Agent 和 Multi-Agent 的定位；</li>
+    <li>理解"Agent 调用 Agent"的最小实现；</li>
+    <li>使用串行或并行方式组织子 Agent；</li>
+    <li>为代码生成与独立验收设计上下文隔离；</li>
+    <li>避免把多智能体做成只有角色名称不同的"角色扮演剧场"。</li>
+  </ul>
+  <h3><span class="h3-no">0.1</span>建议授课节奏（50 分钟）</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>环节</th><th>时间</th><th>重点</th></tr>
+      <tr><td>从问题出发</td><td>10 分钟</td><td>能力边界、上下文隔离、并行收益</td></tr>
+      <tr><td>三层定位</td><td>8 分钟</td><td>Skill、Agent、Multi-Agent</td></tr>
+      <tr><td>两种实现</td><td>15 分钟</td><td>V1 推理接口、OpenCode Primary–Subagent</td></tr>
+      <tr><td>串行与并行</td><td>7 分钟</td><td>依赖关系、汇总规则、停止条件</td></tr>
+      <tr><td>课堂演示与讨论</td><td>10 分钟</td><td>视觉补位、代码独立验收</td></tr>
+    </table>
+  </div>
+  <blockquote><p>开场白：我们今天不先讨论应该创建几个 Agent。我们先找单 Agent 的真实缺陷：它是缺少能力，受到已有上下文影响，还是任务确实可以并行？只有找到真实边界，多智能体才会带来净收益。</p></blockquote>
+</section>
+
+<!-- ============ 01 ============ -->
+<section class="chapter" id="ch1">
+  <div class="chap-head"><span class="num">01</span><h2>为什么需要多智能体</h2></div>
+
+  <h3><span class="h3-no">1.1</span>原因一：单个 Agent 存在能力边界</h3>
+  <p>一个 Agent 能做什么，不只取决于它的提示词，还取决于四类资源：<strong>模型</strong>（文本、视觉、推理深度）、<strong>工具</strong>（搜索、OCR、执行命令）、<strong>上下文</strong>（对话历史、文件）、<strong>权限</strong>（编辑、执行、访问外网）。提示词只能在这四类资源划定的空间里做调度，无法凭空创造能力。</p>
+  <p>例如，一个使用纯文本模型的 Agent 无法直接理解图片。我们可以为它接入一个多模态模型，让它成为专门的视觉处理模块：</p>
+  <div class="diagram" data-flow='{"dir":"LR","nodes":{"U":{"label":"用户：分析图片"},"P":{"label":"文本 Primary"},"V":{"label":"视觉 Subagent"},"O":{"label":"结构化观察结果"}},"edges":[["U","P"],["P","V"],["V","O"],["O","P"]]}'></div>
+  <p>在这里，拆分不是为了模仿人类组织，而是因为两个执行单元拥有不同能力：</p>
+  <div class="tablewrap">
+    <table>
+      <tr><th>执行单元</th><th>主要能力</th><th>输入</th><th>输出</th></tr>
+      <tr><td>文本 Primary</td><td>理解任务、规划、汇总和表达</td><td>用户问题、视觉分析结果</td><td>最终回答或后续动作</td></tr>
+      <tr><td>视觉 Subagent</td><td>图像理解、OCR、物体与布局识别</td><td>图片、观察指令</td><td>结构化视觉事实与不确定性</td></tr>
+    </table>
+  </div>
+  <p>视觉 Subagent 最好不要只返回一段自由文本，而应返回稳定的结构：</p>
+  <div class="code"><div class="code-bar"><span>JSON · 视觉观察报告</span></div><pre><code>{
+  "observations": ["界面右上角存在红色告警图标"],
+  "visible_text": ["Connection failed"],
+  "uncertainties": ["无法确认告警由网络还是权限问题引起"],
+  "limitations": ["图片未包含浏览器地址栏"]
+}</code></pre></div>
+  <p>四个字段的分工是：<code>observations</code> 是直接看到的，<code>visible_text</code> 是 OCR 原文，<code>uncertainties</code> 是图像无法裁决的，<code>limitations</code> 是输入缺失导致的盲区。这样，Primary 消费的是一份带有来源边界的"观察报告"，而不是把视觉模型的一切判断都当成事实。</p>
+  <h4>这里究竟是"模型调用"还是"Agent 调用"？</h4>
+  <p>如果只是把图片发给另一个模型并取回一句描述，它更像一次模型调用。判断是不是真正的 Agent 调用，看三个问题：</p>
+  <ol>
+    <li>它有没有自己的<strong>任务边界</strong>（稳定的职责说明，而非临时拼接的提示词）？</li>
+    <li>它有没有自己的<strong>执行空间</strong>（独立上下文、可用工具、完成判断）？</li>
+    <li>它的<strong>输出</strong>是不是一份可被稳定消费的契约（结构、状态、证据）？</li>
+  </ol>
+  <p>三个都满足，才是一次真正的 Agent 调用。多智能体的关键不在名字，而在是否形成了真实的执行边界。</p>
+
+  <h3><span class="h3-no">1.2</span>原因二：同一个 Agent 完成所有环节会产生缺陷</h3>
+  <p>有些任务并不缺能力，但需要隔离上下文。让同一个 Agent 写完代码后再判断"自己写得对不对"，容易出现：</p>
+  <ul>
+    <li><strong>锚定效应</strong>：生成阶段形成的假设继续影响验收阶段；</li>
+    <li><strong>自我辩护倾向</strong>：更容易解释自己的方案，而不是主动寻找反例；</li>
+    <li><strong>盲区延续</strong>：生成时忽略的边界条件，验收时也可能继续忽略；</li>
+    <li><strong>标准稀释</strong>：长上下文混杂设计讨论与失败尝试，验收标准反而不突出；</li>
+    <li><strong>表面通过</strong>：真实路径可能仍是 fallback、mock、placeholder 或 hard-code。</li>
+  </ul>
+  <div class="note"><span class="note-tag">课堂提问</span><p>让学员回忆一次"AI 自称测试通过、实际跑不通"的经历。追问：它验收时看到了哪些上下文？如果只给它 diff + 验收标准，结论会不会不同？</p></div>
+  <p>这些问题的共同根源是：<em>生成和判断共享了同一份上下文，也共享了这份上下文里的所有偏见</em>。</p>
+  <blockquote><p>不要让同一个上下文既负责写代码，又负责证明代码正确。</p></blockquote>
+  <p>生成 Agent 担任 Primary；验证 Agent 运行在独立上下文中，只读取完成验收所必需的材料：原始任务与验收标准、最终 diff、测试证据、项目规则与必要的代码文件。它不需要读取生成 Agent 的完整思考过程，也不应先看到自我辩护。它应该被允许直接返回 <span class="st st-fail">FAIL</span> 或 <span class="st st-blocked">BLOCKED</span>。</p>
+  <div class="diagram" data-flow='{"dir":"TD","nodes":{"T":{"label":"任务与验收标准","at":[0,0]},"B":{"label":"Builder：实现与自测","at":[0,1]},"H":{"label":"交接包：diff + 证据","at":[1,2]},"R":{"label":"Reviewer：独立验收","at":[2,1]},"G":{"label":"验收结论","shape":"diamond","at":[2,2]},"D":{"label":"交付","at":[2,3]}},"edges":[["T","B"],["B","H"],["T","R"],["H","R"],["R","G"],["G","D","PASS"],["G","B","FAIL"]]}'></div>
+  <p>注意：上下文隔离不等于让 Reviewer 什么都不知道。Reviewer 可以不知道 Builder 的思维过程，但必须知道任务目标、约束和验收标准，否则它不是独立验收，而是盲审。<strong>隔离的是叙事和推理过程，共享的是事实与标准。</strong></p>
+
+  <h3><span class="h3-no">1.3</span>原因三：真正独立的子任务可以并行</h3>
+  <p>当多个子任务之间没有前后依赖时，可以让多个 Agent 同时工作：分别检索互不依赖的资料源；分别分析大代码库的不同模块；同时执行功能、性能和安全检查；对同一候选方案做相互独立的反例搜索。</p>
+  <p>并行的收益有两个：一是缩短<strong>墙上时钟时间</strong>（总耗时从求和变为近似取最大值）；二是在上下文隔离的前提下获得多个<strong>真正独立的证据源</strong>。但"可以拆成多个描述"不等于"可以并行"——判断标准只有一个：<em>每个子任务在启动时是否已经拥有完整输入</em>。B 依赖 A 的结果时强行并行，只会产生猜测、返工和冲突。</p>
+
+  <h3><span class="h3-no">1.4</span>哪些场景不需要多智能体</h3>
+  <ul>
+    <li>任务简单、步骤短、结果容易验证；</li>
+    <li>所有步骤依赖同一份连续上下文；</li>
+    <li>子任务之间强依赖，无法独立推进；</li>
+    <li>换一个 Skill 或增加一个工具就能补足能力；</li>
+    <li>多个 Agent 只是使用相同模型复述相同问题；</li>
+    <li>问题本身没有边界和验收标准，却希望"多人讨论"自动得到正确答案。</li>
+  </ul>
+  <p>尤其警惕最后一种：单 Agent 解决不了的无边界问题，拆给多个 Agent 后并不会自然变得可验证，反而可能得到多份各自自洽但互相冲突的答案。<strong>多智能体放大的是结构设计的能力，而不是问题定义的能力。问题定义不清时，先修问题，不是先加 Agent。</strong></p>
+  <blockquote><p>本节小结：多智能体只有三个正当理由——补能力、做隔离、真并行。其余动机（显得更专业、更像团队）都不是工程理由。</p></blockquote>
+</section>
+
+<!-- ============ 02 ============ -->
+<section class="chapter" id="ch2">
+  <div class="chap-head"><span class="num">02</span><h2>Skill、Agent 与 Multi-Agent 分别解决什么问题</h2></div>
+  <p>三者不是互相替代的产品形态，而是三个不同层级的设计对象：</p>
+  <div class="tablewrap">
+    <table>
+      <tr><th>层级</th><th>核心问题</th><th>主要内容</th><th>典型变化</th></tr>
+      <tr><td><strong>Skill</strong></td><td>在某个场景里应该怎样工作？</td><td>方法、流程、知识、脚本、模板、验收清单</td><td>同一 Agent 按场景加载不同工作方法</td></tr>
+      <tr><td><strong>Agent</strong></td><td>谁在什么边界内执行？</td><td>模型、系统提示、工具、权限、上下文、停止条件</td><td>为一类任务建立稳定执行单元</td></tr>
+      <tr><td><strong>Multi-Agent</strong></td><td>多个执行单元如何协作？</td><td>委托、隔离、串并行、结果汇总、冲突处理</td><td>对任务进行能力路由和上下文编排</td></tr>
+    </table>
+  </div>
+  <h3><span class="h3-no">2.1</span>Skill：给运行中的 Agent 动态加载做事方法</h3>
+  <p>同一个编码 Agent 可以按任务动态加载 API 改造、数据分析、安全检查、文档编写等 Skill。多个 Skill 可组合，但它们共享该 Agent 的当前上下文、模型和权限——<strong>Skill 改变"做事方法"，不改变"执行边界"</strong>。</p>
+  <h3><span class="h3-no">2.2</span>Agent：建立相对稳定的执行边界</h3>
+  <p>当需要改变模型、工具、权限、系统指令或上下文边界时，才有理由创建另一个 Agent：Vision Agent 用多模态模型；Reviewer Agent 禁止修改代码；Database Agent 只调只读接口；Security Agent 在独立上下文中检查敏感问题。每个例子背后都是一次"边界资源"的变化，而不是角色名称的变化。<em>做事方法不同 → 加 Skill；执行边界不同 → 拆 Agent。</em></p>
+  <h3><span class="h3-no">2.3</span>Multi-Agent：能力路由与上下文编排</h3>
+  <p>Multi-Agent 关注的是：Primary 何时委托哪个 Subagent（路由）、子 Agent 拿到多少上下文（编排）、串行还是并行（结构）、返回什么格式（契约）、冲突如何处理（汇总）、何时停止或升级（控制）。</p>
+  <div class="diagram" data-flow='{"dir":"TD","nodes":{"S":{"label":"Skill：场景方法","at":[0,0]},"S2":{"label":"多个 Skill","at":[0,1]},"A":{"label":"Agent：执行边界","at":[1,0.5]},"A2":{"label":"多个 Agent","at":[1,1.5]},"M":{"label":"Multi-Agent：协作结构","at":[2,0.75]}},"edges":[["S","A"],["S2","A"],["A","M"],["A2","M"]]}'></div>
+  <blockquote><p>Skill 优化一个 Agent 在场景中的做法；Agent 定义一个执行单元；Multi-Agent 设计多个执行单元之间的关系。</p></blockquote>
+  <div class="note"><span class="note-tag">讲师提示</span><p>类比收尾：Skill 像给同一位员工发不同场景的操作手册，Agent 像设立有编制有权限的岗位，Multi-Agent 像设计部门间的协作流程。手册可随时换，岗位和流程不能乱设。</p></div>
+  <p>不要因为场景变多就立即增加 Agent。多个场景能共享同一模型、工具、权限和上下文边界时，优先加 Skill；只有出现真实的能力差异、权限差异、隔离需求或并行价值时，再拆 Agent。</p>
+</section>
+
+<!-- ============ 03 ============ -->
+<section class="chapter" id="ch3">
+  <div class="chap-head"><span class="num">03</span><h2>多智能体实现的核心：Agent 调用 Agent</h2></div>
+  <p>最小闭环只有五步：</p>
+  <ol>
+    <li>Primary 判断当前任务需要委托；</li>
+    <li>Primary 构造一个受控的任务包；</li>
+    <li>Subagent 在独立上下文中完成任务；</li>
+    <li>Subagent 返回结构化结果和证据；</li>
+    <li>Primary 汇总结果，决定继续、重试、停止或升级。</li>
+  </ol>
+  <div class="diagram" data-seq='{"parts":["用户","Primary","Subagent"],"msgs":[["用户","Primary","提交目标"],["Primary","Subagent","最小任务包"],["Subagent","Primary","结果 + 证据 + 状态"],["Primary","用户","汇总或请求补充"]]}'></div>
+  <h3><span class="h3-no">3.1</span>委托的不是一句话，而是一份任务包</h3>
+  <div class="code"><div class="code-bar"><span>YAML · 任务包</span></div><pre><code>task_id: review-017
+objective: 验证本次登录超时修复是否满足验收标准
+scope:
+  include:
+    - src/auth/**
+    - tests/auth/**
+  exclude:
+    - UI 样式
+inputs:
+  task_spec: artifacts/task.md
+  diff: artifacts/change.diff
+  test_evidence: artifacts/test-results.txt
+constraints:
+  - 不得修改文件
+  - 不接受 mock 代替真实认证路径
+output_contract:
+  status: PASS | FAIL | BLOCKED
+  findings: 按严重级别列出，并附文件位置和证据
+  missing_evidence: 缺少什么就明确写出
+stop_conditions:
+  - 已覆盖全部验收标准
+  - 证据不足时返回 BLOCKED，不猜测</code></pre></div>
+  <p>任务包的三个作用：<strong>控制上下文</strong>（子 Agent 看到什么）、<strong>限定行为</strong>（可以做和不可以做什么）、<strong>稳定消费</strong>（返回结果可被程序解析）。它是一份"最小充分委托合同"：少到刚好能完成任务，多到足以界定责任。</p>
+  <h3><span class="h3-no">3.2</span>输出必须携带状态和证据</h3>
+  <div class="code"><div class="code-bar"><span>JSON · Subagent 输出契约</span></div><pre><code>{
+  "status": "FAIL",
+  "summary": "超时重试会重复提交登录请求",
+  "findings": [
+    {
+      "severity": "high",
+      "location": "src/auth/client.py:84",
+      "claim": "重试路径缺少幂等保护",
+      "evidence": "测试 test_retry_timeout 连续记录了两次提交"
+    }
+  ],
+  "missing_evidence": [],
+  "recommended_next_action": "修复后重新运行认证集成测试"
+}</code></pre></div>
+  <p>三种状态：<span class="st st-pass">PASS</span> 已有证据支持所有验收标准；<span class="st st-fail">FAIL</span> 存在明确的不满足项；<span class="st st-blocked">BLOCKED</span> 信息、权限或工具不足，无法可靠判断。<code>BLOCKED</code> 很重要——没有它，模型会在证据不足时被迫猜一个结论，而<strong>猜出来的 PASS 是最危险的结果</strong>，因为它带着"已验收"的外观进入下游。同时，每条 finding 强制携带 <code>location</code> 和 <code>evidence</code>：没有证据的 finding 不允许存在。</p>
+</section>
+
+<!-- ============ 04 ============ -->
+<section class="chapter" id="ch4">
+  <div class="chap-head"><span class="num">04</span><h2>实现方式一：直接调用 V1 推理接口</h2></div>
+  <p>最直接的做法：由 Primary 的运行代码构造提示词和上下文，调用另一个模型的 OpenAI-compatible <code>/v1/chat/completions</code> 接口。不依赖任何 Agent 框架，适合"一次明确的能力转换"。下面以"纯文本 Primary 调用多模态模型分析图片"为例。</p>
+  <h3><span class="h3-no">4.1</span>视觉 Subagent 的系统约束</h3>
+  <div class="code"><div class="code-bar"><span>TEXT · system prompt</span></div><pre><code>你是视觉观察子 Agent。
+
+任务：只报告图片中可观察到的内容，不替 Primary 推断业务结论。
+
+要求：
+1. 区分直接观察、OCR 文本和不确定推断。
+2. 看不清时明确说明，不得补全。
+3. 输出 JSON，字段为 observations、visible_text、uncertainties、limitations。
+4. 不回答图片之外的问题。</code></pre></div>
+  <h3><span class="h3-no">4.2</span>Python 示例</h3>
+  <div class="code"><div class="code-bar"><span>PYTHON · call_vision_agent.py</span></div><pre><code>import base64, json, mimetypes, os
+from pathlib import Path
+import requests
+
+def to_data_url(image_path: str) -> str:
+    path = Path(image_path)
+    mime = mimetypes.guess_type(path.name)[0] or "image/png"
+    encoded = base64.b64encode(path.read_bytes()).decode("utf-8")
+    return f"data:{mime};base64,{encoded}"
+
+def call_vision_agent(image_path: str, objective: str) -> dict:
+    base_url = os.environ["VISION_BASE_URL"].rstrip("/")
+    api_key = os.environ["VISION_API_KEY"]
+    model = os.environ["VISION_MODEL"]
+
+    payload = {
+        "model": model,
+        "temperature": 0,
+        "messages": [
+            {"role": "system", "content": (
+                "You are a visual-observation subagent. Report only visible "
+                "evidence. Return JSON with observations, visible_text, "
+                "uncertainties, and limitations."
+            )},
+            {"role": "user", "content": [
+                {"type": "text", "text": objective},
+                {"type": "image_url",
+                 "image_url": {"url": to_data_url(image_path)}},
+            ]},
+        ],
+    }
+
+    resp = requests.post(
+        f"{base_url}/v1/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}"},
+        json=payload, timeout=60,
+    )
+    resp.raise_for_status()
+    content = resp.json()["choices"][0]["message"]["content"]
+    return json.loads(content)
+
+visual_report = call_vision_agent(
+    "screenshots/error.png",
+    "识别界面中的报错文本、告警位置和可见状态；不要推测根因。",
+)
+print(visual_report)</code></pre></div>
+  <h3><span class="h3-no">4.3</span>真正需要设计的部分</h3>
+  <p>接口调用本身很简单，决定效果的是：图片格式与尺寸上限；任务边界是否清楚（只观察、不诊断）；输出是否结构化；是否显式表达不确定性；Primary 是否把"观察"与"根因推断"分开；以及超时、非法 JSON、图片过大时如何返回 <span class="st st-blocked">BLOCKED</span>。生产使用时还应在 <code>json.loads</code> 外包容错：解析失败按 BLOCKED 处理，而不是让异常裸奔进推理链。</p>
+  <p>如果视觉任务只是一次固定转换，这种轻量实现已经足够。<strong>框架解决的是编排复杂度，不解决契约设计——契约永远要自己设计。</strong></p>
+
+  <div class="fieldset">
+    <div class="fs-title"><span class="fs-badge">实际样例区</span>你的真实调用现场（待补充）</div>
+    <p class="fs-desc">以下为占位槽。授课前请替换为自己环境中的真实截图与代码：建议截"请求构造 → 模型返回 JSON → Primary 消费后的最终回答"三段。</p>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ① · 请求构造</div>
+      <div class="ss-hint">建议内容：你环境里构造多模态请求的代码/终端画面，包含 BASE_URL、模型名与 data URL 组装过程。</div>
+    </div>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ② · 模型返回的 JSON</div>
+      <div class="ss-hint">建议内容：一次真实的视觉观察返回，重点展示 observations / uncertainties / limitations 都有内容的一例。</div>
+    </div>
+    <div class="edit-slot" contenteditable="true" data-ph=""></div>
+    <div class="edit-tag">可编辑区 · 粘贴你的实际代码 / 输出 / 讲解备注</div>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section class="chapter" id="ch5">
+  <div class="chap-head"><span class="num">05</span><h2>实现方式二：OpenCode 的 Primary–Subagent</h2></div>
+  <p>OpenCode V2 将 Agent 组织为 <code>primary</code>、<code>subagent</code> 和 <code>all</code> 三种模式。项目级 Agent 放在 <code>.opencode/agents/&lt;name&gt;.md</code>；Subagent 在 child session 中用新的上下文运行，Primary 可前台等待或后台启动。字段可能随版本演进，以当前版本文档为准。下面用"代码生成与独立验收"演示最小设计。</p>
+
+  <h3><span class="h3-no">5.1</span>Builder：负责实现的 Primary</h3>
+  <div class="code"><div class="code-bar"><span>.opencode/agents/builder.md</span></div><pre><code>---
+description: Implements changes and delegates independent acceptance review
+mode: primary
+permissions:
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "reviewer"
+    effect: allow
+---
+
+你是代码实现 Primary。
+
+你的职责：
+1. 根据任务和验收标准修改代码。
+2. 运行与变更直接相关的测试。
+3. 生成交接包：原始目标、验收标准、最终 diff、测试证据、已知限制。
+4. 调用 reviewer 做独立验收。
+5. reviewer 返回 FAIL 时，根据明确 finding 修复后重新提交验收。
+
+边界：
+- 不得把自己的完整推理过程交给 reviewer。
+- 不得要求 reviewer 证明当前方案正确。
+- 最多进行两轮"修复—复验"；仍未通过则停止并报告。</code></pre></div>
+  <p>Builder 可调用的 Subagent 被限定为 <code>reviewer</code>——<strong>委托权限本身也要白名单化</strong>，否则拓扑会在运行中失控生长。</p>
+
+  <h3><span class="h3-no">5.2</span>Reviewer：只验收、不改代码的 Subagent</h3>
+  <div class="code"><div class="code-bar"><span>.opencode/agents/reviewer.md</span></div><pre><code>---
+description: Independently reviews the final diff against acceptance criteria
+mode: subagent
+steps: 8
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "git status *"
+    effect: allow
+  - action: shell
+    resource: "git diff *"
+    effect: allow
+  - action: shell
+    resource: "pytest *"
+    effect: allow
+  - action: shell
+    resource: "npm test *"
+    effect: allow
+---
+
+你是独立代码验收 Agent。你不参与实现，也不得修改文件。
+
+只根据以下内容判断：
+- 原始任务与验收标准；
+- 最终 diff；
+- 可复现的测试或静态检查证据；
+- 项目规则。
+
+重点检查：
+- 功能是否走真实路径；
+- 是否存在 fallback、mock、placeholder 或 hard-code 掩盖失败；
+- 边界条件和失败路径是否覆盖；
+- 是否引入安全、权限、依赖或兼容性回归；
+- 测试是否真正验证需求，而不只是验证实现细节。
+
+必须输出：
+1. status: PASS、FAIL 或 BLOCKED；
+2. findings: 按严重级别排序，每项附文件位置和证据；
+3. missing_evidence: 无法判断时缺少的材料；
+4. next_action: 最小必要下一步。
+
+证据不足时返回 BLOCKED，不得猜测。发现关键问题时允许直接 FAIL。</code></pre></div>
+  <p>关键约束是"<strong>可读取、可验证，但不可悄悄替实现者修改代码</strong>"。<code>steps: 8</code> 与权限白名单一样属于硬约束，防止验收 Agent 在证据不足时无限探索，把 BLOCKED 拖成一场漫长的调查。真实项目应按语言、测试命令和版本调整白名单。</p>
+
+  <h3><span class="h3-no">5.3</span>Primary 交给 Reviewer 的内容</h3>
+  <div class="code"><div class="code-bar"><span>MARKDOWN · Review Handoff</span></div><pre><code># Review Handoff
+
+## Objective
+修复登录请求在网关超时时重复提交的问题。
+
+## Acceptance criteria
+- 超时重试不得产生第二次业务提交。
+- 正常登录行为保持不变。
+- 集成测试覆盖超时后的重试路径。
+
+## Changed artifacts
+- src/auth/client.py
+- tests/auth/test_retry.py
+
+## Evidence
+- pytest tests/auth/test_retry.py -q: 8 passed
+- artifacts/change.diff
+
+## Known limitations
+- 尚未执行完整端到端测试。</code></pre></div>
+  <p>原则：<strong>共享任务事实和验证证据，不共享会诱导 Reviewer 接受实现者结论的叙事。</strong><code>Known limitations</code> 一节最诚实：Builder 主动声明"我没做什么"，等于圈定了验收边界。</p>
+
+  <div class="fieldset">
+    <div class="fs-title"><span class="fs-badge">实际样例区</span>你的 OpenCode 闭环现场（待补充）</div>
+    <p class="fs-desc">建议截"Builder 调起 child session → Reviewer 的 findings 输出 → FAIL 后修复复验"三段，形成完整闭环证据。</p>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ① · Builder 调起 Reviewer child session</div>
+      <div class="ss-hint">建议内容：OpenCode TUI/Web 中 Primary 委托子 Agent 的界面，能看出独立 session 的上下文边界。</div>
+    </div>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ② · Reviewer 的 findings 输出</div>
+      <div class="ss-hint">建议内容：一次真实的 FAIL 输出，含 status、按严重级别排序的 findings、文件位置与证据。</div>
+    </div>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ③ · 修复后复验 PASS</div>
+      <div class="ss-hint">建议内容：Builder 按 finding 修复后再次验收通过的记录，用于展示"受限闭环"而非无限往返。</div>
+    </div>
+    <div class="edit-slot" contenteditable="true" data-ph=""></div>
+    <div class="edit-tag">可编辑区 · 粘贴你的 agent 配置 diff / 实际 handoff / 讲解备注</div>
+  </div>
+</section>
+
+<!-- ============ 06 ============ -->
+<section class="chapter" id="ch6">
+  <div class="chap-head"><span class="num">06</span><h2>两种基本协作模式：串行与并行</h2></div>
+  <h3><span class="h3-no">6.1</span>串行多智能体</h3>
+  <p>Primary 在某个节点调用一个 Subagent，等待完成，再根据结果继续：</p>
+  <div class="diagram" data-flow='{"dir":"LR","nodes":{"P1":{"label":"Primary：准备任务"},"S":{"label":"Subagent：处理"},"P2":{"label":"Primary：消费结果"},"V":{"label":"继续或停止"}},"edges":[["P1","S"],["S","P2"],["P2","V"]]}'></div>
+  <p>适合：下一步依赖上一步结果；能力转换链（图片观察后再文字推理）；生成—验收—修复闭环；子任务少、协调成本要保持最低。</p>
+  <div class="code"><div class="code-bar"><span>TEXT · 两个典型串行链</span></div><pre><code>文本 Primary → 视觉 Agent 读取图片 → Primary 结合用户问题生成回答
+Builder 实现 → Reviewer 验收 → Builder 修复 → Reviewer 复验</code></pre></div>
+  <p>串行模式必须设置最大循环次数：两轮验收仍失败就停止并报告。无限循环在单 Agent 里是"卡住"，在多 Agent 里是<em>两个 Agent 互相礼貌地消耗预算</em>。</p>
+  <h3><span class="h3-no">6.2</span>并行多智能体</h3>
+  <p>Primary 在同一节点启动多个互不依赖的 Subagent，统一汇总：</p>
+  <div class="diagram" data-flow='{"dir":"TD","nodes":{"P":{"label":"Primary：拆分任务","at":[1,0]},"A":{"label":"功能检查","at":[0,1]},"B":{"label":"安全检查","at":[1,1]},"C":{"label":"性能检查","at":[2,1]},"M":{"label":"结构化汇总","at":[1,2]}},"edges":[["P","A"],["P","B"],["P","C"],["A","M"],["B","M"],["C","M"]]}'></div>
+  <div class="code"><div class="code-bar"><span>PYTHON · 框架无关伪代码</span></div><pre><code>import asyncio
+
+async def run_parallel_reviews(task_package):
+    jobs = [
+        call_agent("functional-reviewer", task_package),
+        call_agent("security-reviewer", task_package),
+        call_agent("performance-reviewer", task_package),
+    ]
+    results = await asyncio.gather(*jobs, return_exceptions=True)
+    return aggregate(results)</code></pre></div>
+  <p>最难的不是 <code>gather</code>，而是 <code>aggregate</code>。<code>return_exceptions=True</code> 也值得注意：单个 Agent 失败不应拖垮整批，但失败必须显式进入汇总逻辑，而不是被静默丢弃。</p>
+  <h3><span class="h3-no">6.3</span>并行结果不能只靠多数投票</h3>
+  <p>三个 Agent 中两个返回 PASS，不代表应当通过——安全 Agent 发现的有证据高危漏洞，不应被两票 PASS 覆盖。Agent 结论不满足投票有效的两个前提：<strong>独立性</strong>（相同模型、相似提示下结论高度相关）和<strong>同分布性</strong>（功能检查和安全检查判断的根本不是同一件事）。多智能体汇总不是民主投票，而是证据裁决：</p>
+  <ol>
+    <li>先检查是否有 Agent 执行失败；缺少关键检查时返回 <span class="st st-blocked">BLOCKED</span>；</li>
+    <li>按"验收条目 + 证据位置"合并重复 finding；</li>
+    <li>任一有明确证据的关键 finding 都触发 <span class="st st-fail">FAIL</span>；</li>
+    <li>普通 finding 由 Primary 汇总，不通过多数票消除；</li>
+    <li>冲突且无法通过证据解决时，返回 <span class="st st-blocked">BLOCKED</span> 或升级给用户。</li>
+  </ol>
+  <h3><span class="h3-no">6.4</span>串行与并行的选择表</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>判断问题</th><th>是</th><th>否</th></tr>
+      <tr><td>B 是否依赖 A 的输出？</td><td>串行</td><td>继续判断</td></tr>
+      <tr><td>多个子任务能否在启动时拿到完整输入？</td><td>继续判断</td><td>串行</td></tr>
+      <tr><td>结果是否有统一的结构和汇总规则？</td><td>可并行</td><td>先改善任务契约</td></tr>
+      <tr><td>并行节省的时间是否大于协调成本？</td><td>并行</td><td>单 Agent 或串行</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section class="chapter" id="ch7">
+  <div class="chap-head"><span class="num">07</span><h2>如何设计一个好用的多智能体系统</h2></div>
+  <h3><span class="h3-no">7.1</span>先拆边界，再起角色名</h3>
+  <ol>
+    <li>找出单 Agent 的具体缺陷；</li>
+    <li>判断缺陷属于能力、上下文、权限还是耗时问题；</li>
+    <li>定义需要隔离的最小任务边界；</li>
+    <li>为边界配置模型、工具、权限和输入输出；</li>
+    <li>最后再给 Agent 命名。</li>
+  </ol>
+  <p>从"模拟一个软件公司"开始，往往产生大量角色却没有真实边界差异。<em>命名是最便宜也最诱人一步——把它放到最后，是对抗"角色扮演剧场"的制度性手段。</em></p>
+  <h3><span class="h3-no">7.2</span>上下文不是越多越好</h3>
+  <div class="tablewrap">
+    <table>
+      <tr><th>上下文</th><th>通常是否传递</th><th>原因</th></tr>
+      <tr><td>原始目标与验收标准</td><td>是</td><td>子 Agent 判断任务的基础</td></tr>
+      <tr><td>必要输入文件或 Artifact</td><td>是</td><td>提供可验证事实</td></tr>
+      <tr><td>工具权限与禁止项</td><td>是</td><td>明确执行边界</td></tr>
+      <tr><td>期望输出格式</td><td>是</td><td>便于稳定汇总</td></tr>
+      <tr><td>Primary 的完整思考过程</td><td>通常否</td><td>容易造成锚定和污染</td></tr>
+      <tr><td>与子任务无关的聊天历史</td><td>否</td><td>增加噪声与成本</td></tr>
+      <tr><td>尚未证实的结论</td><td>谨慎</td><td>必须标注为假设而非事实</td></tr>
+    </table>
+  </div>
+  <p>类比医院检验科：医生（Primary）不把全部诊断思路塞给检验科，而是开检验单——查什么、样本是什么、正常范围是什么。检验科只回报结果，不替医生下诊断。最好的交接是"给你完成当前任务所需的最小充分上下文"。</p>
+  <h3><span class="h3-no">7.3</span>每个 Agent 都需要权限边界</h3>
+  <p>提示词里的"请不要修改文件"是软约束；工具权限里的禁止编辑才是硬边界。软约束和硬边界的区别在失败模式下才显现：模型在上下文变长、任务变难、指令冲突时，最先放弃的就是提示词里的"请"字条款。<strong>权限系统不会疲劳。</strong></p>
+  <ul>
+    <li>Reviewer：可读代码、可运行白名单测试、禁止编辑；</li>
+    <li>Database Analyst：只读 API，不暴露数据库密码；</li>
+    <li>Research Agent：允许搜索，禁止修改项目文件；</li>
+    <li>Builder：允许编辑，但不能跳过最终验收门。</li>
+  </ul>
+  <h3><span class="h3-no">7.4</span>让 Artifact 承担跨 Agent 交接</h3>
+  <p>优先传递可检查的 Artifact：<code>task.md</code>（任务与验收标准）、<code>change.diff</code>（最终变更）、<code>test-results.txt</code>（测试证据）、<code>visual-report.json</code>（视觉观察）、<code>review.json</code>（验收结论）、<code>run-summary.yaml</code>（运行状态）。对话是易失的、难以 diff 的；Artifact 能保存、复用、重放和审计。<strong>当一次委托值得发生时，它的输入输出往往值得落盘。</strong></p>
+  <h3><span class="h3-no">7.5</span>必须设计停止条件</h3>
+  <ul>
+    <li><span class="st st-pass">PASS</span> 目标已满足并有证据；</li>
+    <li><span class="st st-fail">FAIL</span> 存在明确问题，且仍在允许的修复轮次内；</li>
+    <li><span class="st st-blocked">BLOCKED</span> 缺输入、缺权限、工具失败或结果冲突；</li>
+    <li><code>BUDGET_EXCEEDED</code> 超过最大轮次、时间或成本；</li>
+    <li><code>OUT_OF_SCOPE</code> 任务已超出授权范围；</li>
+    <li>用户中止。</li>
+  </ul>
+  <p>单 Agent 失控的表现是跑偏；多 Agent 失控的表现是<em>结构化的、看起来分工明确的持续跑偏</em>——每个 Agent 都在认真工作，预算稳定燃烧，系统在兜圈子。停止条件就是断路器。</p>
+</section>
+
+<!-- ============ 08 ============ -->
+<section class="chapter" id="ch8">
+  <div class="chap-head"><span class="num">08</span><h2>常见误区</h2></div>
+  <div class="pitfall"><div class="pf-h"><span class="pf-no">✕ 01</span><h4>Agent 越多，能力越强</h4></div>
+  <p>Agent 数量同时增加调用成本、延迟、失败节点和汇总难度。一个可靠的"双 Agent 闭环"胜过五个互相观望的 Agent。从最小可用结构开始。</p></div>
+  <div class="pitfall"><div class="pf-h"><span class="pf-no">✕ 02</span><h4>不同角色名称等于不同视角</h4></div>
+  <p>相同上下文、相同模型、相同工具、相同提示结构下的多个 Agent 高度相关，不构成独立判断。想让输出真正多样化，要改变输入分布，而不是改变名片。</p></div>
+  <div class="pitfall"><div class="pf-h"><span class="pf-no">✕ 03</span><h4>把完整 Primary 上下文交给 Reviewer</h4></div>
+  <p>虽然创建了新 session，却仍继承生成阶段的锚定。Reviewer 应读取事实、规则、diff 和证据，而不是实现者的自我解释。</p></div>
+  <div class="pitfall"><div class="pf-h"><span class="pf-no">✕ 04</span><h4>Reviewer 发现问题后顺手修改</h4></div>
+  <p>这会重新混合"生成者"和"裁判"的职责。裁判下场踢球的那一刻，比赛就没有裁判了。Reviewer 输出 finding，修改由 Builder 完成后再独立复验。</p></div>
+  <div class="pitfall"><div class="pf-h"><span class="pf-no">✕ 05</span><h4>并行就是同时启动很多 Agent</h4></div>
+  <p>没有独立输入、统一输出和汇总规则的并行，只是同时制造多份难以合并的文本。</p></div>
+  <div class="pitfall"><div class="pf-h"><span class="pf-no">✕ 06</span><h4>用多数投票替代证据判断</h4></div>
+  <p>Agent 的结论不是独立同分布的选票。比较证据、覆盖范围和风险级别，而不是数 PASS 数量。</p></div>
+  <div class="pitfall"><div class="pf-h"><span class="pf-no">✕ 07</span><h4>只写提示词，不设置权限</h4></div>
+  <p>软提示无法替代工具级权限。验收、数据访问和外部操作场景，必须使用真实权限边界。</p></div>
+</section>
+
+<!-- ============ 09 ============ -->
+<section class="chapter" id="ch9">
+  <div class="chap-head"><span class="num">09</span><h2>一套简单的多智能体设计决策流程</h2></div>
+  <div class="diagram" data-flow='{"dir":"TD","nodes":{"Q1":{"label":"单 Agent 缺少必要能力？","shape":"diamond","at":[0,0]},"A1":{"label":"增加专用 Agent","at":[1,0]},"Q2":{"label":"需要独立判断或权限隔离？","shape":"diamond","at":[0,1]},"A2":{"label":"隔离 Subagent","at":[1,1]},"Q3":{"label":"子任务可独立并行？","shape":"diamond","at":[0,2]},"A3":{"label":"并行 Subagents","at":[1,2]},"A4":{"label":"单 Agent + Skills","at":[1,3]}},"edges":[["Q1","A1","是"],["Q1","Q2","否"],["Q2","A2","是"],["Q2","Q3","否"],["Q3","A3","是"],["Q3","A4","否"]]}'></div>
+  <p>创建 Subagent 前，再检查五个问题：</p>
+  <ol>
+    <li>它与 Primary 的能力、权限或上下文边界有什么<strong>真实差异</strong>？</li>
+    <li>它的输入能否被写成<strong>最小任务包</strong>？</li>
+    <li>它的输出能否<strong>结构化，并携带证据</strong>？</li>
+    <li>Primary 知道如何处理 <span class="st st-pass">PASS</span>、<span class="st st-fail">FAIL</span>、<span class="st st-blocked">BLOCKED</span> 和冲突吗？</li>
+    <li>拆分带来的收益是否<strong>大于额外成本</strong>？</li>
+  </ol>
+  <blockquote><p>如果回答不清楚，先继续用单 Agent 和 Skill，而不是先扩展拓扑。默认答案是单 Agent——多智能体需要举证，而不是反过来。</p></blockquote>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="chapter" id="ch10">
+  <div class="chap-head"><span class="num">10</span><h2>两个课堂演示</h2></div>
+
+  <h3><span class="h3-no">10.1</span>演示一：让纯文本 Agent 处理截图问题</h3>
+  <p><strong>目标</strong>：让文本 Primary 回答"截图里发生了什么，下一步应该检查什么"。</p>
+  <p><strong>操作步骤</strong>：</p>
+  <ol>
+    <li>先让纯文本 Primary 直接处理图片，观察能力边界；</li>
+    <li>接入视觉 Subagent，只要求它报告可观察事实；</li>
+    <li>将视觉结果以 JSON 返回 Primary；</li>
+    <li>让 Primary 区分"图片事实"和"基于事实提出的排查建议"；</li>
+    <li>故意换成模糊截图，观察 <code>uncertainties</code> 和 <code>limitations</code> 是否有效。</li>
+  </ol>
+  <p><strong>讲解重点</strong>：这个拆分解决的是异构能力问题。第 5 步是点睛之笔——一张模糊截图立刻检验"看不清时明确说明"是否真的生效；如果视觉 Agent 开始编造细节，正好顺势讲输出契约的价值。</p>
+  <div class="fieldset">
+    <div class="fs-title"><span class="fs-badge">实际样例区</span>演示一现场素材（待补充）</div>
+    <p class="fs-desc">建议准备两张截图：一张清晰报错截图 + 一张故意模糊的截图，对比 uncertainties 字段的差异。</p>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ① · 清晰截图的观察 JSON</div>
+      <div class="ss-hint">建议内容：视觉 Agent 对清晰报错截图的结构化返回，与 Primary 的最终回答对照。</div>
+    </div>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ② · 模糊截图的不确定性输出</div>
+      <div class="ss-hint">建议内容：模糊截图下 uncertainties / limitations 字段是否如实增长——这是演示的高潮。</div>
+    </div>
+    <div class="edit-slot" contenteditable="true" data-ph=""></div>
+    <div class="edit-tag">可编辑区 · 粘贴你的演示脚本 / 现场记录 / 学员问答</div>
+  </div>
+
+  <h3><span class="h3-no">10.2</span>演示二：代码生成与验收隔离</h3>
+  <p><strong>目标</strong>：让 Builder 修复一个带边界条件的缺陷，再由 Reviewer 独立验收。</p>
+  <p><strong>操作步骤</strong>：</p>
+  <ol>
+    <li>给 Builder 任务、代码和验收标准；</li>
+    <li>Builder 修改代码并运行测试；</li>
+    <li>生成 Review Handoff；</li>
+    <li>在独立 child session 中调用 Reviewer；</li>
+    <li>Reviewer 只看任务、diff、证据和规则；</li>
+    <li>对比 Reviewer 与 Builder 自评发现的问题；</li>
+    <li>Reviewer 返回 FAIL 时，只把 finding 交给 Builder 修复；</li>
+    <li>达到最大轮次仍不通过则停止。</li>
+  </ol>
+  <p><strong>可预埋的缺陷</strong>：</p>
+  <ul>
+    <li>使用 mock 让测试通过，但真实路径未调用；</li>
+    <li>对一个固定输入 hard-code；</li>
+    <li>正常路径通过，但异常路径吞掉错误；</li>
+    <li>增加 fallback，导致系统表面成功、实际结果错误；</li>
+    <li>测试只断言 HTTP 200，没有断言业务结果。</li>
+  </ul>
+  <p><strong>讲解重点</strong>：拆分的价值不在角色名称，而在于：新上下文、无编辑权限、只按标准和证据判断、可以直接 FAIL、修复复验形成受限闭环。演示高潮在第 6 步——把 Builder 自评和 Reviewer findings 并排投出，两者的差异就是"上下文隔离收益"最直观的注脚。</p>
+  <div class="fieldset">
+    <div class="fs-title"><span class="fs-badge">实际样例区</span>演示二现场素材（待补充）</div>
+    <p class="fs-desc">建议截图：Builder 自评结论、Reviewer 独立 findings、两者并排对比。预埋缺陷建议选"测试只断言 HTTP 200"一类，戏剧性最强。</p>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ① · Builder 的自评</div>
+      <div class="ss-hint">建议内容：Builder 完成实现后的自我陈述（往往会声称"测试已通过"）。</div>
+    </div>
+    <div class="shot-slot">
+      <svg class="ss-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14"/><circle cx="9" cy="10" r="1.6"/><path d="M3 17l5-4 4 3 4-4 5 5"/></svg>
+      <div class="ss-title">截图位 ② · Reviewer 发现的问题</div>
+      <div class="ss-hint">建议内容：Reviewer 独立验收后给出的 findings——尤其是 Builder 自评中没有提到的那几条。</div>
+    </div>
+    <div class="edit-slot" contenteditable="true" data-ph=""></div>
+    <div class="edit-tag">可编辑区 · 粘贴你的预埋缺陷代码 / 验收轮次记录 / 讲解备注</div>
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="chapter" id="ch11">
+  <div class="chap-head"><span class="num">11</span><h2>最小可观测性：知道多智能体是否真的有用</h2></div>
+  <p>每次委托至少记录：</p>
+  <div class="code"><div class="code-bar"><span>YAML · 委托运行记录</span></div><pre><code>run_id: run-2026-08-27-001
+parent_session_id: session-primary-12
+child_session_id: session-review-08
+agent_id: reviewer
+mode: serial
+input_artifacts:
+  - task.md
+  - change.diff
+output_status: FAIL
+duration_ms: 18320
+tool_calls: 4
+retry_count: 0</code></pre></div>
+  <p>第一阶段不必建平台，只需回答五个问题：</p>
+  <ul>
+    <li>Subagent 是否发现了 Primary 没发现的问题？（隔离收益）</li>
+    <li>新上下文是否降低了误判或锚定？（隔离收益）</li>
+    <li>并行是否真的缩短了总耗时？（并行收益）</li>
+    <li>额外 token、延迟和失败率是多少？（协调成本）</li>
+    <li>哪类任务经常 BLOCKED，说明任务包缺少什么？（契约缺陷）</li>
+  </ul>
+  <blockquote><p>如果一个 Subagent 长期只是重复 Primary 的结论，就应考虑合并它。多智能体系统同样需要绩效考核，依据是结构化运行记录，不是观感。</p></blockquote>
+</section>
+
+<!-- ============ 12（蓝底反白收尾） ============ -->
+<section class="chapter" id="ch12">
+  <div class="invert">
+    <div class="chap-head"><span class="num">12</span><h2>课程总结</h2></div>
+    <p>多智能体不是"一个模型不够就多复制几个"，也不是把人类公司的岗位名称搬进提示词。它解决三类真实问题：</p>
+    <ol>
+      <li><strong>能力互补</strong>：不同模型或工具负责不同能力；</li>
+      <li><strong>上下文与权限隔离</strong>：让生成与验收、执行与监督相互独立；</li>
+      <li><strong>独立任务并行</strong>：并发处理可并行子任务，再按证据汇总。</li>
+    </ol>
+    <p>一个可靠的 Agent 调用必须同时包含：最小充分上下文、明确的输入输出契约、工具和权限边界、可检查的 Artifact 与证据、以及 PASS / FAIL / BLOCKED 与预算停止条件。</p>
+    <div class="final-q">好的多智能体设计，不是把任务分给更多角色，<br>而是把能力、上下文、权限和证据放到正确的边界里。</div>
+  </div>
+</section>
+
+<!-- ============ 附录 ============ -->
+<section class="chapter" id="appA">
+  <div class="chap-head"><span class="num">A</span><h2>术语表</h2></div>
+  <div class="tablewrap">
+    <table>
+      <tr><th>术语</th><th>含义</th></tr>
+      <tr><td>Primary</td><td>主 Agent，负责理解任务、规划、委托与汇总</td></tr>
+      <tr><td>Subagent</td><td>子 Agent，在独立上下文中执行被委托的最小任务</td></tr>
+      <tr><td>Skill</td><td>场景化的工作方法包，按需加载进某个 Agent</td></tr>
+      <tr><td>任务包</td><td>委托给 Subagent 的结构化输入：目标、范围、输入、约束、输出契约、停止条件</td></tr>
+      <tr><td>交接包</td><td>跨 Agent 传递的事实与证据集合，不含诱导性叙事</td></tr>
+      <tr><td>Artifact</td><td>落盘的可检查产物（diff、测试输出、JSON 报告等）</td></tr>
+      <tr><td>上下文隔离</td><td>让不同执行单元读取不同信息集合，避免锚定与污染</td></tr>
+      <tr><td>输出契约</td><td>对 Subagent 返回结构、状态与证据的强制约定</td></tr>
+      <tr><td>BLOCKED</td><td>证据或资源不足时的显式状态，阻止模型猜测</td></tr>
+      <tr><td>协调成本</td><td>构造任务包、对齐契约、汇总结果、排查失败的全部额外开销</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="chapter" id="appB">
+  <div class="chap-head"><span class="num">B</span><h2>设计自检清单</h2></div>
+  <ul>
+    <li>☐ 每个 Agent 都能说清它与 Primary 的边界差异（能力 / 权限 / 上下文 / 耗时）；</li>
+    <li>☐ 每个 Subagent 的输入都能写成最小任务包；</li>
+    <li>☐ 每个 Subagent 的输出都有状态字段和证据字段；</li>
+    <li>☐ BLOCKED 在所有可能的失败路径上都有定义；</li>
+    <li>☐ 所有串行循环都有最大轮次；</li>
+    <li>☐ 所有并行都有明确的汇总规则，且不是多数投票；</li>
+    <li>☐ 权限用硬边界实现，不只靠提示词；</li>
+    <li>☐ 跨 Agent 交接通过 Artifact，而不是整段对话；</li>
+    <li>☐ 有可观测性记录，能回答"这个拆分是否真的有用"；</li>
+    <li>☐ 能一句话说清这笔拆分净收益为正的理由。</li>
+  </ul>
+</section>
+
+<section class="chapter" id="appC">
+  <div class="chap-head"><span class="num">C</span><h2>课后练习</h2></div>
+  <ol>
+    <li><strong>找边界</strong>：选一个你正在用单 Agent 完成的任务，写下它的能力、上下文和权限边界。它真的需要拆吗？</li>
+    <li><strong>写任务包</strong>：为"让另一个 Agent 检查一份周报数据"写一份 YAML 任务包，含输出契约和停止条件。</li>
+    <li><strong>设计汇总规则</strong>：三个并行 Agent 分别返回 PASS、FAIL（有证据）、BLOCKED，写出你的汇总决策过程和最终状态。</li>
+    <li><strong>拆掉角色扮演</strong>：找一个流行的"多 Agent 团队"提示词，用本课决策流程分析，指出哪些角色是真实边界、哪些只是名称。</li>
+  </ol>
+</section>
+
+<section class="chapter" id="appD">
+  <div class="chap-head"><span class="num">D</span><h2>课堂 FAQ</h2></div>
+  <h4>Primary 和 Subagent 一定要用不同的模型吗？</h4>
+  <p>不需要。模型差异只是边界的一种。相同模型 + 不同上下文 + 不同权限同样是有效拆分（如 Builder/Reviewer）。只换模型不换上下文和权限，往往不构成有效拆分。</p>
+  <h4>Reviewer 验收不通过，Builder 修复后，是把所有材料再给 Reviewer 吗？</h4>
+  <p>复验时给：原始任务与标准、<strong>新</strong> diff、<strong>新</strong>证据、以及上一轮 finding 的逐条回应。不要把上一轮 Reviewer 的分析全文回传，避免验收轮次之间相互锚定。</p>
+  <h4>并行 Agent 的结果互相矛盾怎么办？</h4>
+  <p>先比较证据而非结论：哪一方的 finding 有可复现的证据？证据解决不了就返回 BLOCKED 并升级给人。矛盾本身是信息——它说明任务定义或验收标准存在歧义。</p>
+  <h4>多智能体框架（crew / swarm 类）值得用吗？</h4>
+  <p>先用手写任务包 + 接口调用或 OpenCode 原生机制跑通一两个闭环，理解契约、隔离、汇总的真实难点后，再评估框架解决了哪部分、又隐藏了哪部分。不理解底层直接上框架，调试时会发现黑盒比收益多。</p>
+  <h4>Subagent 能不能再派生 Subagent？</h4>
+  <p>工程上可以，但默认禁止。每深一层，上下文控制和失败排查难度都上升一个量级。确有必要时，用权限白名单显式开放，并限制派生深度。</p>
+</section>
+
+<footer>
+  <p><strong>参考资料</strong></p>
+  <p class="ref">OpenCode V2：Agents — https://opencode.ai/v2/docs/agents</p>
+  <p class="ref">OpenCode V2：从 V1 迁移 — https://opencode.ai/v2/docs/migrate-v1</p>
+  <div class="offline-note">本页面为单文件离线版本：不加载任何外部字体、脚本或样式，断网可正常打开。文中的接口、Agent 配置与权限示例用于教学，接入实际项目时请按模型服务、OpenCode 版本与项目白名单调整。"可编辑区"支持直接点击修改，但修改不会保存——请复制内容到你的教学材料中。</div>
+</footer>
+
+</article>
+</div>
+</div>
+
+<script>
+/* ============ 离线 SVG 流程图渲染器（无任何外部依赖） ============ */
+(function(){
+  var BLUE="#0000ff", INK="#14142e", WASH="#f4f4ff";
+  function estW(t){ var w=0; for(var i=0;i<t.length;i++){ w += t.charCodeAt(i)>255?15:8.6; } return w; }
+  function svgEl(tag,attrs){ var e=document.createElementNS("http://www.w3.org/2000/svg",tag); for(var k in attrs) e.setAttribute(k,attrs[k]); return e; }
+  /* 矩形/菱形边界与射线交点 */
+  function borderPt(c,w,h,tx,ty,diamond){
+    var dx=tx-c.x, dy=ty-c.y; if(dx===0&&dy===0) return {x:c.x,y:c.y};
+    if(diamond){ var t=1/(Math.abs(dx)/(w/2)+Math.abs(dy)/(h/2)); return {x:c.x+dx*t,y:c.y+dy*t}; }
+    var sx=(w/2)/Math.abs(dx||1e-9), sy=(h/2)/Math.abs(dy||1e-9), s=Math.min(sx,sy);
+    return {x:c.x+dx*s,y:c.y+dy*s};
+  }
+  function renderFlow(host,spec){
+    var nodes=spec.nodes, edges=spec.edges, ids=Object.keys(nodes);
+    /* 环检测：识别真正的回边（无论布局方式） */
+    var adj0={},indeg0={},backEdge={},state={};
+    ids.forEach(function(id){adj0[id]=[];indeg0[id]=0;});
+    edges.forEach(function(e){adj0[e[0]].push(e[1]);indeg0[e[1]]++;});
+    function dfs0(u,stack){
+      state[u]=1; stack.push(u);
+      adj0[u].forEach(function(v){
+        if(state[v]===1){ backEdge[u+"|"+v]=true; }
+        else if(!state[v]){ dfs0(v,stack); }
+      });
+      stack.pop(); state[u]=2;
+    }
+    ids.forEach(function(id){ if(indeg0[id]===0&&!state[id]) dfs0(id,[]); });
+    ids.forEach(function(id){ if(!state[id]) dfs0(id,[]); });
+    var colW=220,rowH=104,padX=26,padY=24;
+    /* 布局：优先 at:[col,row]，否则按层自动 */
+    var pos={};
+    if(ids.some(function(id){return nodes[id].at;})){
+      colW=280;
+      var maxC=0,maxR=0;
+      ids.forEach(function(id){var a=nodes[id].at||[0,0]; maxC=Math.max(maxC,a[0]); maxR=Math.max(maxR,a[1]);
+        pos[id]={x:padX+a[0]*colW,y:padY+a[1]*rowH};});
+    }else{
+      /* 按 DAG 最长路径分层（忽略回边） */
+      var layer={}; ids.forEach(function(id){layer[id]=0;});
+      var changed=true,guard=0;
+      while(changed&&guard++<40){changed=false;
+        edges.forEach(function(e){
+          if(backEdge[e[0]+"|"+e[1]]) return;
+          if(layer[e[1]]<layer[e[0]]+1){layer[e[1]]=layer[e[0]]+1;changed=true;}
+        });}
+      var buckets={}; ids.forEach(function(id){var l=layer[id];(buckets[l]=buckets[l]||[]).push(id);});
+      var L=Object.keys(buckets).length;
+      Object.keys(buckets).forEach(function(l){
+        buckets[l].forEach(function(id,i){
+          if(spec.dir==="LR") pos[id]={x:padX+l*colW,y:padY+i*rowH};
+          else pos[id]={x:padX+i*colW,y:padY+l*rowH};
+        });
+      });
+    }
+    /* 尺寸 */
+    var dims={}; ids.forEach(function(id){
+      var diamond=nodes[id].shape==="diamond";
+      var w=Math.max(diamond?180:150, estW(nodes[id].label)+44);
+      var h=diamond?64:46;
+      dims[id]={w:w,h:h,diamond:diamond};
+    });
+    var W=0,H=0; ids.forEach(function(id){W=Math.max(W,pos[id].x+dims[id].w);H=Math.max(H,pos[id].y+dims[id].h);});
+    W+=padX+110; H+=padY;
+    var svg=svgEl("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H});
+    var defs=svgEl("defs",{});
+    defs.innerHTML='<marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="'+BLUE+'"/></marker>';
+    svg.appendChild(defs);
+    var gE=svgEl("g",{}),gN=svgEl("g",{}); svg.appendChild(gE); svg.appendChild(gN);
+    edges.forEach(function(e){
+      var a=nodes[e[0]],b=nodes[e[1]]; if(!a||!b) return;
+      var ca={x:pos[e[0]].x+dims[e[0]].w/2,y:pos[e[0]].y+dims[e[0]].h/2};
+      var cb={x:pos[e[1]].x+dims[e[1]].w/2,y:pos[e[1]].y+dims[e[1]].h/2};
+      var p1=borderPt(ca,dims[e[0]].w+8,dims[e[0]].h+8,cb.x,cb.y,dims[e[0]].diamond);
+      var p2=borderPt(cb,dims[e[1]].w+8,dims[e[1]].h+8,ca.x,ca.y,dims[e[1]].diamond);
+      var back = !!backEdge[e[0]+"|"+e[1]];
+      var path;
+      if(back){ /* 回边：绕右侧走折线 */
+        var mx=Math.max(ca.x,cb.x)+44;
+        path="M"+p1.x+","+p1.y+" L"+mx+","+p1.y+" L"+mx+","+p2.y+" L"+p2.x+","+p2.y;
+      }else{ path="M"+p1.x+","+p1.y+" L"+p2.x+","+p2.y; }
+      gE.appendChild(svgEl("path",{d:path,fill:"none",stroke:BLUE,"stroke-width":1.6,"marker-end":"url(#arw)"}));
+      if(e[2]){
+        var lx,ly;
+        if(back){ lx=Math.max(ca.x,cb.x)+44; ly=(p1.y+p2.y)/2-6; }
+        else{ lx=(p1.x+p2.x)/2; ly=(p1.y+p2.y)/2-8; }
+        var t=svgEl("text",{x:lx,y:ly,"text-anchor":"middle","font-size":12,"font-family":"monospace",fill:BLUE});
+        t.textContent=e[2];
+        var tw=estW(e[2]);
+        gE.appendChild(svgEl("rect",{x:lx-tw/2-3,y:ly-12,width:tw+6,height:15,fill:"#fff"}));
+        gE.appendChild(t);
+      }
+    });
+    ids.forEach(function(id){
+      var d=dims[id],x=pos[id].x,y=pos[id].y;
+      if(d.diamond){
+        gN.appendChild(svgEl("polygon",{points:(x+d.w/2)+","+y+" "+(x+d.w)+","+(y+d.h/2)+" "+(x+d.w/2)+","+(y+d.h)+" "+x+","+(y+d.h/2),fill:WASH,stroke:BLUE,"stroke-width":1.6}));
+      }else{
+        gN.appendChild(svgEl("rect",{x:x,y:y,width:d.w,height:d.h,fill:"#fff",stroke:BLUE,"stroke-width":1.6}));
+      }
+      var t=svgEl("text",{x:x+d.w/2,y:y+d.h/2+4.5,"text-anchor":"middle","font-size":13,fill:INK});
+      t.textContent=nodes[id].label;
+      gN.appendChild(t);
+    });
+    host.appendChild(svg);
+  }
+  function renderSeq(host,spec){
+    var parts=spec.parts,msgs=spec.msgs;
+    var colW=190,top=46,step=58,padX=70;
+    var W=padX*2+colW*(parts.length-1)+40, H=top+msgs.length*step+30;
+    var svg=svgEl("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H});
+    var defs=svgEl("defs",{});
+    defs.innerHTML='<marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="'+BLUE+'"/></marker>';
+    svg.appendChild(defs);
+    var xs=parts.map(function(_,i){return padX+i*colW;});
+    parts.forEach(function(p,i){
+      var bw=Math.max(96,estW(p)+30);
+      svg.appendChild(svgEl("rect",{x:xs[i]-bw/2,y:8,width:bw,height:30,fill:"#fff",stroke:BLUE,"stroke-width":1.6}));
+      var t=svgEl("text",{x:xs[i],y:28,"text-anchor":"middle","font-size":13,fill:INK}); t.textContent=p; svg.appendChild(t);
+      svg.appendChild(svgEl("line",{x1:xs[i],y1:38,x2:xs[i],y2:H-10,stroke:BLUE,"stroke-width":1,"stroke-dasharray":"4 4"}));
+    });
+    msgs.forEach(function(m,i){
+      var a=parts.indexOf(m[0]),b=parts.indexOf(m[1]);
+      var y=top+24+i*step;
+      svg.appendChild(svgEl("line",{x1:xs[a],y1:y,x2:xs[b]+(b<a?4:-4),y2:y,stroke:BLUE,"stroke-width":1.6,"marker-end":"url(#arw2)"}));
+      var t=svgEl("text",{x:(xs[a]+xs[b])/2,y:y-7,"text-anchor":"middle","font-size":12.5,fill:INK});
+      t.textContent=m[2]; svg.appendChild(t);
+      var n=svgEl("text",{x:xs[a]+(b>a?8:-8),y:y+15,"text-anchor":b>a?"start":"end","font-size":10,"font-family":"monospace",fill:"#8a8ab0"});
+      n.textContent=(i+1); svg.appendChild(n);
+    });
+    host.appendChild(svg);
+  }
+  document.querySelectorAll(".diagram").forEach(function(host){
+    try{
+      if(host.dataset.flow){ renderFlow(host,JSON.parse(host.dataset.flow)); }
+      else if(host.dataset.seq){ renderSeq(host,JSON.parse(host.dataset.seq)); }
+    }catch(err){ host.innerHTML='<div class="d-cap">[diagram error]</div>'; }
+  });
+
+  /* ============ 代码块复制按钮 ============ */
+  document.querySelectorAll(".code").forEach(function(box){
+    var bar=box.querySelector(".code-bar"); if(!bar) return;
+    var btn=document.createElement("button"); btn.className="copybtn"; btn.textContent="复制";
+    btn.onclick=function(){
+      var txt=box.querySelector("pre").innerText;
+      navigator.clipboard&&navigator.clipboard.writeText(txt).then(function(){btn.textContent="已复制";setTimeout(function(){btn.textContent="复制";},1400);});
+    };
+    bar.appendChild(btn);
+  });
+
+  /* ============ 大纲 scrollspy ============ */
+  var links=[].slice.call(document.querySelectorAll(".toc a"));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute("href"));});
+  function spy(){
+    var y=window.scrollY+120,cur=0;
+    secs.forEach(function(s,i){ if(s&&s.offsetTop<=y) cur=i; });
+    links.forEach(function(a,i){ a.classList.toggle("active",i===cur); });
+  }
+  window.addEventListener("scroll",spy,{passive:true}); spy();
+})();
+</script>
+</body>
+</html>
