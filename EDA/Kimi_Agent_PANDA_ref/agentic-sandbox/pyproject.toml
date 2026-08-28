@@ -1,0 +1,17 @@
+# agentic-sandbox：面向 opencode 的 agentic EDA 沙盒
+# 零第三方依赖，仅标准库，Python >= 3.9
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-sandbox"
+version = "0.1.0"
+description = "面向 opencode 的 agentic EDA 沙盒：bubblewrap 隔离 + 任务契约 + 日志哨兵"
+requires-python = ">=3.9"
+
+[project.scripts]
+asbox = "sandbox.cli:main"
+
+[tool.setuptools]
+packages = ["sandbox", "tools"]

@@ -1,0 +1,12 @@
+{"name": "rtl-basic",
+ "stages": [{"id": "lint", "tool": "verilator_lint",
+             "inputs": {"rtl": "examples/counter/rtl.v"},
+             "gate": {"sentinel": true, "allow_rc": [0]},
+             "on_fail": "stop"},
+            {"id": "sim",  "tool": "iverilog_sim",
+             "inputs": {"rtl": "examples/counter/rtl.v", "tb": "examples/counter/tb.v"},
+             "gate": {"sentinel": true, "sentinel_extra_markers": ["MISMATCH", "FAIL"],
+                      "allow_rc": [0]}, "on_fail": "stop"},
+            {"id": "synth","tool": "yosys_synth",
+             "inputs": {"rtl": "examples/counter/rtl.v"},
+             "gate": {"sentinel": true, "allow_rc": [0]}, "on_fail": "stop"}]}
