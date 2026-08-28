@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": false,
+    "sourceMap": true,
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["src/**/*.ts", ".opencode/lib/**/*.ts"],
+  "exclude": ["test/**/*.ts", ".opencode/plugins/**/*.ts"]
+}

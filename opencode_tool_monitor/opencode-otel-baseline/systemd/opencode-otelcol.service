@@ -1,0 +1,29 @@
+[Unit]
+Description=OpenCode OpenTelemetry Collector
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=opencode-observability
+Group=opencode-observability
+Environment=OTELCOL_CONFIG=/opt/opencode-observability/otelcol/config-upstream.yaml
+EnvironmentFile=-/etc/opencode-observability.env
+ExecStart=/opt/opencode-observability/bin/otelcol-contrib --config=${OTELCOL_CONFIG}
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+LimitNOFILE=65536
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/lib/opencode-observability
+
+[Install]
+WantedBy=multi-user.target

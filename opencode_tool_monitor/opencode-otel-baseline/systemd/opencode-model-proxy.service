@@ -1,0 +1,27 @@
+[Unit]
+Description=OpenCode model observability proxy
+Wants=network-online.target
+After=network-online.target opencode-otelcol.service
+StartLimitIntervalSec=60
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=opencode-observability
+Group=opencode-observability
+WorkingDirectory=/opt/opencode-observability
+EnvironmentFile=-/etc/opencode-observability.env
+ExecStart=/usr/bin/env node /opt/opencode-observability/dist/src/model-proxy.js
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target
