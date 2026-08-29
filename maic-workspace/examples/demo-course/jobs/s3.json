@@ -1,0 +1,20 @@
+{
+  "task": "build-scene",
+  "course_dir": "examples/demo-course",
+  "scene_id": "s3",
+  "scene_type": "quiz",
+  "title": "随堂测：缓存头部理解检查",
+  "outline_item": {
+    "description": "3 道题检验对 Cache-Control、强缓存/协商缓存触发条件与状态码语义的理解。",
+    "keyPoints": [
+      "Cache-Control 指令语义",
+      "304 Not Modified 的含义",
+      "缓存策略的选择"
+    ],
+    "quizConfig": {"count": 3, "types": ["single", "multiple", "short_answer"]}
+  },
+  "languageDirective": "全课用中文讲授，术语保留英文原文",
+  "skill_ref": "skills/quiz-authoring",
+  "material_refs": ["examples/demo-course/materials/http-caching.md"],
+  "output_path": "examples/demo-course/scenes/s3.json"
+}

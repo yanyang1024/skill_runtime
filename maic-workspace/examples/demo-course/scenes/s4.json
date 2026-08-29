@@ -1,0 +1,37 @@
+{
+  "id": "s4",
+  "stageId": "stage_demo",
+  "type": "pbl",
+  "title": "小项目：为静态站点设计缓存策略",
+  "order": 4,
+  "content": {
+    "type": "pbl",
+    "projectTopic": "为一个静态站点设计缓存策略",
+    "projectDescription": "你负责为公司新上线的文档型静态站点设计 HTTP 缓存方案。站点由三类资源构成：HTML 入口页（index.html 等，更新频繁）、构建产出的 CSS/JS（每次发版内容会变）、以及图片与字体等二进制资源（极少更新）。请综合本课的强缓存与协商缓存知识，产出一套可落地的缓存策略：每一类资源用什么 Cache-Control 指令、是否需要文件名指纹、如何验证策略生效。",
+    "targetSkills": [
+      "辨析强缓存与协商缓存的触发条件",
+      "按资源类型选择合适的 Cache-Control 指令",
+      "用文件名指纹（fingerprint）支撑长缓存策略"
+    ],
+    "issues": [
+      {
+        "id": "i1",
+        "title": "资源盘点与分级",
+        "description": "把站点的全部资源按「更新频率」和「变更后是否必须立即生效」两个维度分类，给出每一类的缓存目标（追求零请求、还是追求立即生效）。",
+        "deliverable": "一张资源分级表（Markdown 表格），至少覆盖 HTML / CSS·JS / 图片字体三类，每类注明更新频率与缓存目标"
+      },
+      {
+        "id": "i2",
+        "title": "逐类编写缓存响应头",
+        "description": "为 i1 中的每一类资源写出具体的 Cache-Control 响应头，并说明理由。带指纹的静态资源应使用 max-age=31536000 + immutable；HTML 入口应使用 no-cache 或短 max-age，并解释为什么这样组合是安全的。",
+        "deliverable": "一份响应头配置清单：每类资源一行「资源类型 → 完整 Cache-Control 头 → 一句理由」，且 HTML 入口与静态资源的策略有明显区分"
+      },
+      {
+        "id": "i3",
+        "title": "设计验证与回滚检查",
+        "description": "策略上线后如何确认生效？设计一套检查步骤：发版后首次访问与二次访问时，浏览器开发者工具 Network 面板里应该分别看到什么状态码（200 / 304 / from cache），以及如果用户仍拿到旧资源时的排查路径。",
+        "deliverable": "一份验证清单（checklist）：逐条列出「操作 → 预期观察到的状态码/请求头」，并包含至少一条「拿到旧资源」的排查项"
+      }
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "s3",
+  "stageId": "stage_demo",
+  "type": "quiz",
+  "title": "随堂测：缓存头部理解检查",
+  "order": 3,
+  "content": {
+    "type": "quiz",
+    "questions": [
+      {
+        "id": "q1",
+        "type": "single",
+        "question": "响应头 `Cache-Control: max-age=3600` 在资源被缓存后的 1 小时内，浏览器再次请求该资源时会发生什么？",
+        "options": [
+          {"label": "直接读本地副本，不发出任何网络请求", "value": "A"},
+          {"label": "带上 If-None-Match 发起条件请求", "value": "B"},
+          {"label": "忽略缓存，重新下载完整资源", "value": "C"},
+          {"label": "向服务器请求资源的部分内容（Range 请求）", "value": "D"}
+        ],
+        "answer": ["A"],
+        "analysis": "max-age=3600 声明副本保鲜 1 小时。新鲜期内浏览器直接使用本地副本（开发者工具里常显示 200 from disk/memory cache），零网络往返；只有过期（stale）之后才进入协商验证阶段。",
+        "points": 10
+      },
+      {
+        "id": "q2",
+        "type": "multiple",
+        "question": "关于 `304 Not Modified` 与协商缓存，下列说法正确的有哪些？（多选）",
+        "options": [
+          {"label": "304 响应不携带响应体，流量开销极小", "value": "A"},
+          {"label": "浏览器收到 304 后使用本地缓存的副本", "value": "B"},
+          {"label": "条件请求通常通过 If-None-Match 携带 ETag 发起", "value": "C"},
+          {"label": "304 表示资源已被永久删除", "value": "D"}
+        ],
+        "answer": ["A", "B", "C"],
+        "analysis": "协商缓存中，浏览器带 If-None-Match（ETag）或 If-Modified-Since 发起条件请求；资源未变时服务器回 304 Not Modified（无响应体），浏览器继续用本地副本并刷新新鲜期。D 混淆了 304 与 410 Gone 的语义。",
+        "points": 15
+      },
+      {
+        "id": "q3",
+        "type": "short_answer",
+        "question": "运维同学反馈：网站发版后很多用户看到的仍是旧版 JS。已知该 JS 的响应头是 `Cache-Control: max-age=31536000`，文件名固定为 `app.js`。请分析原因，并给出修复方案。",
+        "commentPrompt": "评分量规（自评对照）：① 指出原因——长 max-age 使旧副本一年内保持新鲜，浏览器不发请求；② 给出文件名指纹方案——构建时把内容 hash 写进文件名（如 app.a1b2c3.js），新版必然换 URL；③ 说明 HTML 入口不能长缓存——应用 no-cache 或很短 max-age，保证入口总拿最新。三点齐备为满分。",
+        "analysis": "参考答案：问题在于 max-age=31536000 配合不变的文件名——发版后旧副本仍在一年新鲜期内，浏览器直接读本地缓存，根本不会发现新文件。修复：启用内容指纹文件名（app.<hash>.js），内容变化则 URL 变化，长缓存 + immutable 才安全；同时把 HTML 入口文件改为 no-cache（每次协商验证）或很短的 max-age，确保用户总能拿到引用新指纹文件的入口页。",
+        "points": 20
+      }
+    ]
+  }
+}

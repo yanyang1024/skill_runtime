@@ -1,0 +1,16 @@
+{
+  "dslVersion": "maic-lite/0.2",
+  "id": "stage_demo",
+  "name": "HTTP 缓存机制",
+  "description": "一门面向前端初学者的微型课程：理解 HTTP 缓存的两级机制（强缓存与协商缓存），学会用 Cache-Control 等头部为静态站点设计缓存策略。",
+  "languageDirective": "全课用中文讲授，HTTP 头部名称、指令名与状态码等技术术语保留英文原文（如 Cache-Control、max-age、ETag、304 Not Modified），首次出现时给出中文解释。",
+  "style": "professional",
+  "createdAt": 1756000000000,
+  "updatedAt": 1756000000000,
+  "scenes": [
+    "scenes/s1.json",
+    "scenes/s2.json",
+    "scenes/s3.json",
+    "scenes/s4.json"
+  ]
+}

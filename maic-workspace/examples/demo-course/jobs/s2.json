@@ -1,0 +1,21 @@
+{
+  "task": "build-scene",
+  "course_dir": "examples/demo-course",
+  "scene_id": "s2",
+  "scene_type": "interactive",
+  "title": "缓存行为模拟：强缓存与协商缓存",
+  "outline_item": {
+    "description": "通过滑块调 max-age、按钮切换缓存策略，观察请求走向动画：命中强缓存不发请求，协商缓存带 If-None-Match 得到 304。",
+    "keyPoints": [
+      "max-age 控制强缓存新鲜期",
+      "过期后走 ETag / If-None-Match 协商",
+      "no-store 完全禁用缓存"
+    ],
+    "widgetType": "simulation",
+    "widgetOutline": {"variables": ["maxAge"], "presets": ["strong", "negotiate", "no-store"]}
+  },
+  "languageDirective": "全课用中文讲授，术语保留英文原文",
+  "skill_ref": "skills/interactive-authoring",
+  "material_refs": ["examples/demo-course/materials/http-caching.md"],
+  "output_path": "examples/demo-course/scenes/s2.json"
+}
