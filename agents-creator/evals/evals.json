@@ -1,0 +1,48 @@
+{
+  "skill_name": "agents-creator",
+  "evals": [
+    {
+      "id": 0,
+      "name": "code-review-subagent",
+      "prompt": "帮我写一个 agent 配置文件：专门做代码审查，只看代码不改代码，审查完给一份问题清单，按严重程度排序。文件放到 agents/ 目录下。",
+      "expected_output": "一个 mode: subagent 的 agent md 文件：frontmatter 权限收敛（edit/write deny），正文含执行流程、只允许结构化 JSON 的回传格式（问题清单按严重程度分级）、防编造红线。",
+      "files": [],
+      "assertions": [
+        "frontmatter 声明 mode: subagent",
+        "frontmatter 包含非空 description 字段且说明了职责边界",
+        "收敛了文件修改权限（edit/write deny 或 tools 禁用 edit）",
+        "正文包含结构化回传格式（JSON 代码块）",
+        "问题清单按严重程度分级（出现 blocker/critical/major/minor/严重 等分级词）",
+        "包含红线/禁止类约束（如禁止修改代码、禁止编造）"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "pipeline-primary-router",
+      "prompt": "我在搞一个数据处理 pipeline，想要一个总控 agent：用户扔过来任务，它判断该走哪步，把活分给下面的执行器（数据抽取、数据清洗、结果质检），最后汇总结果告诉我。它自己不碰数据。帮我生成这个 agent 的 md 文件。",
+      "expected_output": "一个 mode: primary 的 agent md 文件：permission.task 白名单（\"*\": deny + 三个执行器 allow），正文含分流规则、任务契约（派单必带输入/参数/产出目录）、回传契约（只收结构化摘要，禁止全文倒灌）。",
+      "files": [],
+      "assertions": [
+        "frontmatter 声明 mode: primary",
+        "permission.task 为白名单模式（\"*\": deny 加上具名执行器 allow）",
+        "正文包含分流规则（什么输入派给谁）",
+        "正文包含任务契约（派单必须携带的信息）",
+        "正文包含回传契约（只收结构化摘要、禁止全文倒灌主会话）",
+        "覆盖抽取/清洗/质检三个下游环节，含质检闭环"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "ambiguous-log-agent",
+      "prompt": "给我搞个 agent，平时帮我看看日志文件，找出里面的报错和异常，告诉我可能是什么原因。",
+      "expected_output": "意图模糊时 skill 应做出合理 mode 判定（日志分析产生大量中间产物，宜为 subagent）或先澄清；产出的 agent md 符合所选 mode 的范式，含防编造红线。",
+      "files": [],
+      "assertions": [
+        "产出了含合法 YAML frontmatter 的 agent md（mode 为 primary 或 subagent）",
+        "mode 选择有依据：日志分析属重中间产物任务，选 subagent，或在 notes 中明确论证了 mode 选择",
+        "正文包含防编造红线（看不到/不确定要直说，禁止编造原因）",
+        "对日志原文有上下文纪律约束（禁止大段回传/粘贴日志原文，只回摘要）"
+      ]
+    }
+  ]
+}
