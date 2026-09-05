@@ -1,0 +1,75 @@
+{
+  "demo_only": true,
+  "data_origin": "entirely fictional; CPU execution verified, production quality not measured",
+  "sklearn_version": "1.8.0",
+  "train_n": 18,
+  "train_sha256": "5280e5675fb7ac471c70a81cf3c583e4e815dc4171640e101f1304ced5768f07",
+  "threshold": 0.75,
+  "threshold_note": "Illustrative cutoff; probability is not calibrated. Tune on dev only.",
+  "eval": {
+    "dev": {
+      "n": 6,
+      "labels": [
+        "coding",
+        "data_analysis",
+        "knowledge"
+      ],
+      "macro_f1": 1.0,
+      "majority_macro_f1": 0.16666666666666666,
+      "classification_report": {
+        "coding": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "data_analysis": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "knowledge": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 6.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 6.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          2
+        ]
+      ],
+      "selected_n": 0,
+      "selected_accuracy": null,
+      "selection_coverage": 0.0,
+      "eval_sha256": "08012974eefa3116c84e055210383868b5275d9a56599690c5e866f24670bbdf"
+    }
+  }
+}
