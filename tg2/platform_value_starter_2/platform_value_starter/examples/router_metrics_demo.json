@@ -1,0 +1,391 @@
+{
+  "sklearn_version": "1.8.0",
+  "train_n": 18,
+  "train_sha256": "2e9e59a80b75422cc5766421db443dd9721ada77987df1f5763b48e35418d75d",
+  "train_source_groups": [
+    "DEMO/independent-task-1",
+    "DEMO/independent-task-10",
+    "DEMO/independent-task-11",
+    "DEMO/independent-task-12",
+    "DEMO/independent-task-13",
+    "DEMO/independent-task-14",
+    "DEMO/independent-task-15",
+    "DEMO/independent-task-16",
+    "DEMO/independent-task-17",
+    "DEMO/independent-task-18",
+    "DEMO/independent-task-2",
+    "DEMO/independent-task-3",
+    "DEMO/independent-task-4",
+    "DEMO/independent-task-5",
+    "DEMO/independent-task-6",
+    "DEMO/independent-task-7",
+    "DEMO/independent-task-8",
+    "DEMO/independent-task-9"
+  ],
+  "train_case_ids": [
+    "06295d409573cf00ce091a60",
+    "0f303f91f0ba5fda95bc16e3",
+    "0f564e52476200363defb859",
+    "2dfd6c3a2eae3ef4a28c97c3",
+    "3710b69493cf5fb068726c60",
+    "3cfc4c350fc256d57466dc71",
+    "4b3e036f3ae8ba51c4b103d7",
+    "5b762aca23e7de4a75fca724",
+    "5db3721ae5dee2db28ca19c7",
+    "926657372712268df6fba93b",
+    "971f79663ca98398e33bdef0",
+    "996fde85591e463ae5d64c26",
+    "9a9da788a8baa95c56d1d57e",
+    "a51b7443d39a745041adb1ea",
+    "b14b25dafb4912c47fcbcc66",
+    "c3c4a427f23f78909f48d885",
+    "e22a5c0814089f69cd6c4ebf",
+    "f870c653a5d33ca5fd703138"
+  ],
+  "train_text_hashes": [
+    "046453cae8ae84e4e2fca0401787943d37bb60e764511d48bae98bb5782c47ec",
+    "099dc44faa7f2d126fd049e80a8f5cc106779928c8d3edf4356b37f9efb29f96",
+    "1c2250efb7b09207f834b17b9f7933842479d931e18d314a68acc502ec9a827c",
+    "323f6aeda6252e9f9d019f2e425a7d1a30917f5c923384db89cc6920bba6625b",
+    "476f89ffd73c3583ce65e8592c1c4d72cef7c4322d3b0fe4e943fb84560ea29f",
+    "58c494c556884551e14eb7232776f0153561b97dd2947cd7f77721d67662be77",
+    "740033e36851540fdd6848275462db306dff5115d998da99d67b43772b3143d7",
+    "789196873022329ba7b24e21bc86c1ff5ab4334ef62e1009090ecc261c9f7dcd",
+    "823a54e9ab1b7e8459eabbd56db37d85f99b210af3e8a6dc60f07e37070d90eb",
+    "9257613f1cd21cbe31409b9104bd43919708524f04d22634255366590a991a71",
+    "96ab6a451914b709a921b2e637a8e7024227b1c08b0d088daaf6cac11a250f3f",
+    "a9e8993b1dd4f87e983506991582e0b728fc8027f1810bc1d92f37dc74e751c3",
+    "ab4b6d74deab21f58577540a1baf0f42a80e7e1340cfc4230552c09ed7f05348",
+    "ab6489b2e3f17197f6bba9f7015521e4b6353a3f76d442dd5de2cb8979f453bc",
+    "c4f9fce54baf708f7b8bd266cb6e3d90b8925418cfb46f28a37d26a4d63e889f",
+    "d60f554582398fa5d252966b1e74a9144ad1fe2f66df79c18eda08609ef5538b",
+    "d6e6ff9d719a8f413bb7c47684babe5a9f9a5ad9004100fb4e6c5d31b956434c",
+    "db6bed14f8bc30d2fc3088f9144cdcac89d847e5bf6386c8ed52e4f57a193e16"
+  ],
+  "train_label_sources": {
+    "human": 18
+  },
+  "evaluation_goal": "source_group_generalization",
+  "fixed_macro_labels": [
+    "coding",
+    "data_analysis",
+    "knowledge"
+  ],
+  "keyword_rule_sha256": "004b72a867b2778054b5e418ac5a217fe16031e7b03f56646313b5cea3e09fd4",
+  "threshold": 0.75,
+  "threshold_note": "Uncalibrated score. Select threshold on dev only; holdout gets one preselected cutoff.",
+  "note": "All methods use the same label set; keyword abstentions count as errors. Weak-label accuracy means reference agreement.",
+  "eval": {
+    "dev": {
+      "n": 6,
+      "metrics_meaning": "validated_target_agreement",
+      "reference_quality_counts": {
+        "validated": 6
+      },
+      "label_source_counts": {
+        "human": 6
+      },
+      "baselines": {
+        "tfidf_logreg": {
+          "macro_f1": 1.0,
+          "correct": 6,
+          "n": 6,
+          "abstentions": 0
+        },
+        "keywords": {
+          "macro_f1": 0.7777777777777777,
+          "correct": 4,
+          "n": 6,
+          "abstentions": 2
+        },
+        "majority": {
+          "macro_f1": 0.16666666666666666,
+          "correct": 2,
+          "n": 6,
+          "abstentions": 0
+        }
+      },
+      "classification_report": {
+        "coding": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "data_analysis": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "knowledge": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 6.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 6.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          2
+        ]
+      ],
+      "labels": [
+        "coding",
+        "data_analysis",
+        "knowledge"
+      ],
+      "threshold": 0.75,
+      "selected_n": 0,
+      "selected_correct": 0,
+      "selected_accuracy": null,
+      "selection_coverage": 0.0,
+      "eval_sha256": "e23f866113bd8b0b3c16406e7a465a0cc9a9c2140ce962d7c8924cb69594da9d",
+      "slices": [
+        {
+          "field": "org_section",
+          "value": "演示工艺",
+          "n": 3,
+          "macro_f1": 1.0,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        },
+        {
+          "field": "org_section",
+          "value": "演示研发",
+          "n": 3,
+          "macro_f1": 1.0,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        },
+        {
+          "field": "reference_quality",
+          "value": "validated",
+          "n": 6,
+          "macro_f1": 1.0,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        },
+        {
+          "field": "source_kind",
+          "value": "real",
+          "n": 6,
+          "macro_f1": 1.0,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        }
+      ],
+      "dev_threshold_curve": [
+        {
+          "threshold": 0.0,
+          "selected_n": 6,
+          "selected_correct": 6,
+          "selected_accuracy": 1.0,
+          "selection_coverage": 1.0
+        },
+        {
+          "threshold": 0.42,
+          "selected_n": 2,
+          "selected_correct": 2,
+          "selected_accuracy": 1.0,
+          "selection_coverage": 0.3333333333333333
+        },
+        {
+          "threshold": 0.5,
+          "selected_n": 1,
+          "selected_correct": 1,
+          "selected_accuracy": 1.0,
+          "selection_coverage": 0.16666666666666666
+        },
+        {
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        },
+        {
+          "threshold": 0.9,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        }
+      ]
+    },
+    "holdout": {
+      "n": 6,
+      "metrics_meaning": "validated_target_agreement",
+      "reference_quality_counts": {
+        "validated": 6
+      },
+      "label_source_counts": {
+        "human": 6
+      },
+      "baselines": {
+        "tfidf_logreg": {
+          "macro_f1": 1.0,
+          "correct": 6,
+          "n": 6,
+          "abstentions": 0
+        },
+        "keywords": {
+          "macro_f1": 0.8888888888888888,
+          "correct": 5,
+          "n": 6,
+          "abstentions": 1
+        },
+        "majority": {
+          "macro_f1": 0.16666666666666666,
+          "correct": 2,
+          "n": 6,
+          "abstentions": 0
+        }
+      },
+      "classification_report": {
+        "coding": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "data_analysis": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "knowledge": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 2.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 6.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 6.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          2
+        ]
+      ],
+      "labels": [
+        "coding",
+        "data_analysis",
+        "knowledge"
+      ],
+      "threshold": 0.75,
+      "selected_n": 0,
+      "selected_correct": 0,
+      "selected_accuracy": null,
+      "selection_coverage": 0.0,
+      "eval_sha256": "13513eda9fa88d18fc5d4c088c83218c72f14835d810bb8815eeb56b3c5840e0",
+      "slices": [
+        {
+          "field": "org_section",
+          "value": "演示工艺",
+          "n": 4,
+          "macro_f1": 1.0,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        },
+        {
+          "field": "org_section",
+          "value": "演示研发",
+          "n": 2,
+          "macro_f1": 0.6666666666666666,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        },
+        {
+          "field": "reference_quality",
+          "value": "validated",
+          "n": 6,
+          "macro_f1": 1.0,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        },
+        {
+          "field": "source_kind",
+          "value": "real",
+          "n": 6,
+          "macro_f1": 1.0,
+          "threshold": 0.75,
+          "selected_n": 0,
+          "selected_correct": 0,
+          "selected_accuracy": null,
+          "selection_coverage": 0.0
+        }
+      ]
+    }
+  }
+}

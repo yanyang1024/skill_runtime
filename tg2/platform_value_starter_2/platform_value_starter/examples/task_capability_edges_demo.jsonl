@@ -1,0 +1,9 @@
+{"action":"invoke","capability":"skill:demo-parser@v1","meaning":"session_cooccurrence_not_causality","org":"演示工艺","sessions":1,"task_type":"coding","tenant_id":"DEMO"}
+{"action":"load","capability":"skill:demo-parser@v1","meaning":"session_cooccurrence_not_causality","org":"演示工艺","sessions":1,"task_type":"coding","tenant_id":"DEMO"}
+{"action":"invoke","capability":"skill:demo-analysis@v1","meaning":"session_cooccurrence_not_causality","org":"演示工艺","sessions":3,"task_type":"knowledge","tenant_id":"DEMO"}
+{"action":"load","capability":"skill:demo-analysis@v1","meaning":"session_cooccurrence_not_causality","org":"演示工艺","sessions":3,"task_type":"knowledge","tenant_id":"DEMO"}
+{"action":"invoke","capability":"skill:demo-analysis@v1","meaning":"session_cooccurrence_not_causality","org":"演示研发","sessions":1,"task_type":"coding","tenant_id":"DEMO"}
+{"action":"load","capability":"skill:demo-analysis@v1","meaning":"session_cooccurrence_not_causality","org":"演示研发","sessions":1,"task_type":"coding","tenant_id":"DEMO"}
+{"action":"invoke","capability":"agent:demo-checker@v1","meaning":"session_cooccurrence_not_causality","org":"演示研发","sessions":1,"task_type":"knowledge","tenant_id":"DEMO"}
+{"action":"invoke","capability":"skill:demo-parser@v1","meaning":"session_cooccurrence_not_causality","org":"演示研发","sessions":3,"task_type":"knowledge","tenant_id":"DEMO"}
+{"action":"load","capability":"skill:demo-parser@v1","meaning":"session_cooccurrence_not_causality","org":"演示研发","sessions":3,"task_type":"knowledge","tenant_id":"DEMO"}

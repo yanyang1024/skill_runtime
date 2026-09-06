@@ -1,0 +1,4 @@
+{"capability_id":"demo-parser","kind":"skill","provider_org":"演示研发","published_at":"2026-07-01T00:00:00+08:00","tenant_id":"DEMO","version":"v1","visibility_source":"registry","visible_to_orgs":["演示工艺","演示研发"]}
+{"capability_id":"demo-analysis","kind":"skill","provider_org":"演示研发","published_at":"2026-07-01T00:00:00+08:00","tenant_id":"DEMO","version":"v1","visibility_source":"registry","visible_to_orgs":["演示工艺","演示研发"]}
+{"capability_id":"demo-unused","kind":"skill","provider_org":"演示研发","published_at":"2026-07-01T00:00:00+08:00","tenant_id":"DEMO","version":"v1","visibility_source":"registry","visible_to_orgs":["演示工艺","演示研发"]}
+{"capability_id":"demo-checker","kind":"agent","provider_org":"演示研发","tenant_id":"DEMO","version":"v1"}

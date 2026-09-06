@@ -1,0 +1,14 @@
+{
+  "url": "http://internal-platform/api/sessions",
+  "scope": "configured_query_only",
+  "user_param": "user",
+  "filters": {},
+  "items_path": "items",
+  "id_path": "id",
+  "owner_path": "user_id",
+  "cursor_param": "cursor",
+  "next_cursor_path": "next_cursor",
+  "total_path": "total",
+  "detail_required_fields": ["messages"],
+  "max_pages": 1000
+}

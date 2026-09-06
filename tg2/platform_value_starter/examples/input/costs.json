@@ -1,0 +1,9 @@
+{
+  "period_start": "2026-08-01T00:00:00+08:00",
+  "period_end": "2026-09-01T00:00:00+08:00",
+  "fixed_capacity_cost": 10000,
+  "variable_cash_cost": 2000,
+  "operations_cost": 3000,
+  "currency": "DEMO-CNY",
+  "basis": "完全虚构演示，不代表实际成本"
+}
