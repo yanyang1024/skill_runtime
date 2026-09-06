@@ -44,7 +44,14 @@ def validate_curated(rows, cases):
         if not r.get("allowed_uses") or not set(r["allowed_uses"]) <= {"bench", "sft", "router"}:
             raise ValueError("allowed_uses missing or invalid")
         # Both human-assigned family and session identity must remain in one split.
-        for scope in ("group:" + r["source_group"], "case:" + r["case_id"]):
+        # org_section (optional) prevents same-dept leakage for cross-org
+        # generalization benches: an entire org must live in exactly one split.
+        scopes = ["group:" + r["source_group"], "case:" + r["case_id"]]
+        if r.get("org_section"):
+            if not isinstance(r["org_section"], str):
+                raise ValueError("org_section must be a string like 'IAD-D'")
+            scopes.append("org:" + r["org_section"])
+        for scope in scopes:
             if scope in scope_splits and scope_splits[scope] != r["split"]:
                 raise ValueError(f"source family crosses splits: {scope}")
             scope_splits[scope] = r["split"]
@@ -65,9 +72,12 @@ def build(rows, cases, out, registry_path):
     if out.exists():
         raise ValueError("dataset output exists; create a new version directory")
     registry_path = Path(registry_path)
-    registry = json.loads(registry_path.read_text()) if registry_path.exists() else {}
+    registry = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.exists() else {}
     for r in rows:
-        for key in ("group:" + r["source_group"], "case:" + r["case_id"], "input:" + input_hash(r["messages"])):
+        keys = ["group:" + r["source_group"], "case:" + r["case_id"], "input:" + input_hash(r["messages"])]
+        if r.get("org_section"):
+            keys.append("org:" + r["org_section"])
+        for key in keys:
             if key in registry and registry[key] != r["split"]:
                 raise ValueError("historical split changed; old holdout/derivatives must never become training data")
             registry[key] = r["split"]
@@ -94,6 +104,8 @@ def build(rows, cases, out, registry_path):
     manifest = {"version": "dataset-v1", "curated_sha256": digest(rows), "n_curated": len(rows),
                 "counts": {k: len(v) for k,v in outputs.items()}, "hashes": {k: digest(v) for k,v in outputs.items()},
                 "source_groups": sorted({r["source_group"] for r in rows}),
+                "org_level": {s: sorted({r["org_section"] for r in rows if r.get("org_section") and r["split"] == s})
+                              for s in SPLITS},
                 "note": "holdout never exported to SFT; do not use router_holdout for training/tuning"}
     for name, items in outputs.items():
         write_jsonl(out / name, items)

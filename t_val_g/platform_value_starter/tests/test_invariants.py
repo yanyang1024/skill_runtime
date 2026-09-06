@@ -13,6 +13,9 @@ from build_datasets import build, validate_curated
 from common import digest, timestamp, write_json, write_jsonl
 from synthesize_slots import synthesize
 from value_loop import add_reviews, case_id, connect, ingest, report, reuse_edges, snapshot, token_rows
+from org_skill_map import collect, gap_rows
+from reuse_signals import edges as reuse_sig_edges, events as reuse_events, skill_reuse
+from route_hint import apply as hint_apply, predict_mock
 
 
 def session(sid="s",tenant="t"):
@@ -104,8 +107,80 @@ class Integrity(unittest.TestCase):
         for p in (self.root/"a",self.root/"b"):
             write_json(p/"run_manifest.json",meta); write_jsonl(p/"results.jsonl",[])
         compare(self.root/"a",self.root/"b",self.root/"compare.md")
-        text=(self.root/"compare.md").read_text()
+        text=(self.root/"compare.md").read_text(encoding="utf-8")
         self.assertIn("缺失配对 1",text); self.assertIn("双方未通过 0",text)
+
+
+class FieldEvidence(unittest.TestCase):
+    """Guardrails added from real-data iteration (docs/06_field_notes.md)."""
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory(); self.root=Path(self.tmp.name)
+    def tearDown(self):
+        self.tmp.cleanup()
+    def test_tool_dev_failures_never_enter_production_stats(self):
+        dev=session("dev"); dev["dept"]="工具科"; dev["purpose"]="tool_dev"
+        dev["tool_events"]=[{"event_id":"e1","name":"fab_query","origin":"custom","status":"error","ts":"2026-08-01T01:00:00Z"}]
+        use=session("use"); use["dept"]="工艺科"; use["purpose"]="tool_use"
+        use["tool_events"]=[{"event_id":"e2","name":"fab_query","origin":"custom","status":"success","ts":"2026-08-01T02:00:00Z"}]
+        _,tool,_=collect([dev,use])
+        self.assertEqual(tool[("工具科","fab_query","custom","tool_dev")],[1,1])
+        self.assertEqual(tool[("工艺科","fab_query","custom","tool_use")],[1,0])
+    def test_upload_is_stronger_than_read_and_cross_user_is_separate(self):
+        w=session("w"); w["user_id"]="alice"
+        w["artifact_events"]=[{"event_id":"w1","artifact_id":"a","version":"v1","op":"write","success":True,"ts":"2026-08-01T01:00:00Z"}]
+        up=session("up"); up["user_id"]="bob"
+        up["artifact_events"]=[{"event_id":"u1","artifact_id":"a","version":"v1","op":"upload","success":True,"ts":"2026-08-02T01:00:00Z"}]
+        same=session("same"); same["user_id"]="alice"
+        same["artifact_events"]=[{"event_id":"r1","artifact_id":"a","version":"v1","op":"read","success":True,"ts":"2026-08-03T01:00:00Z"}]
+        writes,consumes=reuse_events([w,up,same])
+        es=reuse_sig_edges(writes,consumes)
+        self.assertEqual([(e["kind"],e["op"]) for e in es],[("cross_user","upload"),("same_user","read")])
+    def test_skill_reuse_counts_depts_and_users(self):
+        a,b=session("a"),session("b"); b["user_id"]="v"; b["dept"]="d2"; a["dept"]="d1"
+        a["skills_used"]=b["skills_used"]=["etch-data"]
+        r=skill_reuse([a,b])[0]
+        self.assertEqual((r["depts"],r["users"],r["sessions"]),(2,2,2))
+    def test_org_section_locked_to_one_split(self):
+        s,t=session(),session("other"); ingest_db=connect(self.root/"t.db"); ingest(ingest_db,[s,t]); cases=snapshot(ingest_db); ingest_db.close()
+        a,b=curated(s,"train"),curated(t,"holdout")
+        a["org_section"]=b["org_section"]="IAD-D"
+        with self.assertRaises(ValueError): validate_curated([a,b],cases)
+    def test_hint_only_applied_above_threshold(self):
+        from common import read_jsonl
+        s=session(); ingest_db=connect(self.root/"h.db"); ingest(ingest_db,[s]); cases=snapshot(ingest_db); ingest_db.close()
+        rows=[curated(s,"holdout")]; rows[0]["allowed_uses"]=["bench"]
+        write_jsonl(self.root/"tasks.jsonl",rows)
+        hint_apply(self.root/"tasks.jsonl","mock",None,0.95,self.root/"hinted")
+        hinted=read_jsonl(self.root/"hinted"/"tasks.jsonl")
+        meta=json.loads((self.root/"hinted"/"manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(hinted[0]["messages"][-1]["content"],rows[0]["messages"][-1]["content"])  # below 0.95: unchanged
+        self.assertEqual(meta["hinted"],0)
+        preds=predict_mock(rows)
+        self.assertEqual(len(preds),1) and self.assertIn(preds[0]["label"],("knowledge","coding","data_analysis"))
+    def test_atlas_unknown_never_disappears_and_min_n_suppressed(self):
+        import subprocess
+        s1=session("s1"); s1["dept"]="d1"; s1["messages"]=[{"role":"user","text":"统计这份表格的均值","ts":"2026-08-01T00:00:00Z"}]
+        s2=session("s2"); s2["dept"]="d1"; s2["messages"]=[{"role":"user","text":"一段没有关键词的话","ts":"2026-08-02T00:00:00Z"}]
+        write_jsonl(self.root/"sessions.jsonl",[s1,s2])
+        write_json(self.root/"kw.json",{"data_analysis":["统计"]})
+        subprocess.run([sys.executable,str(Path(__file__).resolve().parents[1]/"scripts"/"task_atlas.py"),
+                        str(self.root/"sessions.jsonl"),"--keywords",str(self.root/"kw.json"),
+                        "--min-n","2","--out",str(self.root/"atlas")],check=True)
+        text=(self.root/"atlas"/"task_atlas.md").read_text(encoding="utf-8")
+        stats=json.loads((self.root/"atlas"/"task_atlas.json").read_text(encoding="utf-8"))
+        self.assertEqual(stats["tiers"],{"keywords":1,"unknown":1})
+        self.assertIn("| d1 | 2 | - |",text)  # data_analysis n=1 < min-n 2 -> suppressed, unknown column likewise
+    def test_bench_compare_has_org_slice(self):
+        meta={"task_ids":["q1","q2"],"config":{"trials":1},"bench":{"tasks_sha256":"x"},"model":"m","mock":True,
+              "task_info":{"q1":{"task_type":"t","subset":"representative","org":"IAD-D"},
+                           "q2":{"task_type":"t","subset":"representative","org":"BEOL"}}}
+        write_json(self.root/"a"/"run_manifest.json",meta)
+        write_jsonl(self.root/"a"/"results.jsonl",[{"id":"q1","trial":0,"passed":True,"status":"ok"},{"id":"q2","trial":0,"passed":True,"status":"ok"}])
+        write_json(self.root/"b"/"run_manifest.json",meta)
+        write_jsonl(self.root/"b"/"results.jsonl",[{"id":"q1","trial":0,"passed":True,"status":"ok"},{"id":"q2","trial":0,"passed":False,"status":"ok"}])
+        compare(self.root/"a",self.root/"b",self.root/"cmp.md")
+        text=(self.root/"cmp.md").read_text(encoding="utf-8")
+        self.assertIn("组织分片",text); self.assertIn("| BEOL | 1 | 1/1 (100.0%) | 0/1 (0.0%) | 1 |",text)
 
 
 if __name__=="__main__": unittest.main()

@@ -34,18 +34,26 @@ def make(out):
                 day = 1 + n % 20
                 ts = f"2026-08-{day:02d}T09:00:00+08:00"
                 end = f"2026-08-{day:02d}T09:10:00+08:00"
+                skill = {"knowledge": "etch-literature", "coding": "log-parser", "data_analysis": "etch-data"}[label]
                 s = {"tenant_id": "DEMO", "session_id": f"demo-{n:03d}", "user_id": f"user-{n%7}",
                      "dept": "演示研发" if n%7%2 else "演示工艺", "title": text,
                      "start_at": ts, "end_at": end,
                      "messages": [{"role":"user","text":text,"ts":ts}, {"role":"assistant","text":"虚构答复，仅供演示","ts":end}],
-                     "stats": {"input_tokens": 1000+n*10, "output_tokens": 100+n, "usage_scope":"session_exclusive"},
+                     "stats": {"input_tokens": 1000+n*10, "output_tokens": 100+n, "usage_scope":"session_exclusive",
+                               "user_turns": 1 + n % 5},
                      "coverage":{"messages_complete":True,"requests_complete":False,"artifact_events_complete":False},
-                     "tool_events": [{"event_id":f"tool-{n}","name":"read_measurement","status":"error","error_kind":"schema_mismatch","ts":ts}] if n%5==0 else [],
+                     "skills_used": [skill],
+                     "tool_events": [{"event_id":f"tool-{n}","name":"read_measurement","origin":"builtin","status":"error","error_kind":"schema_mismatch","ts":ts}] if n%5==0 else [],
                      "artifact_events": []}
+                if n % 7 == 0:  # a tool-developing session: failing on your own custom tool is normal work
+                    s["purpose"] = "tool_dev"
+                    s["tool_events"].append({"event_id":f"dev-{n}","name":"fab_query_v2","origin":"custom","status":"error","error_kind":"timeout","ts":ts})
                 if n == 1:
                     s["artifact_events"] = [{"event_id":"w1","artifact_id":"DEMO/asset-1","version":"sha256:v1","op":"write","success":True,"ts":end}]
                 if n == 4:
                     s["artifact_events"] = [{"event_id":"r1","artifact_id":"DEMO/asset-1","version":"sha256:v1","op":"read","success":True,"ts":ts}]
+                if n == 6:  # cross-user upload: the strongest reuse signal
+                    s["artifact_events"] = [{"event_id":"u1","artifact_id":"DEMO/asset-1","version":"sha256:v1","op":"upload","success":True,"ts":ts}]
                 if n == 5:
                     s["messages"][0]["text"] += "；别把‘报错’当作任务失败。"
                 sessions.append(s)
@@ -56,13 +64,16 @@ def make(out):
                         "work_item_id":f"demo-work-{n}","task_type":label,"business_use":"演示报告整理", "evidence_ref":"演示用户确认",
                         "time_basis":"user_estimate","manual_minutes_low":30,"manual_minutes_high":45,
                         "assisted_minutes_low":10,"assisted_minutes_high":20})
-                curated.append({"id":f"route-{n:03d}","case_id":case_id(s),"source_revision":digest(s),
+                row = {"id":f"route-{n:03d}","case_id":case_id(s),"source_revision":digest(s),
                     "source_group":f"DEMO/independent-task-{n}","parent_ids":[],"split":split,
                     "review_status":"approved","reviewer_id":"demo-human","context_complete":True,
                     "task_type":"intent_routing","subset":"regression" if n%5==0 else "representative",
                     "allowed_uses":["bench","sft","router"],"route_text":text,
                     "messages":[{"role":"system","content":PROMPT},{"role":"user","content":text}],
-                    "target":{"intent":label},"rubric":["只输出 JSON", "intent 是请求时可判断的任务类型"]})
+                    "target":{"intent":label},"rubric":["只输出 JSON", "intent 是请求时可判断的任务类型"]}
+                if split == "holdout":  # org slice demo: org is locked to one split; tagging only holdout keeps it consistent
+                    row["org_section"] = s["dept"]
+                curated.append(row)
     # One deliberately unreviewed, untimestamped session. It is not silently completed.
     sessions.append({"tenant_id":"DEMO","session_id":"unknown-time","user_id":"user-unknown",
         "messages":[{"role":"user","text":"谢谢，还没有解决","ts":None}],"stats":{},"title":"缺字段的演示会话"})
@@ -86,6 +97,10 @@ def make(out):
         "fixed_capacity_cost":10000,"variable_cash_cost":2000,"operations_cost":3000,"currency":"DEMO-CNY","basis":"完全虚构演示，不代表实际成本"})
     write_text(out/"session.md", "# 演示会话\n\n## User\n帮我解释这个术语。\n\n## Assistant\n演示回答。\n```md\n## User\n这是代码块里的文本，不应拆成新用户消息。\n```\n")
     write_jsonl(out/"import_manifest.jsonl",[{"path":"session.md","format":"md","tenant_id":"DEMO","session_id":"md-example","user_id":"demo-user","dept":"演示部门"}])
+    write_json(out/"atlas_keywords.json",{
+        "knowledge": ["解释", "介绍", "说明", "什么是"],
+        "coding": ["脚本", "代码", "报错", "Python", "调试"],
+        "data_analysis": ["统计", "分析", "计算", "均值"]})
     write_text(out/"NOTICE.md","# 纯虚构演示数据\n\n所有身份、对话、确认、费用和标注均为程序生成；不代表用户公司或真实模型效果。\n")
     print(out)
 

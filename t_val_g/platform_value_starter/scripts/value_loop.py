@@ -61,13 +61,22 @@ def validate(row):
     for event in row.get("artifact_events", []):
         if not all(event.get(k) for k in ("event_id", "artifact_id", "version", "ts")):
             raise ValueError("artifact event needs identity, version and timestamp")
-        if event.get("op") not in {"read", "write"} or type(event.get("success")) is not bool:
+        # upload = produced earlier, consumed by attaching to THIS session (reuse signal).
+        if event.get("op") not in {"read", "write", "upload"} or type(event.get("success")) is not bool:
             raise ValueError("artifact event must have explicit operation and success")
         timestamp(event["ts"])
     for event in row.get("tool_events", []):
         if not event.get("event_id") or event.get("status") not in {"success", "error", "cancelled", "unknown"}:
             raise ValueError("invalid tool event")
+        # origin distinguishes platform tools from dept-built custom tools under test.
+        if event.get("origin", "unknown") not in {"builtin", "custom", "unknown"}:
+            raise ValueError("tool origin must be builtin/custom/unknown")
         timestamp(event.get("ts"))
+    skills = row.get("skills_used", [])
+    if not isinstance(skills, list) or any(not isinstance(s, str) or not s for s in skills):
+        raise ValueError("skills_used must be a list of skill/agent names actually invoked")
+    if row.get("purpose", "unknown") not in {"tool_dev", "tool_use", "unknown"}:
+        raise ValueError("purpose must be tool_dev/tool_use/unknown")
 
 
 def ingest(db, rows):
@@ -221,7 +230,7 @@ def reuse_edges(cases):
             record = (c["case_id"], timestamp(e["ts"]), e["event_id"])
             if e["op"] == "write":
                 writes[key].append(record)
-            else:
+            else:  # read and upload both count as consumption of an existing version
                 reads.append((key, record))
     edges = []
     for key, r in reads:
@@ -354,7 +363,7 @@ def main():
             start, end = timestamp(a.start), timestamp(a.end)
             if not start or not end or start >= end:
                 raise ValueError("invalid report window")
-            costs = json.loads(Path(a.costs).read_text()) if a.costs else None
+            costs = json.loads(Path(a.costs).read_text(encoding="utf-8")) if a.costs else None
             report(snapshot(db), start, end, a.out, costs); print(a.out)
 
 

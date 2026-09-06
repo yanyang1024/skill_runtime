@@ -14,6 +14,10 @@
 
 先选当前确有高频使用、输入能冻结的两类。20–30 题是启动规模建议，不能支持很细的全公司准确率结论。代表性题与历史失败回归题分开标 `subset`，同时报告样本数；失败优先的题集不代表线上任务分布。
 
+**用任务分布图谱驱动选题**（docs/07）：representative 子集按图谱给出的意图×部门观测占比设抽样配额，regression 子集从失败案例定向挑，不按比例。没有图谱时题集会慢慢漂向"我们以为用户在做什么"。
+
+**按组织分片**（实证需求：业务方关心"我们科能不能用"，不是全公司均值）：curated 行带 `org_section` 时，`bench.py compare` 自动多出组织分片表（题数、双方通过/计划、退步试次）。组织分片同时也是防泄漏手段——见 §5 的 `org_section` 锁定。单组织题数少时只作方向性证据。
+
 不要优先把“下一阶段工艺 tuning knob 的最优方向和幅度”做合成真值任务。这类任务需要实际量测、条件、工程边界及按 lot/run/时间的分组验证；模型写出合理解释不等于实验结果成立。
 
 ## 2. 一道题必须带完整条件
@@ -97,7 +101,7 @@ for task in approved_runtime_tasks:
 
 ## 5. 更新持续发生，如何避免题库与训练互相污染
 
-1. **先分组再分集**：同一源 session、同一业务事项、同一 recipe/实验 run 或复制模板的衍生任务在同一组。批次与项目等不一定都要整组隔离，按你要证明的泛化范围选择并记录。
+1. **先分组再分集**：同一源 session、同一业务事项、同一 recipe/实验 run 或复制模板的衍生任务在同一组。批次与项目等不一定都要整组隔离，按你要证明的泛化范围选择并记录。要证明**跨组织泛化**（如“IAD-D 训 → BEOL5 dev → BEOL4 holdout”）时给 curated 行加 `org_section` 字段，`build_datasets.py` 会把整个 org 锁进同一个 split 并在 manifest 记录 `org_level`；这比随机 split 更接近真实上线，也能防止同科相似的表达习惯泄漏进训练集。
 2. `split_registry.json` 在不同数据版本间一直保留。旧保留组改为 train 会失败。不要每月删除 registry、随机重新分集。
 3. 明确 train/dev/holdout；开发与选择超参只用 train/dev。只有 holdout 可进入正式比较题库，holdout 不导出 SFT。
 4. 每个合成样本带 parent IDs、来源组、生成规则/模型版本、验证依据；衍生数据继承来源分组。精确输入冲突会被拦截；语义改写/近重复仍需人工或后续去重工具检查。
@@ -115,6 +119,19 @@ for task in approved_runtime_tasks:
 运行时对低分数/未知任务保持原有流程；默认 0.75 只是实验阈值，预测概率未校准。先在 dev 上观察覆盖与误分损失，再设阈值；holdout 只用于最终验收。你们已有简单关键词规则时也要保留作基线。若 TF-IDF 已够用，就不必为了“训练小模型”引入更重模型。
 
 **任务分类不自动等于省推理费**。只有知道某类任务在便宜模型上仍满足质量要求，才把该分类接入模型路由。节省要计路由调用成本、错误路由后的重跑/升级成本、训练与维护摊销。
+
+### 6.1 路由之后还有一招：提示改写（route-conditioned prompting）
+
+路由结果不只可以选模型，还可以**改提示**：把分类结果翻译成一句任务类型引导（如"【任务类型：数据分析】先确认口径与分组，再给数值"）前置到用户输入。思路借自检索领域的查询改写——不换模型，只让模型走在更对的推理路径上。`route_hint.py` 实现并封装了它的验证纪律：
+
+```sh
+python3 scripts/route_hint.py apply benchmarks/v2/tasks.jsonl \
+  --pred router_preds.jsonl --threshold 0.5 --out benchmarks/v2_hinted
+python3 scripts/bench.py run benchmarks/v2_hinted --model 同一模型 ... --out runs/X_v2_hinted
+python3 scripts/route_hint.py ab runs/X_v2 runs/X_v2_hinted --out comparisons/hint_ab.md
+```
+
+三条纪律：低置信**不加**提示（路由错标会主动误导，ab 报告第一列就是退步数）；A/B 必须用同一冻结题集、同一模型、同一配置；"不换模型也能加速"只有在**通过不降且 token/延迟降**同时成立时才写进汇报，此前一律标"待验证假设"。
 
 ## 7. 合成先做程序有真值的部分
 

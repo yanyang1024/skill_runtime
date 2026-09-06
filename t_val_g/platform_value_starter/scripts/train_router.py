@@ -29,6 +29,7 @@ def main():
     ap.add_argument("--train", required=True); ap.add_argument("--dev", required=True)
     ap.add_argument("--test", help="optional final holdout; do not tune on this")
     ap.add_argument("--out", required=True); ap.add_argument("--threshold", type=float, default=0.75)
+    ap.add_argument("--keywords", help="optional JSON {label: [substring,...]} rule baseline; first match wins, no match = abstain")
     a = ap.parse_args()
     if not 0 <= a.threshold <= 1:
         raise ValueError("threshold must be in [0,1]")
@@ -48,6 +49,12 @@ def main():
                           LogisticRegression(C=1.0, max_iter=1000, class_weight="balanced", random_state=42))
     model.fit([r["text"] for r in train], [r["label"] for r in train])
     majority = Counter(r["label"] for r in train).most_common(1)[0][0]
+    keywords = None
+    if a.keywords:
+        import json as _json
+        keywords = _json.loads(Path(a.keywords).read_text(encoding="utf-8"))
+        if not isinstance(keywords, dict) or not all(isinstance(v, list) for v in keywords.values()):
+            raise ValueError("keywords file must be {label: [substring,...]}")
     report = {"sklearn_version": sklearn.__version__, "train_n": len(train), "train_sha256": digest(train),
               "threshold": a.threshold, "threshold_note": "Illustrative cutoff; probability is not calibrated. Tune on dev only.", "eval": {}}
     for split, rows in parts.items():
@@ -64,6 +71,17 @@ def main():
             "confusion_matrix": confusion_matrix(y,pred,labels=labels).tolist(),
             "selected_n": len(selected), "selected_accuracy": sum(pred[i] == y[i] for i in selected)/len(selected) if selected else None,
             "selection_coverage": len(selected)/len(rows), "eval_sha256": digest(rows)}
+        if keywords:
+            # Rule baseline on the same split: substring first-match; abstain when nothing hits.
+            kpred, khit = [], []
+            for t in texts:
+                hit = next((lab for lab, words in keywords.items() if any(w in t for w in words)), None)
+                kpred.append(hit or majority); khit.append(hit is not None)
+            report["eval"][split]["keywords_macro_f1"] = f1_score(y, kpred, average="macro", zero_division=0)
+            report["eval"][split]["keywords_coverage"] = sum(khit)/len(khit)
+            report["eval"][split]["baseline_order_note"] = (
+                "Empirical expectation: tfidf+logreg macro_f1 > keywords_macro_f1 > majority_macro_f1. "
+                "If keywords wins on your real data, keep the rule baseline and skip the model.")
     out = Path(a.out)
     if out.exists(): raise ValueError("model output exists; create a new version")
     out.mkdir(parents=True)

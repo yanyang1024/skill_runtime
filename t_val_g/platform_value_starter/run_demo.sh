@@ -20,4 +20,10 @@ python3 "$SCRIPT_DIR/scripts/bench.py" freeze "$DEMO_DIR/dataset_v1/bench_candid
 python3 "$SCRIPT_DIR/scripts/bench.py" run "$DEMO_DIR/bench_v1" --mock demo_v1 --out "$DEMO_DIR/model_a"
 python3 "$SCRIPT_DIR/scripts/bench.py" run "$DEMO_DIR/bench_v1" --mock demo_v2 --out "$DEMO_DIR/model_b"
 python3 "$SCRIPT_DIR/scripts/bench.py" compare "$DEMO_DIR/model_a" "$DEMO_DIR/model_b" --out "$DEMO_DIR/model_comparison.md"
+python3 "$SCRIPT_DIR/scripts/org_skill_map.py" "$DEMO_DIR/input/sessions.jsonl" --out "$DEMO_DIR/org_map" --min-calls 1
+python3 "$SCRIPT_DIR/scripts/reuse_signals.py" "$DEMO_DIR/input/sessions.jsonl" --out "$DEMO_DIR/reuse"
+python3 "$SCRIPT_DIR/scripts/task_atlas.py" "$DEMO_DIR/input/sessions.jsonl" --keywords "$DEMO_DIR/input/atlas_keywords.json" --min-n 3 --out "$DEMO_DIR/atlas"
+python3 "$SCRIPT_DIR/scripts/route_hint.py" apply "$DEMO_DIR/bench_v1/tasks.jsonl" --pred mock --out "$DEMO_DIR/bench_v1_hinted"
+python3 "$SCRIPT_DIR/scripts/bench.py" run "$DEMO_DIR/bench_v1_hinted" --mock demo_v1 --out "$DEMO_DIR/model_a_hinted"
+python3 "$SCRIPT_DIR/scripts/route_hint.py" ab "$DEMO_DIR/model_a" "$DEMO_DIR/model_a_hinted" --out "$DEMO_DIR/hint_ab.md"
 echo "Demo complete: $DEMO_DIR/report/value_report.md"

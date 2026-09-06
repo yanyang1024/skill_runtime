@@ -102,6 +102,21 @@ for tenant in authorized_tenants:
 
 不要同时把所有历史 snapshot 追加到输入。对同一 tenant/session，导入器接收该批次一个最新版本；跨次内容更新作为新 revision 保存。
 
+## 3.1 按用户全量拉取（实测可用，优先使用）
+
+实证结论（2026-09，见 docs/06_field_notes.md）：平台会话 API 支持按用户全量拉取全部历史（如 `/api/sessions?user=&date=&mode=active`，用 200/404 判别存活），实测 2999/2999 用户可拉、单次全量探测约 7.6 秒。因此接入策略从「等静态导出」改为「按用户增量游标全量拉取」：
+
+```python
+# 伪代码，接口名以你们平台实际为准
+for user in list_authorized_users():           # 全量用户名单，不按活跃度预过滤
+    for session in export_sessions(user, updated_after=cursor.get(user)):
+        emit_jsonl(map_session_fields(session))
+    cursor[user] = last_successful_watermark   # 只在写入成功后推进
+# 404/空列表是“该用户无会话”，不是错误；拉取失败单独重试，不用空数据覆盖历史
+```
+
+全量可拉意味着两件事：第一，「活跃渗透率」的分母（授权名单）和分子（有时间戳的用户消息）都能拿真值，不再需要近似；第二，抽样复核可以从全平台分层抽样，不再受样例包偏差影响。
+
 ## 4. 资产读取证据
 
 ```json
@@ -111,6 +126,23 @@ for tenant in authorized_tenants:
 `artifact_id` 来自平台文件/产物系统；沙箱绝对路径相同并不证明是同一资产。若没有 ID，可以在导出侧维护“租户 + 资产来源 + 文件内容哈希”的映射，但要区分同内容的公共模板与真正的复制来源。文件内容相同是身份候选，实际 lineage 更有力。
 
 当前实现只关联同租户、同资产版本、其他会话、写入之后发生的成功 read，输出证据边。它不估计“全平台复用率”，也不把读取称为“投入业务”。7/30 天指标要等资产已拥有完整 7/30 天观察窗口，再看后续读取/采用；没有记录不代表资产已死亡。
+
+`op` 还支持 `"upload"`：产物在之后的会话里被**作为附件/输入上传**。这是比 read 更强的复用信号（用户主动把旧产物带进新任务），`reuse_signals.py` 会把它与 read 分开统计，并区分**同用户复用**（自己的文件自己接着用）与**跨用户复用**（产物被他人采用——这才是平台级资产证据）。只有 artifact_id/内容哈希能稳定对齐时才统计；basename 相同不作数。
+
+## 4.1 技能与工具来源字段（组织×可靠性分析的前提）
+
+```json
+{"skills_used": ["etch-data", "recipe-diff"], "purpose": "tool_use",
+ "tool_events": [{"event_id":"t1","name":"fab_query","origin":"custom","status":"error","error_kind":"timeout","ts":"..."}]}
+```
+
+| 字段 | 语义 | 缺失处理 |
+|---|---|---|
+| `skills_used` | 本会话实际调用过的 skill/agent 名（会话级去重列表） | 缺省 `[]`，不从标题猜 |
+| `tool_events[].name` / `origin` | 工具名；`builtin`=平台原生，`custom`=某部门自建，`unknown` 未区分 | 默认 unknown，**不把 unknown 计入任何一方** |
+| `purpose` | `tool_dev`=本会话是在测试/打磨自建工具；`tool_use`=正常业务使用 | 默认 unknown；只能从明确证据（如会话在工具的测试 workspace）打标，不靠猜测 |
+
+这三个字段是「工具失败率按部门公平比较」的前提：开发部门的测试会话（tool_dev + custom）必须与生产性使用分开报，否则打磨工具的天然试错会被误读为平台质量问题。
 
 ## 5. 平台 CSV 与身份映射怎样继续使用
 

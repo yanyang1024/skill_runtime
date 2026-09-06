@@ -45,17 +45,17 @@ def freeze(rows, out):
         raise ValueError("frozen directory exists; create a new version")
     write_jsonl(out / "tasks.jsonl", rows)
     write_json(out / "manifest.json", {"tasks_sha256": digest(rows), "grader": GRADER, "harness": HARNESS,
-        "n": len(rows), "script_sha256": digest(Path(__file__).read_text()),
+        "n": len(rows), "script_sha256": digest(Path(__file__).read_text(encoding="utf-8")),
         "note": "Immutable task/context/target/grader packet; fixed text evaluation only."})
 
 
 def load_bench(path):
     root = Path(path)
     tasks = read_jsonl(root / "tasks.jsonl")
-    meta = json.loads((root / "manifest.json").read_text())
+    meta = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     if digest(tasks) != meta["tasks_sha256"] or meta["grader"] != GRADER or meta["harness"] != HARNESS:
         raise ValueError("frozen benchmark changed")
-    if meta["script_sha256"] != digest(Path(__file__).read_text()):
+    if meta["script_sha256"] != digest(Path(__file__).read_text(encoding="utf-8")):
         raise ValueError("benchmark script changed; freeze a new version and rerun both models")
     return tasks, meta
 
@@ -112,7 +112,7 @@ def run(args):
         raise ValueError("real run requires --model and --api-base")
     write_json(out / "run_manifest.json", {"bench": meta, "config": config, "model": model,
         "api_base": args.api_base, "mock": bool(args.mock), "task_ids": [t["id"] for t in tasks],
-        "task_info": {t["id"]:{"task_type":t["task_type"],"subset":t.get("subset","unspecified")} for t in tasks}})
+        "task_info": {t["id"]:{"task_type":t["task_type"],"subset":t.get("subset","unspecified"),"org":t.get("org_section","unknown")} for t in tasks}})
     with (out / "results.jsonl").open("x", encoding="utf-8") as f:
         for t in tasks:
             for trial in range(args.trials):
@@ -135,7 +135,7 @@ def run(args):
 
 def read_run(path):
     root = Path(path)
-    meta = json.loads((root / "run_manifest.json").read_text())
+    meta = json.loads((root / "run_manifest.json").read_text(encoding="utf-8"))
     expected = {(i, j) for i in meta["task_ids"] for j in range(meta["config"]["trials"])}
     rows = {}
     for r in read_jsonl(root / "results.jsonl"):
@@ -182,6 +182,19 @@ def compare(base, candidate, out):
         na = sum(r["passed"] for (i,j),r in a.items() if i in tids)
         nb = sum(r["passed"] for (i,j),r in b.items() if i in tids)
         lines.append(f"| {cell(' / '.join(group))} | {rate(na,denom)} | {rate(nb,denom)} |")
+    orgs = {}
+    for tid in ma["task_ids"]:
+        orgs.setdefault(ma.get("task_info",{}).get(tid,{}).get("org","unknown"), set()).add(tid)
+    if len(orgs) > 1 or "unknown" not in orgs:
+        lines += ["", "## 组织分片（「本科能不能用」比全公司均值更可信）", "",
+                  "| 组织 | 题数 | 基线通过/计划 | 候选通过/计划 | 关键退步试次 |", "|---|---|---|---|---|"]
+        for org, tids in sorted(orgs.items()):
+            denom = len(tids) * ma["config"]["trials"]
+            na = sum(r["passed"] for (i,j),r in a.items() if i in tids)
+            nb = sum(r["passed"] for (i,j),r in b.items() if i in tids)
+            regress = sum(a[k]["passed"] and not b[k]["passed"] for k in set(a)&set(b) if k[0] in tids)
+            lines.append(f"| {cell(org)} | {len(tids)} | {rate(na,denom)} | {rate(nb,denom)} | {regress} |")
+        lines.append("单组织题数少时只作方向性证据；退步题逐题人工核对后再下结论。")
     lines += ["", "## 资源（含失败试次）", ""]
     for name, data in ((ma["model"], a), (mb["model"], b)):
         if ma["mock"]:
