@@ -1,0 +1,22 @@
+{
+  "version": "conversation-judge-v1",
+  "unit": "one_primary_task_per_session; mixed sessions remain mixed",
+  "dimensions": {
+    "task_type": {
+      "labels": ["knowledge", "data_analysis", "coding", "parameter_compare", "document", "capability_build", "mixed", "unknown"],
+      "rule": "根据用户主要目标分类，不从部门、skill 名称或文件后缀反推。多个独立目标保留 mixed。"
+    },
+    "context_sufficiency": {
+      "labels": ["sufficient", "missing_necessary", "unknown"],
+      "rule": "只依据 initial_context（首次响应前可用输入/附件/规则快照）。没有完整的初始视图则 unknown。missing_necessary 需说明哪项必要条件缺失、为何任务无法据此继续；不能用后来才新增的目标倒推首问不足。"
+    },
+    "observed_outcome": {
+      "labels": ["met", "partial", "unmet", "unknown"],
+      "rule": "按明确任务范围及可见成果判断。met 需直接结果、适用且通过的验证证据，或用户明确确认具体目标满足；用户确认只证明确认事实。文件写出、谢谢、工具 success 不能单独证明 met。日志缺尾/附件不可见且无法判定时 unknown。明确只满足部分目标为 partial；存在明确未解决/错误结果为 unmet。开放领域正确性无依据时 unknown。"
+    },
+    "blocking_point": {
+      "labels": ["missing_input", "ambiguous_goal", "tool_access", "tool_execution", "output_mismatch", "no_observed_block", "unknown"],
+      "rule": "记录最直接可见的主要卡点，不做责任或根因结论。先前工具 error 后已恢复不必是当前卡点；开发中的预期负例不是自然失败。多个无法区分的重要卡点用 unknown，在 reason 中说明。"
+    }
+  }
+}
