@@ -1,0 +1,22 @@
+{
+  "change_id": "DEMO-date-example",
+  "signal_ids": [
+    "130bad6acc2e731194864b3c"
+  ],
+  "state": "evaluated",
+  "hypothesis": "日期示例与当前工具契约不一致，导致部分参数错误",
+  "alternative": "工具版本或输入语义改变",
+  "target_file": "skills/example/references/date_parameters.md",
+  "base_version": "替换为实际版本",
+  "proposed_diff": "仅更新日期格式示例，保留歧义输入需澄清的条件",
+  "applicability": "指定工具/schema 版本与日期语义",
+  "not_applicable": "有歧义时不擅自猜测日期顺序",
+  "source_refs": [],
+  "eval_plan_ref": "eval_plan.json",
+  "eval_result_ref": "comparison/comparison.json",
+  "decision": "do_not_activate",
+  "decision_reason": "虚构示例：有一条退步且一条新版本结果缺失，先复核",
+  "applied_version": null,
+  "supersedes": [],
+  "recheck_when": "依赖工具/schema 改变或再次出现同类失败"
+}
