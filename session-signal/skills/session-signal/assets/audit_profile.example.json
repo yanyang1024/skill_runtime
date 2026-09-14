@@ -1,0 +1,66 @@
+{
+  "rule_version": "example-profile-1",
+  "_note": "示例 profile：字段名/正则/映射全部按你的业务改写；脚本本身不含业务死逻辑。roots 由 CLI --root 传入。",
+  "roles": {
+    "scene-builder": {
+      "required_receipt_fields": ["status", "scene_path", "validation"],
+      "status_field": "status",
+      "status_values": ["done", "failed"],
+      "prompt_id_regex": "(?:jobs|scenes)/(s\\d+)\\.json",
+      "prompt_pointer_regex": "jobs/s\\d+\\.json",
+      "artifact_field": "scene_path"
+    },
+    "scene-verifier": {
+      "required_receipt_fields": ["verdict", "checks", "issues", "advice"],
+      "verdict_field": "verdict",
+      "verdict_values": ["pass", "warn", "fail"],
+      "checks_field": "checks",
+      "prompt_id_regex": "(?:jobs|scenes)/(s\\d+)\\.json"
+    },
+    "material-analyst": {
+      "required_receipt_fields": ["status", "outline_path", "scene_stats"],
+      "status_field": "status",
+      "status_values": ["done", "failed"]
+    }
+  },
+  "pair_check": {"builder_role": "scene-builder", "verifier_role": "scene-verifier", "owner": "course-director"},
+  "path_roots": {"courses/interfaces-protocols": "course"},
+  "skill_path_marker": "/skills/",
+  "consistency_checks": [
+    {
+      "name": "outline_job_consistency",
+      "dimension": "agent",
+      "target": "planning_to_job_tool",
+      "source": {"root": "course", "file": "outline.json", "items": "outlines", "id_field": "id"},
+      "derived": {"root": "course", "glob": "jobs/*.json", "id_field": "scene_id"},
+      "compare": {
+        "description": {"source": "description", "derived": "outline_item.description"},
+        "keyPoints": {"source": "keyPoints", "derived": "outline_item.keyPoints"}
+      }
+    }
+  ],
+  "reference_checks": [
+    {
+      "name": "job_references_resolve",
+      "dimension": "tools",
+      "target": "job_preflight",
+      "root": "course",
+      "glob": "jobs/*.json",
+      "fields": ["output_path", "skill_ref", "material_refs"],
+      "suffixes": {"skill_ref": "/SKILL.md"}
+    }
+  ],
+  "static_checks": [
+    {"root": "workspace", "skill_glob": "skills/*/SKILL.md", "agent_glob": "agents/*.md"}
+  ],
+  "review_requests": [
+    {
+      "review_id": "coverage-s5",
+      "target": "quiz-authoring + scene-verifier",
+      "criterion": "分别映射 description、keyPoints 到题干/选项/解析；区分直接考查与旁注，不按关键词覆盖率给分",
+      "files": [["course", "jobs/s5.json"], ["course", "scenes/s5.json"]],
+      "frozen_goal": "以此 job card 快照为准；不是后来已修改的 outline",
+      "source_group": "interfaces-protocols-course"
+    }
+  ]
+}

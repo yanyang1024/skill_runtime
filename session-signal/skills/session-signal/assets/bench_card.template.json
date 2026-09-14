@@ -1,0 +1,22 @@
+{
+  "task_id": "DRAFT-replace-me",
+  "state": "draft",
+  "fixture_only": true,
+  "origin": "real_replay_or_reconstructed_or_synthetic",
+  "source_refs": [],
+  "source_group": "人工核对的同源任务家族",
+  "task_type": "待确认",
+  "task_label_source": "unknown",
+  "input_cutoff_ref": "真实任务开始点；后续修正/答案不进入题面",
+  "initial_user_request": "填原请求，保留用户约束",
+  "required_inputs": [],
+  "environment_snapshot_ref": null,
+  "acceptance_checks": [
+    {"name": "结果满足明确业务要求", "validator": "待填写程序断言或人工参考", "status": "unknown"}
+  ],
+  "benchmark_role": "representative_or_challenge_or_regression",
+  "split": "unassigned",
+  "intended_change": "本轮只改一个 Skill/Prompt/工具配置",
+  "reviewer_verified": false,
+  "note": "模板不是已验收题；原会话的工具成功/感谢/文件存在不自动产生正确答案。"
+}
