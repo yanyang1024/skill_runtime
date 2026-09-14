@@ -1,0 +1,87 @@
+{
+  "validator_sha256": "77f8c000053ba4e1c43f80c56254c2f0dc55b9df3d6e5ffe02aba662f6f3ecdc",
+  "source_stage_sha256": "02c1d954abe194f436d9af322a1bed265b1412577df6806e305a17b4233def02",
+  "results": [
+    {
+      "exit_code": 0,
+      "summary": {
+        "errors": 0,
+        "warnings": 0,
+        "passed": true
+      },
+      "stdout": "{\"errors\": 0, \"warnings\": 0, \"passed\": true}\n",
+      "stderr": "",
+      "accepted": true,
+      "rejected_with_report": false,
+      "case_id": "baseline",
+      "expected_accept": true,
+      "expectation": "文件结构与实际选中对象/材料存在性这一增强契约；不是原工具已承诺全部实现",
+      "result": "as_expected"
+    },
+    {
+      "exit_code": 0,
+      "summary": {
+        "errors": 0,
+        "warnings": 0,
+        "passed": true
+      },
+      "stdout": "{\"errors\": 0, \"warnings\": 0, \"passed\": true}\n",
+      "stderr": "",
+      "accepted": true,
+      "rejected_with_report": false,
+      "case_id": "unindexed_bad_scene",
+      "expected_accept": false,
+      "expectation": "文件结构与实际选中对象/材料存在性这一增强契约；不是原工具已承诺全部实现",
+      "result": "unexpected_accept"
+    },
+    {
+      "exit_code": 1,
+      "summary": {
+        "errors": 1,
+        "warnings": 0,
+        "passed": false
+      },
+      "stdout": "[ERROR] /tmp/harness-grader-probe-nfro4w2r/bad_scene_direct_control/scenes/s1.json: 非法场景类型 'INVALID_FIXTURE'，type 必须是 ('quiz', 'interactive', 'pbl')\n{\"errors\": 1, \"warnings\": 0, \"passed\": false}\n",
+      "stderr": "",
+      "accepted": false,
+      "rejected_with_report": true,
+      "case_id": "bad_scene_direct_control",
+      "expected_accept": false,
+      "expectation": "文件结构与实际选中对象/材料存在性这一增强契约；不是原工具已承诺全部实现",
+      "result": "as_expected"
+    },
+    {
+      "exit_code": 0,
+      "summary": {
+        "errors": 0,
+        "warnings": 0,
+        "passed": true
+      },
+      "stdout": "{\"errors\": 0, \"warnings\": 0, \"passed\": true}\n",
+      "stderr": "",
+      "accepted": true,
+      "rejected_with_report": false,
+      "case_id": "missing_requested_scene",
+      "expected_accept": false,
+      "expectation": "文件结构与实际选中对象/材料存在性这一增强契约；不是原工具已承诺全部实现",
+      "result": "unexpected_accept"
+    },
+    {
+      "exit_code": 0,
+      "summary": {
+        "errors": 0,
+        "warnings": 0,
+        "passed": true
+      },
+      "stdout": "{\"errors\": 0, \"warnings\": 0, \"passed\": true}\n",
+      "stderr": "",
+      "accepted": true,
+      "rejected_with_report": false,
+      "case_id": "broken_material_ref",
+      "expected_accept": false,
+      "expectation": "文件结构与实际选中对象/材料存在性这一增强契约；不是原工具已承诺全部实现",
+      "result": "unexpected_accept"
+    }
+  ],
+  "note": "故障注入样例不是生产错误率。baseline 本身也只验证现有结构规则。"
+}

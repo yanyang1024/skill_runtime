@@ -1,0 +1,56 @@
+{
+  "version": "case-bench-seeds-1",
+  "status": "seeds_not_accepted_gold",
+  "note": "路径相对上传包。先冻结所选文件及哈希；语义题需人工复核。三个会话共享材料，不能当独立泛化样本。",
+  "cases": [
+    {
+      "id": "T1-target-really-checked", "dimension": "tools", "origin": "real_failure_mode_with_fault_injection",
+      "source_group": "interfaces-materials-family", "source": "session-ses_f64e.md: scene-builder s5/s10/s14 的回执",
+      "input": "有错误的 s1.json，stage.scenes=[]，请求 --course --scene s1",
+      "expected": "明确未检查到目标并失败，或实际定位文件后检查并失败；不得返回未覆盖的 pass",
+      "runner": "probe_validator.py / unindexed_bad_scene", "positive_control": "bad_scene_direct_control"
+    },
+    {
+      "id": "T2-material-reference", "dimension": "tools", "origin": "contract_based_fault_injection",
+      "source_group": "interfaces-materials-family", "source": "maic-workspace/PROTOCOL.md + outline/job 路径契约",
+      "input": "一条 materialRefs 指向不存在的文件",
+      "expected": "job preflight 拦截，指出字段、路径和解析基准；不要求 HTML 校验器独自承担全部阶段职责",
+      "runner": "probe_validator.py / broken_material_ref"
+    },
+    {
+      "id": "A1-receipt-contract", "dimension": "agent", "origin": "real_reconstructed",
+      "source_group": "interfaces-materials-family", "source": "session-ses_f64e.md: 29 个 task_result",
+      "input": "分别回传纯 JSON、围栏包裹 JSON、缺字段、status=failed、checks 有 fail 但 verdict=pass",
+      "expected": "区分格式问题与业务失败；可恢复格式显式归一化，缺字段/冲突判定不能静默接收为完成",
+      "runner": "audit_maic.py 的回执检查 + 你的 director 回放"
+    },
+    {
+      "id": "A2-warning-propagation", "dimension": "agent", "origin": "real_reconstructed",
+      "source_group": "interfaces-materials-family", "source": "interfaces-protocols/outline.json + jobs/s5.json + jobs/s12.json",
+      "input": "大纲描述修改后继续重建/重生成",
+      "expected": "重新生成 job card 或显式保留不可变旧 job 并标记已过期；禁止把旧 job 当当前大纲的等价输入",
+      "runner": "audit_maic.py / outline_job_consistency"
+    },
+    {
+      "id": "S1-quiz-coverage", "dimension": "skill", "origin": "real_reconstructed",
+      "source_group": "interfaces-materials-family", "source": "interfaces-protocols/jobs/s5.json + scenes/s5.json；s12 同理",
+      "input": "冻结旧 job 的 description/keyPoints 与实际 quiz",
+      "expected": "分别列直接考查、选项考查、解析旁注、未覆盖；指出描述与实际考查范围的差异",
+      "runner": "review_rubric.md + 独立语义复核；没有自动金标准"
+    },
+    {
+      "id": "S2-doc-fidelity", "dimension": "skill", "origin": "real_reconstructed",
+      "source_group": "interfaces-materials-family", "source": "session-ses_f650.md: doc-reshaper + input.zip",
+      "input": "从原文选少量数值/限定/否定主张，配对应改写段落，另造一条删限定的负例",
+      "expected": "检测语义改变，不能只检查存在保真附录；原文自身事实正确性另行验证",
+      "runner": "review_rubric.md；先人工核对来源与改写定位"
+    },
+    {
+      "id": "A3-creator-load-and-scope", "dimension": "agent+skill", "origin": "static_contract_based",
+      "source_group": "creator-package-family", "source": "agents-creator.zip",
+      "input": "安装后请求一个单 primary agent 文档，并检查声明 skill 的实际可发现/可加载性",
+      "expected": "输出一份 agent 文档，不代做业务；名称/目录/加载规则一致；实际写权限符合当前 runtime",
+      "runner": "内网启动微型探针；本次没有该包的运行会话，结果 unknown"
+    }
+  ]
+}

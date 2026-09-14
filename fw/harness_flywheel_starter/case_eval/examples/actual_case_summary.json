@@ -1,0 +1,101 @@
+{
+  "source_sessions": [
+    {
+      "source_file": "session-ses_f64b.md",
+      "source_sha256": "1fd568767af44bbcacc8804680870fd8f73f52e566b985dc2dded8bc8b8d7ec9",
+      "session_id": "ses_f64bc1f71ffefRMtFkTUJzb9iZ",
+      "user_turns": 3,
+      "tool_counts": {
+        "bash": 16,
+        "read": 29,
+        "grep": 1,
+        "edit": 7
+      },
+      "parsed_tool_inputs": 53,
+      "events": 53,
+      "coverage": "this_export_only; child traces/exit codes/tokens not generally present"
+    },
+    {
+      "source_file": "session-ses_f64e.md",
+      "source_sha256": "0dd3af235256094f6491894e42a0698a0b9204ceea717c5fac04af9f6ed6099a",
+      "session_id": "ses_f64ed4304ffeYqlxDAzG79xHxH",
+      "user_turns": 3,
+      "tool_counts": {
+        "bash": 23,
+        "read": 30,
+        "todowrite": 4,
+        "task": 29,
+        "edit": 3
+      },
+      "parsed_tool_inputs": 89,
+      "events": 89,
+      "coverage": "this_export_only; child traces/exit codes/tokens not generally present"
+    },
+    {
+      "source_file": "session-ses_f650.md",
+      "source_sha256": "7d52c1ded3bde786104a9a2bb4ddc286d22b1a79abe3854052786adf0da70608",
+      "session_id": "ses_f650c9f50ffeY1Fow6eFYBkgdg",
+      "user_turns": 3,
+      "tool_counts": {
+        "bash": 5,
+        "glob": 1,
+        "read": 14,
+        "write": 2,
+        "ctx_reduce": 1,
+        "skill": 1,
+        "question": 1,
+        "todowrite": 2,
+        "edit": 2
+      },
+      "parsed_tool_inputs": 29,
+      "events": 29,
+      "coverage": "this_export_only; child traces/exit codes/tokens not generally present"
+    }
+  ],
+  "dispatch_roles": {
+    "material-analyst": 1,
+    "scene-builder": 14,
+    "scene-verifier": 14
+  },
+  "rule_version": "maic-contract-profile-1",
+  "provided_contract_hashes": {
+    "PROTOCOL.md": "5367bcca07fe3b9397cced66c611c03e7e4aeb3fca04794e8fa75802a9bdb200",
+    "dsl/SPEC.md": "78cdc1335b799eaf97f46915e84da15108f3d6d399882bf5df6ba4e83bccd518",
+    "tools/course_validate.py": "77f8c000053ba4e1c43f80c56254c2f0dc55b9df3d6e5ffe02aba662f6f3ecdc",
+    "agents/material-analyst.md": "3fcdc0956de89a7f12acb61603e7dba2d440504a1753c70b12b5f91fafd7076c",
+    "agents/scene-verifier.md": "c5a3de302d843b21299d4ec2becdb5ae84d7d4692d6229f196243c45792180c4",
+    "agents/scene-builder.md": "02ccaede57427bfd3c9eb8fe6a32320548f6e5ecf5245de4aaf8e40a36107621",
+    "agents/course-director.md": "1e750a6aa7b79a7085a1bf8e7f1988d678381cd1d68e86ec3cc5b497b2022756"
+  },
+  "receipt_formats": {
+    "recoverable_json_with_extra_text": 29
+  },
+  "verdict_claims": {
+    "pass": 12,
+    "warn": 2
+  },
+  "check_counts": {
+    "receipt_strict_json": 29,
+    "receipt_minimum_fields": 29,
+    "builder_job_pointer": 14,
+    "claimed_artifact_in_supplied_snapshot": 14,
+    "verdict_internal_consistency": 14,
+    "verifier_execution_evidence": 14,
+    "builder_verifier_pair_observed": 14,
+    "doc_reshaper_required_reference_access": 1,
+    "doc_reshaper_appendix_markers": 1,
+    "job_minimum_fields": 14,
+    "outline_job_consistency": 14,
+    "job_references_resolve": 14,
+    "skill_declared_for_scene_type": 14,
+    "job_scene_identity": 14,
+    "skill_name_directory_match": 5,
+    "permission_semantics_probe_needed": 2
+  },
+  "failures_by_property": {
+    "receipt_strict_json": 29,
+    "outline_job_consistency": 2,
+    "skill_name_directory_match": 1
+  },
+  "note": "不跨属性计算总通过率；格式偏离、业务效果、缺少执行证据是不同问题。配置快照不冒充历史实际加载版本。"
+}

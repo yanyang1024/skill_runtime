@@ -1,0 +1,33 @@
+{
+  "change_id": "DEMO-date-example",
+  "fixture_only": true,
+  "old_harness": "h1",
+  "new_harness": "h2",
+  "trials": 1,
+  "model": "DEMO-FIXED-MODEL",
+  "environment_hash": "250cdb1ca66f35135222942558b71a8cd2d42d77559df2362e62ac7fd4caf9cf",
+  "grader_version": "date-check-v1",
+  "budget_hash": "a5dd54348d739a89afb45b715c57e5dc290e88797a1e2af34f4e22e438af2b23",
+  "tasks": [
+    {
+      "task_id": "q0",
+      "input_hash": "2b042f6f06ae3f6d10a780fd44b71cbc49f229d577a3c5413f0737198ecf479a",
+      "source_group": "eval-family-0"
+    },
+    {
+      "task_id": "q1",
+      "input_hash": "5ea04b7affe61c0e376a29338dd97f3178ecabfa5034893e52e34964b60f8601",
+      "source_group": "eval-family-1"
+    },
+    {
+      "task_id": "q2",
+      "input_hash": "7031b4cdcd9508e73f0380b99eaf9765755892459f08fb6752a512c0a5585eea",
+      "source_group": "eval-family-2"
+    },
+    {
+      "task_id": "q3",
+      "input_hash": "0cf7b5ca613d77bf3a2d53fd989654c3ba3911a8804afeb196224e94f6441b45",
+      "source_group": "eval-family-3"
+    }
+  ]
+}

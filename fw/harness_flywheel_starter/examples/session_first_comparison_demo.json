@@ -1,0 +1,62 @@
+{
+  "dataset_id": "DEMO-composition",
+  "tenant_id": "DEMO",
+  "metric": "recorded_tool_error",
+  "departments": [
+    "示例甲",
+    "示例乙"
+  ],
+  "strata": [
+    "period",
+    "task_type",
+    "model",
+    "tool"
+  ],
+  "raw": {
+    "示例甲": {
+      "numerator": 182,
+      "denominator": 1000,
+      "sessions": 2,
+      "users": 2,
+      "unknown_user_sessions": 0
+    },
+    "示例乙": {
+      "numerator": 38,
+      "denominator": 1000,
+      "sessions": 2,
+      "users": 2,
+      "unknown_user_sessions": 0
+    }
+  },
+  "standardized_rates": {
+    "示例甲": 0.11,
+    "示例乙": 0.11
+  },
+  "common_call_coverage": {
+    "示例甲": 1.0,
+    "示例乙": 1.0
+  },
+  "common_slices": 2,
+  "excluded_rows_outside_selection": 0,
+  "max_absolute_slice_gap": 0.0,
+  "triage_hint": "descriptively_close_in_common_slices",
+  "illustrative_gap_threshold": 0.03,
+  "min_calls_per_department_per_cell": 20,
+  "comparison_strength": "observational",
+  "missing_context_rows": {
+    "task_type": 0,
+    "task_label_source": 0,
+    "model": 0,
+    "tool_version": 4,
+    "phase": 4,
+    "origin": 4,
+    "user_id": 0
+  },
+  "unadjusted_context": [
+    "phase",
+    "origin",
+    "tool_version",
+    "task_label_source"
+  ],
+  "note": "只描述本次共同切片。相近不等于部门无关；不同不等于部门造成。未推断人员能力或模型缺陷。"
+}
