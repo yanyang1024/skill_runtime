@@ -1,0 +1,203 @@
+User: 分析下 opencode pi codex cc的工具实现 read 、 write 、 edit 、 bash这四个工具在这些harness中是如何实现的，共性和差异，以及每个的优缺点分析
+Kimi: 四家（opencode / pi / Codex / Claude Code）的 read、write、edit、bash 我都对照了源码分析和官方文档，下面按「实现机制 → 共性 → 差异 → 优缺点」来拆。
+
+## 一、四个工具在各 harness 中的实现
+
+### 1. opencode（TypeScript/Bun，client-server 架构）
+
+opencode 是本地 client-server 结构：server 进程持有 agent loop、工具执行和会话持久化，通过 HTTP + SSE 暴露，TUI/桌面端/IDE 插件都只是客户端。工具代码集中在 `packages/opencode/src/tool/` 下，`tool.ts` 定义工具基类，`registry.ts` 注册表，`truncation.ts` 统一处理输出截断。
+
+- **read**：带行号的文件读取，支持 offset/limit 分页，内部有统一的输出截断保护。
+- **write**：创建或覆盖文件。
+- **edit**：字符串查找替换（search-and-replace）式编辑，而非行号定位——文件在 read 后被修改过也能工作，可靠性更高。
+- **bash**：用 tree-sitter 解析 shell 命令做权限匹配，比纯字符串匹配更能识别 `rm`、`mv`、越界路径等风险操作。但没有 OS 级沙箱，边界完全靠权限系统。
+- **权限模型**：`permission` 配置块，`allow`/`ask`/`deny` 三态 + glob 模式匹配，last-match-wins；`edit` 这个 capability key 同时覆盖 write/edit/patch 三个工具，write/apply_patch 都映射到 `edit` 上。值得一提的内置设计：`doom_loop`（同一调用以相同输入重复 3 次即拦截）和 `external_directory`（项目外路径默认 ask）。
+
+### 2. pi（Mario Zechner，极简哲学）
+
+- 开箱只有四个工具：read、write、edit、bash；grep/find/ls 通过工具选项追加。
+- **edit** 是 diff-based，基于 npm 的 `diff` 包实现。
+- **bash** 直接以用户完整权限在宿主机执行，shell 解析顺序为 settings 里的 `shellPath` > `/bin/bash` > PATH 上的 bash > `sh`。
+- **grep/find** 依赖 ripgrep 和 fd，找不到时自动下载二进制到 `~/.pi/agent/bin/`。
+- 没有内置 plan mode、没有 sub-agent、没有 MCP、没有权限弹窗——这些全靠 extension/skill/package 自行叠加。你之前问的 `--tools read,grep,find,ls` 和这个设计并不冲突：四个核心工具是默认面，其余是可选追加。
+
+### 3. Codex CLI（OpenAI，patch-first 设计）
+
+Codex 的思路和前三家根本不同：**模型侧工具面极简，编辑不拆 read/write/edit，而是统一收敛到 `shell` + `apply_patch`**。
+
+- 早期版本工具面只有 `shell` 一个；`apply_patch` 是在系统提示词里定义的"虚拟 shell 命令"，模型输出 `{"cmd":["apply_patch","*** Begin Patch..."]}` 后，CLI 会绕过真实 shell 直接走内部 patch 处理函数。
+- **read/write/edit 的等价物**：读文件靠 `shell` 里的 `cat`/`sed`/`rg`；写和改全部走 apply_patch，patch 是 OpenAI 自定义的 V4A diff 格式，`Add File` / `Update File` / `Delete File` 三种操作、顺序应用。这种原子化 patch 便于审计和回滚。
+- **bash 等价物（shell）**：核心差异在沙箱。macOS 用 Seatbelt，Linux 用 Docker 隔离 + iptables 限制出口只到 OpenAI 端点；sandbox 模式分 `read-only` / `workspace-write` / `danger-full-access`，审批策略分 `untrusted` / `on-request` / `never`。
+- V4A 格式的坑：单个文件段内多个 `@@` context 的解析有 bug、对前导缩进敏感、强制相对路径防目录穿越。
+
+### 4. Claude Code（Anthropic，闭源 bundle）
+
+- 工具面：Read / Write / Edit / Bash / Glob / Grep 六件套，外加 MultiEdit、NotebookEdit。实体是 VS Code 扩展里的原生二进制内嵌 JS bundle。
+- **Edit**：字符串替换式（同 opencode 流派），且有 read-before-edit 的契约约束——要求先 Read 再 Edit，用文件状态校验防止基于过期快照编辑。
+- **Bash**：权限规则是工具名+模式的三列表结构（`"Bash(npm run test *)"`），deny > ask > allow 且与具体度无关；之上还有 PreToolUse hooks 可在工具调用前拦截（exit 2 直接阻断，优先于 allow 规则）；再之上可选 OS 级沙箱（网络域名 allowlist、credential masking 等）。
+- 一个值得注意的动向：近期版本在 auto/bypassPermissions 模式下通过服务端 feature flag 灰度推送"Bash 优先"的提示词变体——能用 Bash 干的活（cat/grep/sed/heredoc）就不走专用工具。本质上是在向 Codex 式的收敛工具面靠拢。
+
+## 二、共性
+
+1. **工具面都收敛到同一最小集**。不管是显式给四个工具（pi、opencode）还是收敛成 shell+patch（Codex），本质都是「读文件、写文件、改文件、跑命令」四个原子能力，靠组合覆盖一切——这套工具组合起来才让模型从文本生成器变成能导航、理解、修改、验证真实代码库的 agent。
+2. **edit 普遍放弃行号定位**。opencode/Claude Code 用字符串锚点替换，pi 用 diff 匹配，Codex 用 context 锚定的 patch——四家都认识到行号在文件变动后不可靠。
+3. **权限都是「deny 优先的三列表」抽象**：denylist 直接拒绝、allowlist 放行、其余进 ask 由人裁决，这是终端 AI agent 的通用架构。
+4. **bash 都是安全边界的主战场**。文件工具的路径校验相对好做，bash 任意命令才是真正的攻击面，所以各家的差异化投入（tree-sitter 解析、沙箱、hooks）全砸在 bash 上。
+
+## 三、关键差异
+
+| 维度 | opencode | pi | Codex | Claude Code |
+|---|---|---|---|---|
+| 工具哲学 | 能力族权限（edit 覆盖 write/patch） | 极简四工具，其余靠扩展 | 收敛到 shell+patch | 六件套 + 丰富 hook |
+| edit 机制 | 字符串替换 | diff 包 | V4A patch（原子、可审计） | 字符串替换 + 状态校验 |
+| bash 安全 | tree-sitter 解析 + 权限规则，无沙箱 | 无防护，全权限直跑 | OS 级沙箱（Seatbelt/Docker+iptables） | 权限规则 + hooks + 可选沙箱，纵深最深 |
+| 防呆机制 | doom_loop、external_directory | 无 | patch 相对路径强制、审批模式 | deny 内置列表、plan 模式 |
+| 架构 | client-server（工具在 server 端执行，权限经 HTTP 流回 UI） | 单进程极简 | 单进程 + 沙箱边界 | 闭源二进制 + 服务端 flag |
+
+## 四、各自的优缺点
+
+**opencode**
+- 优点：权限语言最规整（capability 抽象 + last-match-wins + 每 agent 覆盖），build/plan 双 persona 共用一套工具面只是权限映射不同；doom_loop 这类防死循环设计很实用；开源可读，你已经二开过，最熟。
+- 缺点：默认 permissive，安全靠自己配；无 OS 沙箱，进程内策略只检查命令字符串不检查 syscall，被 allow 的命令名不副实时照样放行；策略按机器分布、易漂移。
+
+**pi**
+- 优点：奥卡姆剃刀做到极致——核心小、行为可预测、易嵌入自己的 harness 或沙盒（和你的 agentic_sandbox 思路最搭）；工具实现直接复用 ripgrep/fd/diff 这些成熟组件。
+- 缺点：bash 裸奔、无任何权限层，安全完全外包给你自己的运行环境；功能面要啥没啥，都得自己搭。
+
+**Codex**
+- 优点：apply_patch 的原子 patch + diff 预览 + 逐 patch 审批是四家里可审计性最强的编辑路径；沙箱+审批双轴设计在无人值守场景最稳；工具面收敛减少了模型误用工具的维度。
+- 缺点：V4A 是自造格式，有解析 bug 和缩进敏感性，换非 OpenAI 模型（如 Azure 托管版）可能不认这套格式；沙箱配置复杂；单 patch 失败语义对模型的自纠错依赖错误信息质量。
+
+**Claude Code**
+- 优点：纵深防御最完整——权限规则 → hooks → OS 沙箱三层，且 hooks 给了运行时自定义拦截的通用扩展点；Edit 的文件状态校验对多会话并发改同一文件的场景有价值。
+- 缺点：闭源，行为受服务端 feature flag 影响（比如 Bash 优先的灰度推送会让行为在同版本间漂移）；规则语法工具特有、学习成本高；已知有绕过路径的记录（如 Read deny 被替代工具路径绕过）。
+
+## 五、对你的启发
+
+结合你在做的 agentic 沙盒和企业平台，有三个可直接借用的点：
+
+1. **Codex 的 patch 收敛 + opencode 的 capability 权限**是互补的：编辑面收敛成一种机制（好审计、好做 PostToolUse 类钩子），权限面按 capability 而非工具名抽象（write/patch 统一归 edit，策略不易漏）。
+2. **opencode 的 doom_loop 和 external_directory** 是两个零成本高价值的防呆哨兵，契合你"做减法、只保留最高价值验证机制"的取向，比 LLM-as-judge 便宜得多。
+3. **安全边界的分层共识**：进程内权限规则（快、可读）+ OS 级沙箱（硬边界）缺一不可——opencode 和 pi 都只做了前者，你已有 bwrap，正好补上后者，这恰好是你平台相对这些通用 harness 的差异化优势。
+
+一个值得留意的趋势：Claude Code 在灰度"Bash 优先"，说明业界在重新评估"专用工具 vs 收敛 shell"的取舍——专用工具的价值不在能力（Bash 都能干），而在**可观测性和权限粒度**（Read/Edit 是结构化事件，cat/sed 不是）。你之前做会话信号提取时应该能直接感受到这一点：结构化工具调用留下的轨迹比 bash 命令字符串好分析得多。
+User: 除了这四个之外，你再分析下deepseek harness
+Kimi: 找到了——DeepSeek 在 2026 年 8 月 13 日开源了官方 harness：**DeepSeek Harness（CLI 名 `dsh`）**，MIT 协议，和 V4-Pro 同日发布。下面接着上一轮的框架分析它的 read/write/edit/bash，再放进五家对比。
+
+## 一、dsh 的工具实现方式：工具本身也是插件
+
+dsh 的底层是 Cordis 插件内核，"Everything is a Plugin"是字面意思——模型适配器、工具注册表、沙箱、审批策略、会话日志乃至 UI 全都是平级插件，没有特权核心。monorepo 分 `apps/`（cli 和 web）和 `packages/`（core、llm、mcp、sandbox、context、plan、goal 等几十个包）。
+
+这一点直接决定了四个工具的形态：**read/write/edit 由文件系统插件（`dsh-fs-local`）提供，bash 由执行器插件（`dsh-bash-local`）提供**，沙箱是独立插件（`dsh-sandbox-policy`），在 spawn 前包裹命令行。想换实现不用 fork 工程，在配置层卸载/替换插件即可。
+
+### 四个工具的具体实现
+
+- **read/write/edit**：标准模式下是完整的文件工具集；值得注意的是**极简模式（Minimal）只保留两个工具：持久 bash + `str_replace_editor`**——这个名字直接继承了 Anthropic 最早公开的 agent 工具命名，说明 dsh 的 edit 走的是字符串替换流派（和 opencode/CC 同源）。社区还长出了增强插件：比如 `dsh-tool-edit` 在 edit 落盘前后接 LSP，做 formatOnWrite 和诊断摘要回传（`N error(s), M warning(s)` 附在 edit 结果里），失败时静默降级不阻塞编辑——这是插件化红利的直接体现。
+- **bash**：本地后端走 bwrap 兼容 runner，另有 E2B 远程后端做一次性执行环境。Linux 上优先用 bubblewrap，fallback 到 Landlock，且 Landlock launcher 是 npm 包里自带的预编译原生二进制，不用用户自己编。
+- **权限模型**：三个预设把沙箱模式和审批策略绑死——`read-only`（默认，fail-safe）、`workspace-write`（写限定在 workspace 根，ask 审批）、`danger-full-access`（无限制 + never 审批）。越权写入得到的是内核级拒绝，而不是模型层面的礼貌回绝。
+
+### 两个独有的玩法
+
+1. **PTC 模式（Programmatic Tool Calling）**：模型不再逐次调工具，而是写一段 TypeScript 程序，通过 Code Mode SDK 在一次 `run_code` 里编排多步工具调用，中间数据留在 Worker Thread 不进上下文，实测缓存命中率常在 99% 左右。这是对"多步任务"问题与 Claude Code 子代理扇出完全不同的答案，token 成本低得多。但注意：Worker Thread 官方明确定义为 "containment, not a security boundary"——模型代码仍能访问 Node API，信任等级接近 bash。
+2. **Append-only 会话日志**：模型看到的一切（system prompt、推理链、工具调用、子代理调度）全量写入只追加事件流，支持在第 39 步 fork 重跑第 40 步。另外它能把 Claude Code 和 Codex 当子代理调用，并桥接它们的 `hooks.json`——定位是可以坐在它们之上的一层，而不只是竞品。
+
+## 二、放进五家对比
+
+| 维度 | opencode | pi | Codex | Claude Code | **DeepSeek Harness** |
+|---|---|---|---|---|---|
+| 工具哲学 | 能力族权限 | 极简四工具 | shell+patch 收敛 | 六件套+hooks | **一切皆插件，工具面按 preset 组合** |
+| edit 机制 | 字符串替换 | diff 包 | V4A patch | 字符串替换+状态校验 | str_replace_editor 流派，插件可接 LSP |
+| bash 安全 | tree-sitter+权限，无沙箱 | 裸奔 | Seatbelt/Docker 沙箱 | 规则+hooks+可选沙箱 | **bwrap/Landlock 默认开启，read-only 兜底** |
+| 编排范式 | 逐步调用 | 逐步调用 | 逐步调用 | 子代理扇出 | 逐步调用 **或 PTC 代码编排** |
+| 可观测性 | 会话持久化 | 树状会话 | diff 审批 | hooks | **append-only 日志+fork/replay** |
+| 开放性 | 开源 TS | 开源 TS | 开源 Rust | 闭源 | MIT 全开源，插件生态 |
+
+## 三、dsh 的优缺点
+
+**优点**：
+1. **安全默认值是五家里最激进的**：默认 read-only + 内核级沙箱（bwrap/Landlock），和 Codex 同级但默认更严；opencode/pi/CC 的默认都宽松得多。
+2. **插件化最彻底**：opencode 你二开要改源码，dsh 换工具/换沙箱/换 loop 都是配置层操作——对它"没有特权核心"的宣称，源码层面是成立的。
+3. **Minimal 模式是评测友好的官方配置**：固定 system prompt、关掉上下文压缩、只留 bash + str_replace_editor，DeepSeek 官方 V4-Flash 的 agent 评测就是用这个模式跑的。
+4. PTC 把确定性控制流从提示词搬回代码，省 token 且可审计（程序本身可读）。
+
+**缺点**：
+1. **v0.1 开发者预览**，README 自己承诺会有 breaking change，打磨度远不及 Claude Code。
+2. `danger-full-access` 预设把沙箱和审批一起关掉——第一道墙没了后面是空的，没有 CC 那种 hooks 第二道防线。
+3. PTC 依赖模型的代码规划稳定性，调试难；且 run_code 的 Worker Thread 不是安全边界，信任等级等同 bash。
+4. 插件生态刚起步，WSL 等边缘环境已有插件作者自己踩出坑（WSL 下 bash 跑出 Windows ACL 沙箱之外、文件策略不生效）。
+5. Web UI 只绑 localhost，远程用要自己解决代理/SSL/认证。
+
+## 四、对你的直接相关性
+
+有三个点和你在做的事高度重合：
+
+1. **bwrap 路线被官方背书了**。你平台用 bwrap 做沙箱，dsh 的本地执行器也是 bwrap 优先——而且他们解决了一个你大概率也踩过的问题：把 Landlock fallback 做成 npm 包内预编译二进制，消除用户侧编译依赖。这个打包手法可以直接抄。
+2. **Minimal 模式就是你做企业版 SWE-bench 的 harness 参照系**。它的 `agent.cordis.yml` 固定 prompt、`complete: true`、`includeRuntimeContext: false` 这套配置，本质是把 harness 变量全部冻结，让评测只度量模型差异——这正是你把 SWE-bench 配方迁移到办公场景时需要的"受控 harness"设计模板。
+3. **append-only 事件流 + fork/replay 和你的会话信号提取工作天然互补**：你现在是事后从 session.md 挖信号，dsh 的设计是把"模型看到的每一帧"作为一等公民记录下来——如果企业平台想升级数据采集层，这个事件流 schema 值得参考，它比 session.md 的粒度细得多，也直接支持 good/bad case 的精确回放定位。
+
+一句话总结五家的演进方向：opencode/pi 在**收敛工具面**，Codex 在**收敛编辑语义**（patch），Claude Code 在**加深纵深防御**，而 dsh 试图**把整个 harness 变成可重组的插件市场**——代价是目前还只是个野心大于打磨的 v0.1。
+User: 再检查这五个harness在工具设计和调用上有哪些tool trick去更好的释放模型的性能和避免一些问题
+Kimi: 这一轮的检索把五家在「工具输出治理」和「调用层设计」上的具体 trick 都翻出来了。我按 trick 的类型分类讲，每条标注哪家在用、解决什么问题。
+
+## 一、上下文预算治理：lossy on model，lossless on disk
+
+这是五家投入最密集的 trick 群——一次 `bash ls -R /` 就能灌爆上下文，所以都围绕「截断」做了大量设计：
+
+**1. 分层截断 + 全文落盘（opencode / pi）**
+- opencode 的统一截断策略：2000 行 / 50KB，单行超 2000 字符也截；超限后全文写入本地 tool-output store，返回 preview + `outputPath` 提示，让模型用 Grep/Read offset 按需回读。架构上是混合式：runtime 统一管安全预算，但懂语义的工具（shell 保 tail、grep 求更窄查询）自己塑造 preview 形状。
+- pi 的对应实现有一条细节规矩：**绝不返回半截行**（bash 边缘情况除外），并且 grep 每行匹配单独限 500 字符。半截行对模型是幻觉温床——它会把不完整的 JSON/代码当成完整结构引用。
+- Codex 最粗暴：10KB 或 256 行 head-and-tail 硬截断，没有落盘回读机制——丢了就真丢了，这是它工具面收敛的代价。
+
+**2. 截断时的「可行动提示」（几乎全员）**
+截断消息不是死讯，而是导航指令。pi 的格式最典型：`[Showing lines X-Y of Z. Use offset=N to continue]`，bash 截断则给出 `Full output: /tmp/pi-bash-xxx.log` 的路径。opencode 更进一步：如果当前 agent 有 Task 权限，提示会改成"让 explore 子代理去处理这个文件，别自己读全文，省上下文"——截断提示同时是**编排引导**。反面教材也在 opencode：这个提示只检查 Task 是否存在，不检查 Grep/Read 是否被禁用，禁用后模型会收到指向不存在工具的指令，陷入无解循环。
+
+**3. 读前拦截 + 读后复核的双闸门（Claude Code）**
+CC 的 Read 有两道闸：先用 stat 预检 256KB 字节上限，超限直接报错并指引模型改用 offset/limit 或 grep；读完后还有 25,000 token 的二次预算检查，抓那些字节小但 token 密的文件。两个阈值都能通过 GrowthBook feature flag 远程调，不用发版。
+
+**4. 去重 stub（Claude Code / Hermes）**
+模型重复读同一文件同一范围且文件未变时，CC 返回 stub 而不是全文，避免重复 token。这是针对「模型失忆重读」这一高频浪费模式的定向优化。
+
+## 二、工具描述即提示词工程
+
+工具的 description 和参数说明本身就是 system prompt 的一部分，各家都在里面埋行为引导：
+
+- opencode 的 read 描述里直接写了「最好一次推测性批量读多个可能有用的文件」（encourage parallel/speculative reads），并声明空文件会返回 system reminder 而非空内容——空文件返回空串会让模型怀疑文件不存在或工具坏了，一条 reminder 消除歧义。
+- CC 的 read 描述是多段落完整 prompt：讲分页、提 256KB 上限、鼓励并行读；offset/limit 参数各自带说明。
+- **错误消息也要 prompt-engineer**：Anthropic 自己的工具设计指南强调，校验失败的报错要给出具体可操作的改进建议，而不是 opaque error code——好的错误响应能引导模型走向更省 token 的行为（多次小查询代替一次大查询）。模型是错误消息的消费者，traceback 是给人看的。
+
+## 三、编辑层的防错契约
+
+1. **read-before-write 账本**：CC、opencode、Hermes 都有——没读过的文件不允许写/改，防止基于过期快照盲改；pi 和 Codex 没有这个约束。CC 还叠加文件状态校验，文件在读后被外部改动时 edit 会失败。
+2. **offset 越过 EOF 返回提示而非报错**：把"边界情况"从 error 降级为 note，避免模型把无害的越界当成需要重试的故障。
+3. **编辑结果的即时验证反馈（dsh 独有）**：dsh 的 `dsh-tool-edit` 插件在 edit 落盘后接 LSP，把诊断摘要（`N error(s), M warning(s)`）直接附在 edit 返回值里——模型改完立刻知道有没有改坏，把「编辑→编译检查」两步合成一步，这是五家里唯一把验证信号内嵌进工具返回的设计。
+4. **opencode 的 doom_loop**：同一工具以相同输入连续调用 3 次即拦截——针对 agent 死循环的零成本哨兵。
+
+## 四、调用层的 trick
+
+1. **Codex：把工具藏进提示词**。apply_patch 不在 function schema 里，而是系统提示词中定义的"虚拟 shell 命令"，CLI 拦截后绕过 shell 直接走内部处理。好处是不占 schema、自由格式省 token；代价是换模型可能不认这套私有协议。
+2. **dsh：PTC 代码编排**。多步工具调用压成一次 `run_code`，中间数据不进上下文，缓存命中率常达 99%——把上下文问题从"治理"升级为"不产生"。
+3. **截断方向语义化**：bash 保 tail（错误信息在末尾）、read 保 head（结构在开头），这个细节在多个 harness 里都是显式策略。
+4. **Compaction 时对工具结果单独降级**：pi 序列化会话做总结时，每个 tool result 单独截到 2000 字符——所以持久状态（栈轨迹、迁移状态）必须写 checkpoint 文件，不能信 summary。
+
+## 五、汇总：谁的 trick 箱子最深
+
+| trick | opencode | pi | Codex | CC | dsh |
+|---|---|---|---|---|---|
+| 截断+落盘回读 | ✅ 混合式 | ✅ 无半截行 | ❌ 硬截断 | ✅ 双闸门 | 插件化 |
+| 可行动截断提示 | ✅ 含编排引导 | ✅ 最规范 | 弱 | ✅ | ✅ |
+| read-before-write | ✅ | ❌ | ❌ | ✅+状态校验 | ✅ |
+| 重复读取去重 | ❌ | ❌ | ❌ | ✅ | — |
+| 编辑内嵌验证信号 | ❌ | ❌ | diff 审批 | ❌ | ✅ LSP 诊断 |
+| 防死循环哨兵 | ✅ doom_loop | ❌ | ❌ | hooks 可配 | 插件可配 |
+| 远程调参 | ❌ | ❌ | ❌ | ✅ GrowthBook | ❌ |
+| 代码编排省上下文 | ❌ | ❌ | ❌ | 子代理 | ✅ PTC |
+
+## 六、对你平台的可迁移清单
+
+按「性价比/实现成本」排序，前三个都值得直接搬：
+
+1. **截断提示即导航**：截断消息里必须给出 offset、落盘路径、下一步建议，且**提示内容要校验目标工具实际可用**（opencode 那个 issue 就是反例——指向被禁用工具的提示比没提示更糟，会让 agent 无解空转，在你的失败分类学里这会是一种典型的 harness-induced failure）。
+2. **绝不返回半截行 + 空文件显式提醒**：两个一行代码级的 trick，消除一大类模型幻觉诱因。
+3. **doom_loop 式哨兵**：相同输入重复 N 次即拦截，代码化、零 LLM 成本，符合你"做减法"的原则。
+4. **edit 后附验证信号**（dsh 的 LSP 思路）：在你的办公场景里对应物可以是"编辑文档后附格式校验摘要"——把验证内嵌进工具返回，比单独的验证步骤省一轮交互，也天然产出结构化的成败轨迹，正好喂你的信号提取管线。
+5. 一个反向教训：Codex 的硬截断无回读是「工具面收敛」牺牲的代偿——你可以收敛工具面，但**截断必须可逆**（落盘），否则收敛省下的复杂度会被信息丢失吃掉。
