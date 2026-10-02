@@ -1,0 +1,18 @@
+{
+  "old_verification_after_new_generation": "human-reviewed",
+  "date_only_is_stale": false,
+  "offset_timestamp_is_stale": true,
+  "timestamp_roundtrip": {
+    "type": "Metric",
+    "generated": {
+      "by": "agent/1",
+      "at": "2026-06-30T14:00:00Z"
+    }
+  },
+  "viewer_absolute_link": [],
+  "viewer_relative_link": [
+    "tables/a"
+  ],
+  "source_only_graph_edges": [],
+  "root_index_version_preserved": false
+}

@@ -1,0 +1,49 @@
+{
+  "matching": {
+    "ok": true,
+    "reason": null,
+    "details": {
+      "job_id": null
+    }
+  },
+  "different_table": {
+    "ok": false,
+    "reason": "executed SQL does not match sanctioned computation",
+    "details": {
+      "sanctioned_canonical": "SELECT x FROM a",
+      "executed_canonical": "SELECT x FROM b"
+    }
+  },
+  "no_job_id": {
+    "ok": true,
+    "reason": null,
+    "details": {
+      "job_id": null
+    }
+  },
+  "unverified_parameters": {
+    "ok": true,
+    "reason": null,
+    "details": {
+      "job_id": null
+    }
+  },
+  "literal_case_changed": {
+    "ok": true,
+    "reason": null,
+    "details": {
+      "job_id": null
+    }
+  },
+  "empty_result": {
+    "exception": "IndexError",
+    "message": "list index out of range"
+  },
+  "old_review_after_new_generation": "human-reviewed",
+  "date_only_stale": false,
+  "offset_stale": true,
+  "root_version_preserved": false,
+  "log_in_index": true,
+  "global_context_overwritten": true,
+  "supplied_generated_at_retained": "2020-01-01T00:00:00Z"
+}

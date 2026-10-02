@@ -1,0 +1,60 @@
+[
+  {
+    "case": "matching_template_and_result",
+    "result": {
+      "ok": true,
+      "reason": null,
+      "details": {
+        "job_id": "unverified-id"
+      }
+    }
+  },
+  {
+    "case": "rewritten_table",
+    "result": {
+      "ok": false,
+      "reason": "executed SQL does not match sanctioned computation",
+      "details": {
+        "sanctioned_canonical": "SELECT SUM(amount) FROM orders",
+        "executed_canonical": "SELECT SUM(amount) FROM different_orders"
+      }
+    }
+  },
+  {
+    "case": "receipt_has_no_job_id",
+    "result": {
+      "ok": true,
+      "reason": null,
+      "details": {
+        "job_id": null
+      }
+    }
+  },
+  {
+    "case": "parameter_values_not_checked",
+    "result": {
+      "ok": true,
+      "reason": null,
+      "details": {
+        "job_id": null
+      }
+    }
+  },
+  {
+    "case": "changed_case_in_string_literal",
+    "result": {
+      "ok": true,
+      "reason": null,
+      "details": {
+        "job_id": null
+      }
+    }
+  },
+  {
+    "case": "empty_result",
+    "result": {
+      "exception": "IndexError",
+      "message": "list index out of range"
+    }
+  }
+]
