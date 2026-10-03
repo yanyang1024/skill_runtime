@@ -1,0 +1,348 @@
+{
+  "kind": "deterministic_illustration_not_empirical_ROI_or_agent_benchmark",
+  "limitations": [
+    "人工构造交互路径；未测真实用户耗时",
+    "没有调用真实 LLM、业务服务或沙盒进程",
+    "版本重算是固定示例，不证明模型能正确合并任意文档",
+    "工时等权回收；未计工资差异、token、服务器成本与收益重叠"
+  ],
+  "effort_cases": {
+    "base_illustration": {
+      "assumptions": {
+        "monthly_tasks": 2000,
+        "adoption": 0.6,
+        "saved_minutes": 3,
+        "added_review_minutes": 1,
+        "development_days": 10,
+        "maintenance_hours": 12,
+        "working_hours_per_day": 8
+      },
+      "user_net_saved_hours_per_month": 40.0,
+      "net_after_maintenance_hours_per_month": 28.0,
+      "equal_hour_payback_months": 2.8571,
+      "positive_net_requires_monthly_tasks_above": 600.0
+    },
+    "low_adoption": {
+      "assumptions": {
+        "monthly_tasks": 2000,
+        "adoption": 0.2,
+        "saved_minutes": 3,
+        "added_review_minutes": 1,
+        "development_days": 10,
+        "maintenance_hours": 12,
+        "working_hours_per_day": 8
+      },
+      "user_net_saved_hours_per_month": 13.3333,
+      "net_after_maintenance_hours_per_month": 1.3333,
+      "equal_hour_payback_months": 60.0,
+      "positive_net_requires_monthly_tasks_above": 1800.0
+    },
+    "low_volume": {
+      "assumptions": {
+        "monthly_tasks": 500,
+        "adoption": 0.6,
+        "saved_minutes": 3,
+        "added_review_minutes": 1,
+        "development_days": 10,
+        "maintenance_hours": 12,
+        "working_hours_per_day": 8
+      },
+      "user_net_saved_hours_per_month": 10.0,
+      "net_after_maintenance_hours_per_month": -2.0,
+      "equal_hour_payback_months": null,
+      "positive_net_requires_monthly_tasks_above": 600.0
+    },
+    "high_review": {
+      "assumptions": {
+        "monthly_tasks": 2000,
+        "adoption": 0.6,
+        "saved_minutes": 3,
+        "added_review_minutes": 4,
+        "development_days": 10,
+        "maintenance_hours": 12,
+        "working_hours_per_day": 8
+      },
+      "user_net_saved_hours_per_month": -20.0,
+      "net_after_maintenance_hours_per_month": -32.0,
+      "equal_hour_payback_months": null,
+      "positive_net_requires_monthly_tasks_above": null
+    },
+    "lower_build_effort": {
+      "assumptions": {
+        "monthly_tasks": 2000,
+        "adoption": 0.6,
+        "saved_minutes": 3,
+        "added_review_minutes": 1,
+        "development_days": 3,
+        "maintenance_hours": 12,
+        "working_hours_per_day": 8
+      },
+      "user_net_saved_hours_per_month": 40.0,
+      "net_after_maintenance_hours_per_month": 28.0,
+      "equal_hour_payback_months": 0.8571,
+      "positive_net_requires_monthly_tasks_above": 600.0
+    },
+    "higher_maintenance": {
+      "assumptions": {
+        "monthly_tasks": 2000,
+        "adoption": 0.6,
+        "saved_minutes": 3,
+        "added_review_minutes": 1,
+        "development_days": 10,
+        "maintenance_hours": 40,
+        "working_hours_per_day": 8
+      },
+      "user_net_saved_hours_per_month": 40.0,
+      "net_after_maintenance_hours_per_month": 0.0,
+      "equal_hour_payback_months": null,
+      "positive_net_requires_monthly_tasks_above": 2000.0
+    },
+    "zero_adoption": {
+      "assumptions": {
+        "monthly_tasks": 2000,
+        "adoption": 0,
+        "saved_minutes": 3,
+        "added_review_minutes": 1,
+        "development_days": 10,
+        "maintenance_hours": 12,
+        "working_hours_per_day": 8
+      },
+      "user_net_saved_hours_per_month": 0.0,
+      "net_after_maintenance_hours_per_month": -12.0,
+      "equal_hour_payback_months": null,
+      "positive_net_requires_monthly_tasks_above": null
+    }
+  },
+  "scripted_interaction_paths": {
+    "known_repeated_task": {
+      "chat": {
+        "plan": [
+          "type",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 2,
+        "model_steps": 1,
+        "output_inspections": 1
+      },
+      "contextual_shortcut": {
+        "plan": [
+          "click",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 2,
+        "model_steps": 1,
+        "output_inspections": 1
+      },
+      "forced_form": {
+        "plan": [
+          "type",
+          "click",
+          "click",
+          "click",
+          "click",
+          "click",
+          "click",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 8,
+        "model_steps": 1,
+        "output_inspections": 1
+      }
+    },
+    "known_fields_three_missing_values": {
+      "serial_chat": {
+        "plan": [
+          "type",
+          "model",
+          "type",
+          "model",
+          "type",
+          "model",
+          "type",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 5,
+        "model_steps": 4,
+        "output_inspections": 1
+      },
+      "optional_structured_clarification": {
+        "plan": [
+          "type",
+          "model",
+          "click",
+          "click",
+          "click",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 5,
+        "model_steps": 2,
+        "output_inspections": 1
+      },
+      "single_batched_chat_answer": {
+        "plan": [
+          "type",
+          "model",
+          "type",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 3,
+        "model_steps": 2,
+        "output_inspections": 1
+      }
+    },
+    "six_ambiguities_without_task_schema": {
+      "batched_chat": {
+        "plan": [
+          "type",
+          "model",
+          "type",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 3,
+        "model_steps": 2,
+        "output_inspections": 1
+      },
+      "guessed_form_then_correction": {
+        "plan": [
+          "type",
+          "model",
+          "click",
+          "click",
+          "click",
+          "click",
+          "click",
+          "click",
+          "type",
+          "model",
+          "inspect"
+        ],
+        "user_actions": 9,
+        "model_steps": 2,
+        "output_inspections": 1
+      }
+    }
+  },
+  "state_checks": [
+    {
+      "name": "old_proposal_blocked",
+      "observed": "version_conflict",
+      "expected": "version_conflict",
+      "passed": true
+    },
+    {
+      "name": "human_version_not_overwritten",
+      "observed": 2,
+      "expected": 2,
+      "passed": true
+    },
+    {
+      "name": "concurrent_edit_after_recalculation_blocked",
+      "observed": "version_conflict",
+      "expected": "version_conflict",
+      "passed": true
+    },
+    {
+      "name": "fresh_proposal_applied",
+      "observed": "applied",
+      "expected": "applied",
+      "passed": true
+    },
+    {
+      "name": "human_note_preserved_in_scripted_merge",
+      "observed": "部门使用情况（保留人工补充口径）",
+      "expected": "部门使用情况（保留人工补充口径）",
+      "passed": true
+    },
+    {
+      "name": "before_request_is_not_ack",
+      "observed": "stop_requested",
+      "expected": "stop_requested",
+      "passed": true
+    },
+    {
+      "name": "before_future_actions_blocked",
+      "observed": "blocked",
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "name": "before_local_execution_stopped",
+      "observed": "stopped",
+      "expected": "stopped",
+      "passed": true
+    },
+    {
+      "name": "before_effect_remains_independent",
+      "observed": "not_sent",
+      "expected": "not_sent",
+      "passed": true
+    },
+    {
+      "name": "in_flight_request_is_not_ack",
+      "observed": "stop_requested",
+      "expected": "stop_requested",
+      "passed": true
+    },
+    {
+      "name": "in_flight_future_actions_blocked",
+      "observed": "blocked",
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "name": "in_flight_local_execution_stopped",
+      "observed": "stopped",
+      "expected": "stopped",
+      "passed": true
+    },
+    {
+      "name": "in_flight_effect_remains_independent",
+      "observed": "in_flight",
+      "expected": "in_flight",
+      "passed": true
+    },
+    {
+      "name": "reconciliation_can_find_committed_effect_after_stop",
+      "observed": "committed",
+      "expected": "committed",
+      "passed": true
+    },
+    {
+      "name": "after_request_is_not_ack",
+      "observed": "stop_requested",
+      "expected": "stop_requested",
+      "passed": true
+    },
+    {
+      "name": "after_future_actions_blocked",
+      "observed": "blocked",
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "name": "after_local_execution_stopped",
+      "observed": "stopped",
+      "expected": "stopped",
+      "passed": true
+    },
+    {
+      "name": "after_effect_remains_independent",
+      "observed": "committed",
+      "expected": "committed",
+      "passed": true
+    },
+    {
+      "name": "reconciliation_can_find_uncommitted_effect",
+      "observed": "not_committed",
+      "expected": "not_committed",
+      "passed": true
+    }
+  ]
+}

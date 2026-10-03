@@ -1,0 +1,426 @@
+[
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/LICENSE",
+    "sha256": "ebb4f09972aee8608be255debaf78451a68e95c290f55c240dec2ecfa16ea6be",
+    "bytes": 1065,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/LICENSE"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/README.md",
+    "sha256": "0f5516be2acde776f05572cbc8c3093c90549afe04ce118e11157d073d5d15f4",
+    "bytes": 2673,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/README.md"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/docs/subsystems/sandbox.md",
+    "sha256": "b60d665a9d5681b2a264f780f51f03863e3855105049d803acc85e44f48d4c1e",
+    "bytes": 12980,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/subsystems/sandbox.md"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/docs/subsystems/skills.md",
+    "sha256": "d37b8cf049f887ff6fc645dea3b1e7fd6079014552d1cee9f991c6e65dd116f9",
+    "bytes": 24700,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/subsystems/skills.md"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/docs/postmortem/0004-landlock-partial-notice-misclassified-child-failures.md",
+    "sha256": "1fcc6058a0a482265c299511868ea53bf1ddad302889cf13cee4ffe2c0609cdc",
+    "bytes": 6911,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/postmortem/0004-landlock-partial-notice-misclassified-child-failures.md"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox/src/index.ts",
+    "sha256": "46592025ce36d04ff8d1bfa9d6594dd8d1527883649ccf40ff7a169e94e68dc6",
+    "bytes": 7966,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox/src/index.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox/src/roots.ts",
+    "sha256": "8a18e1474012415def8197a4ee493394a91cc739a6ec94eb83c6b4d980b7a23b",
+    "bytes": 2745,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox/src/roots.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox/src/diagnostics.ts",
+    "sha256": "758d86ef3e565f534a9903ea75b25bab92d31d7c080c8740ff118388966c8659",
+    "bytes": 4608,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox/src/diagnostics.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox/src/escalation.ts",
+    "sha256": "82b165b60d20ebcd78ab51a4ba503a88b4305fa6a8ba1b420da749759ecc5085",
+    "bytes": 10480,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox/src/escalation.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox/tests/diagnostics.spec.ts",
+    "sha256": "ae6c6d38d4c2bdcd002a2ee1431bb7e5d7d6617e9af9346ea36215933cf3bfa8",
+    "bytes": 8263,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox/tests/diagnostics.spec.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox-local/src/index.ts",
+    "sha256": "282709d0bf789ad3ab9ec6a706f3aeaeac1632d80a08ded507a7b7caff860ac2",
+    "bytes": 28557,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox-local/src/index.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox-local/src/profiles.ts",
+    "sha256": "b94dd0d0c49c8df63edcbdfe036fafb90eb0bb96e7613e73d46e27b009ae6aaa",
+    "bytes": 2440,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox-local/src/profiles.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox-local/tests/bwrap.e2e.ts",
+    "sha256": "e7c3020eb5a4882d23d07384e5017ed515b5e4318d9ef8f7c9eff69518a1016b",
+    "bytes": 7119,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox-local/tests/bwrap.e2e.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/sandbox/sandbox-policy/src/index.ts",
+    "sha256": "6fce58e5bf63475f761871389bbf01043fba859f22e44c805522c39afbff32d6",
+    "bytes": 8345,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/sandbox/sandbox-policy/src/index.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/fs/fs-sandbox/README.md",
+    "sha256": "aa67919fbf11c01d887153e511928a0173e25a8eae85cd87c039c2c23577c11c",
+    "bytes": 8028,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/fs/fs-sandbox/README.md"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/fs/fs-sandbox/src/index.ts",
+    "sha256": "baba926440e3bcaf9c5f70c4e7d5478efd977d66c76e025c4deb82534ce3256b",
+    "bytes": 6843,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/fs/fs-sandbox/src/index.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/fs/fs-sandbox/src/containment.ts",
+    "sha256": "36dd20f6c63bb6a263bf9e424346d65ce34483944ab260259a37f829c54bb1ed",
+    "bytes": 3043,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/fs/fs-sandbox/src/containment.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/fs/tool-fs/src/write.ts",
+    "sha256": "c79dfb2f270a52df96c87547a8370e4561ac110596a83db909477da38f884d8f",
+    "bytes": 6948,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/fs/tool-fs/src/write.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/fs/tool-fs/src/read.ts",
+    "sha256": "1e7d5743be73623b07cde79f2f7168f4466794c26c714b923c289cd0e155115f",
+    "bytes": 9570,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/fs/tool-fs/src/read.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/fs/tool-fs/src/edit.ts",
+    "sha256": "7a1cfb9e4b6e1e83cb86b33a08a1b5d23fe6a5a240659afac1e1499b4dd5e4db",
+    "bytes": 7742,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/fs/tool-fs/src/edit.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/shell/bash-sandbox/src/index.ts",
+    "sha256": "45dec72853eb9ab2f40697b7618dd922eefc7d5a5c7eb427dcd590898ab1ad9f",
+    "bytes": 8389,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/shell/bash-sandbox/src/index.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/shell/bash-sandbox/src/helpers.ts",
+    "sha256": "553e8996a945a937f63c620b15ccdd2eefde26d32b0189e70eed3e044c19a466",
+    "bytes": 732,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/shell/bash-sandbox/src/helpers.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/skill/skill-filesystem/README.md",
+    "sha256": "8816e192628cdfbce1716a129ab13bec29718b6cdbdf4fd93d9af4f3461967d1",
+    "bytes": 11644,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/skill/skill-filesystem/README.md"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/skill/skill-filesystem/src/index.ts",
+    "sha256": "a3fcfefcc6500f4bd7c19ba48dfa80efad312034f196f81a40d33d0d0098d315",
+    "bytes": 39233,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/skill/skill-filesystem/src/index.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/skill/tool-skill/README.md",
+    "sha256": "028dd921bc1b958f8d53224e48599a3ab3279c78697bbe992331bd29d20b3312",
+    "bytes": 14952,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/skill/tool-skill/README.md"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/skill/tool-skill/src/index.ts",
+    "sha256": "fb7b9f7558d516854ffe159803586decd1da003d7f10e04e026c4b7ca3622a1c",
+    "bytes": 18371,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/skill/tool-skill/src/index.ts"
+  },
+  {
+    "project": "dsh",
+    "commit": "639ed015397290b3745d163aafe02ffee4aa3f84",
+    "path": "sources/dsh/packages/llm/llm/src/content.ts",
+    "sha256": "e679f0972cef3f6301c4a9f321ee288ef0a63223ec51c093349c186cdc81ff35",
+    "bytes": 21501,
+    "url": "https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/llm/llm/src/content.ts"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/LICENSE",
+    "sha256": "c4be3acebe12527d7de689933d98329b4065f8c50cd929d0365584eafe6c20dd",
+    "bytes": 11437,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/LICENSE"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/README.md",
+    "sha256": "b28bf8191159a5ceb4800f30f44ba5979e7900e87975f8fbcf81e10f40c88883",
+    "bytes": 8050,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/README.md"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/docs/about/architecture.mdx",
+    "sha256": "811b91601d97e10c08809a0e835ba9c0ffb6e80f17b83ee4ebdc6df5a969d185",
+    "bytes": 13001,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/docs/about/architecture.mdx"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/docs/extensibility/isolation-backends.mdx",
+    "sha256": "31a9e9d6e5ebc3af6a578111e933594e18449b7c2e0cf84eb16f427ab8d865c1",
+    "bytes": 3179,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/docs/extensibility/isolation-backends.mdx"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/docs/how-it-works/sandboxes/runtimes.mdx",
+    "sha256": "f65f86f34d359043d319a48de168c9d51140833c234d3a12e8d22b20b330e8db",
+    "bytes": 15493,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/docs/how-it-works/sandboxes/runtimes.mdx"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/docs/how-it-works/providers/overview.mdx",
+    "sha256": "f4e7384a8ede3f8325b4747fd9b08458f9bf3ea57c3e957313ffe476a9625fc0",
+    "bytes": 20826,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/docs/how-it-works/providers/overview.mdx"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/docs/how-it-works/policies/prover.mdx",
+    "sha256": "c8b1d8ebd46aa6420b68192ae30e0b8c5434acdd033316caa25c080526f56ab6",
+    "bytes": 10074,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/docs/how-it-works/policies/prover.mdx"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/docs/how-it-works/policies/overview.mdx",
+    "sha256": "b221eebb60055f3f52619dedec6f44d1ff48232e92d8ad0a42ee80621d06c446",
+    "bytes": 5395,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/docs/how-it-works/policies/overview.mdx"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/docs/security/best-practices.mdx",
+    "sha256": "49fd4a98a207b522b235e72a3f0438d14a6ba70dd4556aaf9826e78609394c2d",
+    "bytes": 29179,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/docs/security/best-practices.mdx"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-isolation-interface/src/contract.rs",
+    "sha256": "90657629e63f0a07eb791775d9e89e6d3b6ddf657b7ac3cf4d9b05858e8c0ff6",
+    "bytes": 42567,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-isolation-interface/src/contract.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-sandbox/src/network_broker.rs",
+    "sha256": "181d3da5be9a971205afa9936ea3027d87a45eee33fbac93f034ad50723e4fb6",
+    "bytes": 105484,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-sandbox/src/network_broker.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-sandbox/src/sandbox/linux/landlock.rs",
+    "sha256": "fb3143e7bae09c1566efd502493bf224d5948861fb2be80e8d31c812cf158e22",
+    "bytes": 35785,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-sandbox/src/sandbox/linux/landlock.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-sandbox/src/sandbox/linux/seccomp.rs",
+    "sha256": "eb247792f2305262ec12527f58c0c5964f8dbac54357b8e4435e9933738e9fce",
+    "bytes": 34249,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-sandbox/src/sandbox/linux/seccomp.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-sandbox/src/child_env.rs",
+    "sha256": "fd7a01916bf2831c87426a462cb979541095b21a3cc85cf1cb00bed5636d5aa9",
+    "bytes": 2180,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-sandbox/src/child_env.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-sandbox/src/provider_files.rs",
+    "sha256": "adbec63312beb060a059fa2b5453a3cbad6668cea263c6b9a2e50b9bb1c0a09f",
+    "bytes": 10298,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-sandbox/src/provider_files.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-core/src/policy.rs",
+    "sha256": "08bb9f207930d1aaf579f9dcc572c72b8187ab0d7e59d7ea21d44cdda01ccc4a",
+    "bytes": 7117,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-core/src/policy.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-supervisor-network/src/l7/provider.rs",
+    "sha256": "efd71abcedf3607875d3f09db757f7f308104c1e848c8027148088fab29372db",
+    "bytes": 3780,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-supervisor-network/src/l7/provider.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-supervisor-network/src/proxy/egress.rs",
+    "sha256": "ed2c7ca8e4d05e179bb2b5d8466d67a1c4bb5bb9d68bfc9e86b9461106f4875a",
+    "bytes": 6745,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-supervisor-network/src/proxy/egress.rs"
+  },
+  {
+    "project": "openshell",
+    "commit": "8719fc9f37a93dd96435cf6753ae53c8ee8809e6",
+    "path": "sources/openshell/crates/openshell-supervisor-network/src/opa.rs",
+    "sha256": "7bc2382d60dab84cf10177a82b79181d86f36d62c500a3a8a078e39cabcbd520",
+    "bytes": 451006,
+    "url": "https://github.com/NVIDIA/OpenShell/blob/8719fc9f37a93dd96435cf6753ae53c8ee8809e6/crates/openshell-supervisor-network/src/opa.rs"
+  },
+  {
+    "project": "anthropic-srt",
+    "commit": "117eb928202b53c80d3cb6527d88d1b90e4ca7a9",
+    "path": "sources/anthropic-srt/LICENSE",
+    "sha256": "1210bc93eb85dd786c33192d5bcb7153a93922fa99fbc1512af6a7199cb41080",
+    "bytes": 11339,
+    "url": "https://github.com/anthropics/sandbox-runtime/blob/117eb928202b53c80d3cb6527d88d1b90e4ca7a9/LICENSE"
+  },
+  {
+    "project": "anthropic-srt",
+    "commit": "117eb928202b53c80d3cb6527d88d1b90e4ca7a9",
+    "path": "sources/anthropic-srt/README.md",
+    "sha256": "82b4b4c6169479909ac15df2943216aa3398cbc90f080469f9d6dc84ee7b4a76",
+    "bytes": 72266,
+    "url": "https://github.com/anthropics/sandbox-runtime/blob/117eb928202b53c80d3cb6527d88d1b90e4ca7a9/README.md"
+  },
+  {
+    "project": "anthropic-srt",
+    "commit": "117eb928202b53c80d3cb6527d88d1b90e4ca7a9",
+    "path": "sources/anthropic-srt/src/sandbox/linux-sandbox-utils.ts",
+    "sha256": "98a06355737620dcb4f8b9ba464cce8ddd1ae681d9842d3338fe83022799c096",
+    "bytes": 145773,
+    "url": "https://github.com/anthropics/sandbox-runtime/blob/117eb928202b53c80d3cb6527d88d1b90e4ca7a9/src/sandbox/linux-sandbox-utils.ts"
+  },
+  {
+    "project": "anthropic-srt",
+    "commit": "117eb928202b53c80d3cb6527d88d1b90e4ca7a9",
+    "path": "sources/anthropic-srt/src/sandbox/sandbox-manager.ts",
+    "sha256": "a9c5dd5f6e1311a28cac318736229ab0feb681a0edd3951d6e2069d5023225c7",
+    "bytes": 96014,
+    "url": "https://github.com/anthropics/sandbox-runtime/blob/117eb928202b53c80d3cb6527d88d1b90e4ca7a9/src/sandbox/sandbox-manager.ts"
+  },
+  {
+    "project": "anthropic-srt",
+    "commit": "117eb928202b53c80d3cb6527d88d1b90e4ca7a9",
+    "path": "sources/anthropic-srt/src/sandbox/sandbox-schemas.ts",
+    "sha256": "b4fc2efebdd503c57f8ff70d752ead1afc8b5544ad7d8370cc5b3cb38ed8d963",
+    "bytes": 5226,
+    "url": "https://github.com/anthropics/sandbox-runtime/blob/117eb928202b53c80d3cb6527d88d1b90e4ca7a9/src/sandbox/sandbox-schemas.ts"
+  },
+  {
+    "project": "anthropic-srt",
+    "commit": "117eb928202b53c80d3cb6527d88d1b90e4ca7a9",
+    "path": "sources/anthropic-srt/src/sandbox/http-proxy.ts",
+    "sha256": "81ac7f32ec6e3c29f8359398d5445e7ab0a3091c491e2d353cbb74fb62c4826c",
+    "bytes": 38780,
+    "url": "https://github.com/anthropics/sandbox-runtime/blob/117eb928202b53c80d3cb6527d88d1b90e4ca7a9/src/sandbox/http-proxy.ts"
+  },
+  {
+    "project": "anthropic-srt",
+    "commit": "117eb928202b53c80d3cb6527d88d1b90e4ca7a9",
+    "path": "sources/anthropic-srt/src/sandbox/socks-proxy.ts",
+    "sha256": "1a29c94986cbe196a74bce50a5a5e286cd316cc6f57d5366e772b419e7d812e1",
+    "bytes": 16087,
+    "url": "https://github.com/anthropics/sandbox-runtime/blob/117eb928202b53c80d3cb6527d88d1b90e4ca7a9/src/sandbox/socks-proxy.ts"
+  }
+]

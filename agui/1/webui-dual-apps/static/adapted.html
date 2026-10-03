@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>表单增强 · 用量观察</title><link rel="stylesheet" href="/static/common.css"><link rel="stylesheet" href="/static/adapted.css"><script defer src="/static/common.js"></script><script defer src="/static/adapted.js"></script></head>
+<body>
+<header class="topbar"><a class="brand" href="/adapted"><span class="brand-mark">◫</span><span>用量观察<small>USAGE OBSERVATORY</small></span></a><nav class="switcher" aria-label="交互方式"><a class="active" href="/adapted" aria-current="page">A · 表单增强</a><a href="/native">B · 目标工作台</a></nav><span class="mode" id="mode-badge">加载模式…</span></header>
+<main class="shell">
+  <div class="page-heading"><div><p class="eyebrow">PATTERN A / ASSISTED FORM</p><h1>熟悉的表单，多一个帮手。</h1><p class="sub">你设置条件并提交；AI 帮你填字段、解释结果。</p></div><div class="scope-pill">合成数据 · 2026.09.01 — 09.14 · 3 个部门</div></div>
+  <div id="page-error" class="error-box hidden" role="alert"></div>
+  <div class="adapted-grid">
+    <div class="left-stack">
+      <section class="panel form-panel" aria-labelledby="form-title"><div class="panel-head"><h2 id="form-title"><span class="number">01</span>分析条件</h2><span class="tag">由你提交</span></div>
+        <form id="analysis-form" class="panel-body">
+          <div class="field"><label for="report-title">报告名称</label><input id="report-title" type="text" maxlength="100" required value="部门使用分析"></div>
+          <div class="field"><label for="metric">分析指标</label><select id="metric"><option value="sessions">会话数</option><option value="active_users">活跃用户</option><option value="tool_failure_rate">工具失败率</option></select></div>
+          <fieldset class="field"><legend>部门范围</legend><div class="check-row"><label class="check-option"><input type="checkbox" name="department" value="研发" checked>研发</label><label class="check-option"><input type="checkbox" name="department" value="工艺" checked>工艺</label><label class="check-option"><input type="checkbox" name="department" value="设备" checked>设备</label></div></fieldset>
+          <div class="row-2"><div class="field"><label for="date-from">开始日期</label><input type="date" id="date-from" min="2026-09-01" max="2026-09-14" value="2026-09-01" required></div><div class="field"><label for="date-to">结束日期</label><input type="date" id="date-to" min="2026-09-01" max="2026-09-14" value="2026-09-14" required></div></div>
+          <div id="form-error" class="error-box hidden" role="alert"></div>
+          <div class="manual-note"><span>✓</span><span>统计由服务器计算，未接入 AI 也可使用。</span></div>
+          <button id="analyze-btn" class="btn primary full" type="submit">生成分析 <span aria-hidden="true">↗</span></button>
+        </form>
+      </section>
+      <section class="panel ai-panel" aria-labelledby="assistant-title"><div class="panel-head"><h2 id="assistant-title"><span class="spark" aria-hidden="true">✦</span>用一句话修改条件</h2><span class="tag blue">仅提议</span></div><div class="panel-body">
+        <label class="sr-only" for="suggest-instruction">需要修改的字段</label><textarea id="suggest-instruction" class="text-entry" maxlength="2000" rows="3" placeholder="例如：看研发和工艺9月5日至10日的工具失败率"></textarea>
+        <button id="suggest-example" class="sample-link" type="button">试一下：研发和工艺的工具失败率 ↗</button>
+        <div class="actions" style="margin-top:12px"><button id="suggest-btn" type="button" class="btn soft">生成字段建议</button><span class="hint" style="margin:0">检查后再应用</span></div>
+        <div id="suggest-error" class="error-box hidden" role="alert"></div>
+        <div id="suggestion" class="suggestion hidden" aria-live="polite"><h3>建议修改</h3><div id="patch-table" class="patch-table"></div><p id="patch-explanation" class="hint"></p><div class="actions"><button id="apply-btn" class="btn primary small" type="button">应用到表单</button><button id="dismiss-btn" class="quiet" type="button">忽略</button></div></div>
+      </div></section>
+      <p class="footer-note">AI 建议可以忽略。提交前你始终能直接调整字段；分析结果与提交时的条件绑定。</p>
+    </div>
+    <div class="right-stack">
+      <section class="panel result-panel" aria-labelledby="result-heading"><div class="panel-head"><div><h2 id="result-heading"><span class="number">02</span>分析结果</h2><p class="sub" id="result-sub">提交条件后，在这里查看统计和解读。</p></div><span class="tag" id="result-state">等待生成</span></div>
+        <div id="result-empty" class="empty result-empty"><div class="empty-icon" aria-hidden="true">▥</div><h3>从一个明确的问题开始</h3><p>选择指标、范围和日期，生成可核对的结果。<br>需要时，再请 AI 提供解读。</p><div class="steps"><span><i class="mini-dot">1</i>设置条件</span><span><i class="mini-dot">2</i>计算统计</span><span><i class="mini-dot">3</i>解释结果</span></div></div>
+        <div id="result-content" class="panel-body hidden">
+          <div class="result-meta" id="result-meta"></div><div class="metric-cards" id="metric-cards"></div><div class="table-wrap" id="result-table"></div><div id="metric-definition" class="definition"></div>
+          <p id="stale-result" class="revision-warning hidden">表单条件已修改；这里仍显示上次提交的结果。</p>
+          <div class="actions" style="margin-top:20px"><button id="explain-btn" type="button" class="btn soft">✦ 解释这份结果</button><button id="export-btn" type="button" class="btn">导出 Markdown</button></div>
+          <div id="explain-error" class="error-box hidden" role="alert"></div><div id="explain-content" class="explain-body hidden"><div class="explain-label"><span>✦</span><span id="explain-origin">AI 解读</span><span class="tag">与统计分开</span></div><div id="explain-prose" class="prose"></div></div>
+          <p class="source-note">来源：sample-usage-v1 · 合成数据。工具失败率提供排查线索，不代表任务失败率或部门绩效。</p>
+        </div>
+      </section>
+      <div class="notice">这套交互适合逐步改造现有表单：保留字段、校验和提交路径，增加可核对的 AI 建议与结果解释。</div>
+    </div>
+  </div>
+</main><div id="toast" class="toast hidden" role="status"></div>
+</body></html>

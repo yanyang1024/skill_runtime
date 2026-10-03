@@ -1,0 +1,92 @@
+{
+  "type": "execute_actual_fragment_JS_in_minimal_DOM_not_browser_or_user_study",
+  "network_calls": 0,
+  "checks": [
+    {
+      "name": "口径缺失不启动",
+      "status": "passed"
+    },
+    {
+      "name": "零个部门不启动",
+      "status": "passed"
+    },
+    {
+      "name": "补齐口径建立任务，并保留部门选择",
+      "status": "passed"
+    },
+    {
+      "name": "旧提案不能覆盖人工新版本",
+      "status": "passed"
+    },
+    {
+      "name": "被拒绝后人工内容仍存在",
+      "status": "passed"
+    },
+    {
+      "name": "重算后的预览包含人工内容",
+      "status": "passed"
+    },
+    {
+      "name": "重算后接受生成第三版",
+      "status": "passed"
+    },
+    {
+      "name": "重复接受被禁用",
+      "status": "passed"
+    },
+    {
+      "name": "重算后再次编辑仍触发冲突",
+      "status": "passed"
+    },
+    {
+      "name": "停止请求不等于停止确认",
+      "status": "passed"
+    },
+    {
+      "name": "停止请求冻结后续动作",
+      "status": "passed"
+    },
+    {
+      "name": "提交前停止没有外部提交",
+      "status": "passed"
+    },
+    {
+      "name": "提交中停止保留结果未知",
+      "status": "passed"
+    },
+    {
+      "name": "核查保留已生效结果而非假称撤回",
+      "status": "passed"
+    },
+    {
+      "name": "提交确认后停止保留既有结果",
+      "status": "passed"
+    },
+    {
+      "name": "示例工时与回收期计算",
+      "status": "passed"
+    },
+    {
+      "name": "采用率为零无有限回收期",
+      "status": "passed"
+    },
+    {
+      "name": "审查负担超过节省导致负收益",
+      "status": "passed"
+    },
+    {
+      "name": "净收益恰为零无有限回收期",
+      "status": "passed"
+    },
+    {
+      "name": "采用率下降显著延长回收期",
+      "status": "passed"
+    }
+  ],
+  "limitations": [
+    "未执行浏览器布局与可访问性验证",
+    "没有真实模型调用、业务进程、外部服务或用户试验",
+    "版本重算与停止确认使用固定事件模拟"
+  ],
+  "browser_attempt": "浏览器执行文件缺失；已改用本地脚本验证，不声称视觉测试通过"
+}
