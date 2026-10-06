@@ -1,0 +1,14 @@
+{
+  "example_only": true,
+  "capability_id": "inspect_dataset",
+  "purpose": "调用用户已有脚本检查一个当前用户可访问的数据集",
+  "source": {"kind": "python_script", "skill_doc": "skills/data-check/SKILL.md", "entrypoint": "skills/data-check/scripts/check.py"},
+  "input_schema": {"type": "object", "properties": {"dataset_id": {"type": "string"}}, "required": ["dataset_id"], "additionalProperties": false},
+  "server_bindings": ["authenticated_user", "tenant_scope", "task_workdir", "dataset_path_resolved_from_id"],
+  "output": {"summary": "string", "findings": "array", "evidence_refs": "array", "artifact_refs": "array"},
+  "error_codes": ["invalid_input", "dataset_not_found", "out_of_scope", "tool_timeout", "tool_failed"],
+  "side_effect": "read_only",
+  "timeout_seconds": 30,
+  "invocation": "fixed_argv_without_shell",
+  "validation_status": "not_connected"
+}

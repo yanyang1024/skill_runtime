@@ -1,0 +1,13 @@
+interface:
+  display_name: Web Agent 改造
+  short_description: 理解现有 Flask/FastAPI 功能，用候选表单或探索路径设计 Agent 交互
+  default_prompt: 使用 $web-agent-rebuild 分析当前 Web 应用的任务，选择候选表单或探索入口，保留业务规则并完成改造。
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
