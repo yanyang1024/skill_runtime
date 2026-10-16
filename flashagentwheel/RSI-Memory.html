@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从 Memory 到 RSI：智多星 × 星轮的智能飞轮</title>
+<style>
+  :root{
+    --ink:#1e293b; --sub:#64748b; --faint:#94a3b8;
+    --bg:#eef1f6; --card:#ffffff;
+    --indigo:#4f46e5; --indigo-soft:#eef0fe;
+    --red:#e11d48;   --red-soft:#fef1f4;
+    --green:#059669; --green-soft:#ecfdf5;
+    --amber:#d97706; --amber-soft:#fff7e8;
+    --purple:#7c3aed; --purple-soft:#f5f0fe;
+    --blue:#0284c7;  --blue-soft:#eef8fe;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink);
+  }
+  .deck{scroll-snap-type:y mandatory; height:100vh; overflow-y:scroll}
+  .slide{
+    min-height:100vh; scroll-snap-align:start;
+    display:flex; align-items:center; justify-content:center;
+    padding:36px 20px;
+  }
+  .sheet{
+    width:min(1240px,100%); background:var(--card);
+    border-radius:18px; box-shadow:0 10px 40px rgba(15,23,42,.08);
+    padding:52px 60px 46px; position:relative; overflow:hidden;
+  }
+  .sheet::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:6px;
+    background:linear-gradient(90deg,var(--indigo),var(--purple),var(--blue));
+  }
+  .sheet.part2::before{background:linear-gradient(90deg,var(--amber),#f59e0b,var(--green))}
+  .kicker{font-size:14px; letter-spacing:.18em; color:var(--indigo); font-weight:700; margin-bottom:10px}
+  .part2 .kicker{color:var(--amber)}
+  h1{font-size:44px; line-height:1.25; letter-spacing:.01em}
+  h2{font-size:32px; line-height:1.3; margin-bottom:6px}
+  .subtitle{font-size:16px; color:var(--sub); margin-bottom:28px}
+  h3{font-size:18px; margin-bottom:10px}
+  p,li{font-size:15.5px; line-height:1.75}
+  .muted{color:var(--sub)}
+  .accent{color:var(--indigo); font-weight:700}
+  .em-red{color:var(--red); font-weight:700}
+  .em-green{color:var(--green); font-weight:700}
+  .em-amber{color:var(--amber); font-weight:700}
+  .em-purple{color:var(--purple); font-weight:700}
+  .pageno{position:absolute; bottom:18px; right:28px; font-size:12px; color:var(--faint)}
+  .brand{position:absolute; bottom:18px; left:60px; font-size:12px; color:var(--faint); letter-spacing:.1em}
+  .cols{display:grid; gap:24px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-3{grid-template-columns:1fr 1fr 1fr}
+  ul.clean{list-style:none}
+  ul.clean li{padding-left:20px; position:relative; margin-bottom:10px}
+  ul.clean li::before{content:""; position:absolute; left:0; top:.72em; width:8px; height:8px; border-radius:2px; background:var(--indigo)}
+  ul.clean.green li::before{background:var(--green)}
+  ul.clean.amber li::before{background:var(--amber)}
+  ul.clean.purple li::before{background:var(--purple)}
+  ul.clean.red li::before{background:var(--red)}
+  .card{border:1px solid #e6eaf2; border-radius:14px; padding:20px 22px; background:#fff}
+  .card.soft-indigo{background:var(--indigo-soft); border-color:#dfe3fb}
+  .card.soft-green{background:var(--green-soft); border-color:#cdeede}
+  .card.soft-amber{background:var(--amber-soft); border-color:#f3e2bd}
+  .card.soft-purple{background:var(--purple-soft); border-color:#e4d9fa}
+  .card.soft-red{background:var(--red-soft); border-color:#f8d3dc}
+  .card.soft-blue{background:var(--blue-soft); border-color:#cfe8f7}
+  .tag{display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; margin-bottom:8px}
+  .tag.indigo{background:var(--indigo); color:#fff}
+  .tag.green{background:var(--green); color:#fff}
+  .tag.amber{background:var(--amber); color:#fff}
+  .tag.purple{background:var(--purple); color:#fff}
+  .tag.red{background:var(--red); color:#fff}
+  .tag.blue{background:var(--blue); color:#fff}
+  .tag.gray{background:#94a3b8; color:#fff}
+  .quote{
+    border-left:4px solid var(--indigo); background:var(--indigo-soft);
+    padding:16px 22px; border-radius:0 12px 12px 0; font-size:16.5px; line-height:1.8; font-weight:600;
+  }
+  table{width:100%; border-collapse:collapse; font-size:14px}
+  th{background:#f4f6fb; text-align:left; padding:10px 14px; border-bottom:2px solid #e2e8f0; font-size:13.5px}
+  td{padding:9px 14px; border-bottom:1px solid #eef1f6; vertical-align:top; line-height:1.6}
+  tr:last-child td{border-bottom:none}
+  .num{font-variant-numeric:tabular-nums; font-weight:700}
+  .cover{background:linear-gradient(135deg,#17153a 0%,#2b2166 45%,#123a6b 100%); color:#fff; border-radius:18px; width:min(1240px,100%); padding:90px 80px; position:relative; overflow:hidden; box-shadow:0 18px 60px rgba(15,23,42,.35)}
+  .cover::after{content:""; position:absolute; width:560px; height:560px; border-radius:50%;
+    background:radial-gradient(circle,rgba(124,58,237,.35),transparent 65%); right:-140px; top:-140px}
+  .cover::before{content:""; position:absolute; width:420px; height:420px; border-radius:50%;
+    background:radial-gradient(circle,rgba(2,132,199,.30),transparent 65%); left:40%; bottom:-220px}
+  .cover .kicker{color:#a5b4fc}
+  .cover h1{font-size:52px; color:#fff}
+  .cover .sub{font-size:19px; color:#c7d2fe; margin-top:18px; line-height:1.7; max-width:820px}
+  .cover .meta{position:absolute; bottom:44px; left:80px; font-size:12.5px; color:#8b96c9; letter-spacing:.08em; max-width:900px; line-height:1.7}
+  .cover .badge{display:inline-block; border:1px solid rgba(255,255,255,.35); color:#e0e7ff; border-radius:999px; padding:6px 16px; font-size:13px; margin-bottom:26px; letter-spacing:.15em}
+  svg text{font-family:inherit}
+  .section-note{font-size:12.5px; color:var(--faint); margin-top:14px}
+  .divider{height:1px; background:#e6eaf2; margin:22px 0}
+  .big-num{font-size:34px; font-weight:800; line-height:1.1}
+  code{background:#f1f5f9; border-radius:5px; padding:1px 6px; font-size:.92em; color:#be185d}
+  .st-ok{color:var(--green); font-weight:700}
+  .st-doing{color:var(--amber); font-weight:700}
+  .st-plan{color:var(--faint); font-weight:700}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- ============ Slide 1 · Cover ============ -->
+<section class="slide">
+  <div class="cover">
+    <div class="badge">智多星 × 星轮 · 内部智能体平台</div>
+    <div class="kicker">MEMORY × RECURSIVE SELF-IMPROVEMENT</div>
+    <h1>从 Memory 到 RSI<br>智多星 × 星轮的智能飞轮</h1>
+    <div class="sub">Memory 是点——一次次版本化的点状沉淀；RSI 是线——把点连成线、由线推演方向的方法论。星轮平台把智多星上每一个 Skill、每一个 Agent 的「做过」，连成「变好」的方向。</div>
+    <div class="meta">汇报材料 · 2026-10 ｜ 上半：RSI 背景与各家做法 · 下半：星轮平台实践 ｜ 参考：腾讯技术工程《Agent 自进化飞轮》/ RRSI · SICA · HGM 论文 / Agent-Native RSI 第一性原理分析</div>
+  </div>
+</section>
+
+<!-- ============ Slide 2 · RSI 起源 ============ -->
+<section class="slide">
+  <div class="sheet">
+    <div class="kicker">PART 1 · RSI 背景与全景</div>
+    <h2>RSI 的起源：一个六十年的设想</h2>
+    <div class="subtitle">从理论设想到工程现实——写代码与跑实验的自动化，让这条推论比过去近了很多</div>
+
+    <svg viewBox="0 0 1120 310" style="width:100%; margin:4px 0 16px">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+        </marker>
+      </defs>
+      <line x1="50" y1="150" x2="1070" y2="150" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arr)"/>
+      <!-- 1965 -->
+      <circle cx="140" cy="150" r="9" fill="#7c3aed"/>
+      <text x="140" y="118" text-anchor="middle" font-size="15" font-weight="700" fill="#7c3aed">1965 · I. J. Good</text>
+      <text x="140" y="182" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1e293b">「智能爆炸」设想</text>
+      <text x="140" y="202" text-anchor="middle" font-size="11.5" fill="#64748b">设计机器本身也是智力活动</text>
+      <text x="140" y="219" text-anchor="middle" font-size="11.5" fill="#64748b">聪明的机器将设计出更聪明的机器</text>
+      <!-- 2003 -->
+      <circle cx="400" cy="150" r="9" fill="#0284c7"/>
+      <text x="400" y="118" text-anchor="middle" font-size="15" font-weight="700" fill="#0284c7">2003 · Gödel Machine</text>
+      <text x="400" y="182" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1e293b">理论最优的接受规则</text>
+      <text x="400" y="202" text-anchor="middle" font-size="11.5" fill="#64748b">只接受「可证明提升长期效用」的修改</text>
+      <text x="400" y="219" text-anchor="middle" font-size="11.5" fill="#64748b">蓝图完美，但依赖形式化证明</text>
+      <!-- 2023 -->
+      <circle cx="660" cy="150" r="9" fill="#4f46e5"/>
+      <text x="660" y="118" text-anchor="middle" font-size="15" font-weight="700" fill="#4f46e5">2023–24 · 工程化尝试</text>
+      <text x="660" y="182" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1e293b">STOP · Self-Refine</text>
+      <text x="660" y="202" text-anchor="middle" font-size="11.5" fill="#64748b">用 LLM 递归改进代码生成器</text>
+      <text x="660" y="219" text-anchor="middle" font-size="11.5" fill="#64748b">自我改进从理论搬进代码</text>
+      <!-- today -->
+      <circle cx="950" cy="150" r="11" fill="#e11d48"/>
+      <text x="950" y="118" text-anchor="middle" font-size="15" font-weight="700" fill="#e11d48">今天 · Coding Agent 时代</text>
+      <text x="950" y="182" text-anchor="middle" font-size="12.5" font-weight="700" fill="#1e293b">RSI 有了具体的形式</text>
+      <text x="950" y="202" text-anchor="middle" font-size="11.5" fill="#64748b">改训练代码 · 排查错误 · 连续跑实验</text>
+      <text x="950" y="219" text-anchor="middle" font-size="11.5" fill="#64748b">AI 正在参与下一代 AI 的研发</text>
+    </svg>
+
+    <div class="quote">
+      RSI = Recursive Self-Improvement，递归自我改进——<strong>改进后的系统，能够继续参与正向改进自己</strong>。问题由此变成：对今天复杂的 Agent 系统，这条回路应该怎么搭？
+    </div>
+    <div class="pageno">02 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 3 · 四级台阶 ============ -->
+<section class="slide">
+  <div class="sheet">
+    <div class="kicker">PART 1 · 定义校准</div>
+    <h2>改了自己 ≠ 越改越会改</h2>
+    <div class="subtitle">「RSI」被用得很滥——把声明拆成四级台阶，每升一级都要单独交证据</div>
+
+    <svg viewBox="0 0 1120 260" style="width:100%; margin-bottom:18px">
+      <defs>
+        <marker id="arrL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+        </marker>
+      </defs>
+      <!-- 4 steps ascending -->
+      <g>
+        <rect x="20" y="150" width="260" height="90" rx="12" fill="#eef0fe" stroke="#4f46e5" stroke-width="2"/>
+        <text x="150" y="180" text-anchor="middle" font-size="15" font-weight="800" fill="#4f46e5">L-A · 自我修改</text>
+        <text x="150" y="203" text-anchor="middle" font-size="11.5" fill="#64748b">能产生并采用自身改动</text>
+        <text x="150" y="223" text-anchor="middle" font-size="11" fill="#059669" font-weight="700">SICA / DGM / HGM / RRSI 已入住</text>
+      </g>
+      <line x1="285" y1="180" x2="310" y2="160" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrL)"/>
+      <g>
+        <rect x="315" y="120" width="260" height="90" rx="12" fill="#eef0fe" stroke="#4f46e5" stroke-width="1.5"/>
+        <text x="445" y="150" text-anchor="middle" font-size="15" font-weight="800" fill="#4f46e5">L-B · 系统改进</text>
+        <text x="445" y="173" text-anchor="middle" font-size="11.5" fill="#64748b">新系统更好完成目标任务</text>
+        <text x="445" y="193" text-anchor="middle" font-size="11" fill="#d97706" font-weight="700">需逐案核对：对照 + 独立任务验证</text>
+      </g>
+      <line x1="580" y1="150" x2="605" y2="130" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrL)"/>
+      <g>
+        <rect x="610" y="90" width="260" height="90" rx="12" fill="#fff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="740" y="120" text-anchor="middle" font-size="15" font-weight="800" fill="#64748b">L-C · 改进能力提升</text>
+        <text x="740" y="143" text-anchor="middle" font-size="11.5" fill="#64748b">更有效地产生后续改进</text>
+        <text x="740" y="163" text-anchor="middle" font-size="11" fill="#94a3b8" font-weight="700">只有虚线线索，尚无确证</text>
+      </g>
+      <line x1="875" y1="120" x2="900" y2="100" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrL)"/>
+      <g>
+        <rect x="905" y="60" width="195" height="90" rx="12" fill="#fff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="1002" y="90" text-anchor="middle" font-size="15" font-weight="800" fill="#94a3b8">L-D · 持续递归增益</text>
+        <text x="1002" y="113" text-anchor="middle" font-size="11.5" fill="#94a3b8">多轮反馈中持续贡献</text>
+        <text x="1002" y="133" text-anchor="middle" font-size="11" fill="#94a3b8" font-weight="700">空房招租</text>
+      </g>
+      <text x="560" y="252" text-anchor="middle" font-size="12" fill="#94a3b8">台阶是声明的阶梯，不是价值排名——停在 L-B 不丢人，声称到了 L-D 才要交证据</text>
+    </svg>
+
+    <table>
+      <tr><th style="width:16%">层次</th><th style="width:34%">可以声称什么</th><th>额外需要的证据</th></tr>
+      <tr><td><b>L-A 自我修改</b></td><td>系统能产生并采用自身改动</td><td class="muted">修改与采用记录</td></tr>
+      <tr><td><b>L-B 系统改进</b></td><td>新系统能更好完成目标任务</td><td class="muted">可比较预算下的新旧对照 + 独立任务结果</td></tr>
+      <tr><td><b>L-C 改进能力提升</b></td><td>新系统更有效地产生后续改进</td><td class="muted">新旧改进器在可比较搜索问题上的对照</td></tr>
+      <tr><td><b>L-D 持续递归增益</b></td><td>改进能力在多轮中持续贡献收益</td><td class="muted">多轮独立重复 + 阻断递归反馈的对照</td></tr>
+    </table>
+    <div class="pageno">03 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 4 · 三条路线 ============ -->
+<section class="slide">
+  <div class="sheet">
+    <div class="kicker">PART 1 · 各家做法</div>
+    <h2>做法全景：按「迭代什么」分三条路线</h2>
+    <div class="subtitle">迭代产物 · 迭代代码（Harness）· 迭代模型——改什么，决定了进化的持久性与成本</div>
+
+    <div class="cols cols-3">
+      <div class="card">
+        <span class="tag gray">路线一 · 迭代产物</span>
+        <h3>Artifacts——「打草稿」</h3>
+        <ul class="clean">
+          <li><strong>Self-Refine / Reflexion</strong>：任务内自我纠错、多改几版</li>
+          <li><strong>Test-time Compute Scaling</strong>：用更多推理换更好结果</li>
+        </ul>
+        <div class="divider"></div>
+        <p class="muted" style="font-size:13.5px">任务结束经验即丢弃，下次不会更快。<strong>已成熟，但不是真进化</strong>——Agent 本身没有任何改变。</p>
+      </div>
+      <div class="card soft-indigo" style="border:2px solid var(--indigo)">
+        <span class="tag indigo">路线二 · 迭代代码 / Harness ★ 主战场</span>
+        <ul class="clean">
+          <li><strong>ADAS</strong>（2024）：meta-agent 自动设计 agent——但 meta/target 分离，不算自改进</li>
+          <li><strong>SICA</strong>（2025）：首个完全自指的编码 Agent，<strong>自己编辑自己的代码库</strong>，SWE-bench 17%→53%</li>
+          <li><strong>DGM</strong>（2025）：自我修改组织成进化树，扩展高分节点</li>
+          <li><strong>HGM</strong>（2025.10）：发现「当前高分≠后代高产」的元生产力错配，用谱系聚合表现 CMP 指导搜索，更少算力达人类工程师水平</li>
+          <li><strong>RRSI</strong>（2026.9）：Harness 进化的正则化——防过拟合，收益可迁移，token 省 30%</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag" style="background:#f97316;color:#fff">路线三 · 迭代模型</span>
+        <h3>Model——写入权重</h3>
+        <ul class="clean">
+          <li><strong>STaR / Agent RL</strong>：用自身产出的正确样本微调</li>
+          <li><strong>自对弈微调</strong>：经验直接写入参数</li>
+        </ul>
+        <div class="divider"></div>
+        <p class="muted" style="font-size:13.5px">持久性最强，但<strong>成本最高、风险最大</strong>，目前仍在研究阶段，距生产落地尚远。</p>
+      </div>
+    </div>
+
+    <div class="section-note">工程侧配套：Anthropic Dreaming（空闲时异步审阅轨迹发现系统性模式）· EvoAgentX 等开源框架 · 腾讯「四齿飞轮」工程闭环（评测→记忆→落地→控制）。三层并不割裂：Harness 积累的经验可变成训练数据反哺 Model，更强的 Model 又能产出更好的 Artifacts。</div>
+    <div class="pageno">04 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 5 · Harness 主战场 ============ -->
+<section class="slide">
+  <div class="sheet">
+    <div class="kicker">PART 1 · 时代演进</div>
+    <h2>Agent 时代，RSI 的主战场是 Harness</h2>
+    <div class="subtitle">Agent = 冻结的骨干模型 + Harness——同一个模型表现如何，很大程度由 Harness 决定</div>
+
+    <svg viewBox="0 0 1120 210" style="width:100%; margin-bottom:18px">
+      <rect x="30" y="30" width="1060" height="150" rx="16" fill="#eef0fe" stroke="#c7d2fe"/>
+      <rect x="60" y="70" width="220" height="80" rx="12" fill="#17153a"/>
+      <text x="170" y="104" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">骨干模型 π</text>
+      <text x="170" y="128" text-anchor="middle" font-size="11.5" fill="#a5b4fc">权重冻结 · 不动它</text>
+      <g font-size="12.5" fill="#1e293b">
+        <rect x="310" y="55" width="240" height="48" rx="10" fill="#fff" stroke="#c7d2fe"/>
+        <text x="430" y="84" text-anchor="middle">Prompt 与系统指令</text>
+        <rect x="310" y="115" width="240" height="48" rx="10" fill="#fff" stroke="#c7d2fe"/>
+        <text x="430" y="144" text-anchor="middle">控制流（何时计划/行动/停止）</text>
+        <rect x="575" y="55" width="240" height="48" rx="10" fill="#fff" stroke="#c7d2fe"/>
+        <text x="695" y="84" text-anchor="middle">工具接口与描述</text>
+        <rect x="575" y="115" width="240" height="48" rx="10" fill="#fff" stroke="#a7dcc3"/>
+        <text x="695" y="144" text-anchor="middle" font-weight="700" fill="#059669">记忆与 Skill 文件 ★</text>
+        <rect x="840" y="55" width="220" height="48" rx="10" fill="#fff" stroke="#c7d2fe"/>
+        <text x="950" y="84" text-anchor="middle">上下文管理</text>
+        <rect x="840" y="115" width="220" height="48" rx="10" fill="#fff" stroke="#c7d2fe"/>
+        <text x="950" y="144" text-anchor="middle">交接与停止机制</text>
+      </g>
+      <text x="560" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#4f46e5">HARNESS = 权重之外的一切（RRSI 定义）</text>
+    </svg>
+
+    <div class="cols cols-2">
+      <div class="card soft-indigo">
+        <h3>为什么 Harness 是主战场：即时、可控</h3>
+        <p class="muted">改完 Skill / Prompt <strong>立刻生效</strong>，不需要重训模型；改错了<strong>一键回滚</strong>，不会造成不可逆的损害。实测：通过 Harness 层进化，迭代次数减少 70%、Token 消耗降低 80%+——这些收益全部来自「改配套系统」，一个模型参数都没动。</p>
+      </div>
+      <div class="card soft-blue">
+        <h3>对我们意味着什么</h3>
+        <p class="muted">智多星上的 <strong>Skill 与 Agent 正是 Harness 层资产</strong>——方法论上已被各家验证是投入产出比最高的进化着力点。我们不需要碰模型权重，就能让平台能力持续增长。</p>
+      </div>
+    </div>
+    <div class="pageno">05 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 6 · 点与线 ============ -->
+<section class="slide">
+  <div class="sheet">
+    <div class="kicker">PART 1 · RSI × MEMORY</div>
+    <h2>Memory 是点，RSI 是线</h2>
+    <div class="subtitle">记忆不是一个静态的「大脑」——它是版本迭代的过程，不断产生点状沉淀；RSI 负责把点连成线</div>
+
+    <svg viewBox="0 0 1120 330" style="width:100%; margin-bottom:14px">
+      <defs>
+        <marker id="arrD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#d97706"/>
+        </marker>
+      </defs>
+      <!-- left: dots -->
+      <rect x="30" y="30" width="440" height="270" rx="18" fill="#ecfdf5" stroke="#cdeede"/>
+      <text x="250" y="62" text-anchor="middle" font-size="14" font-weight="800" fill="#059669">MEMORY · 点状的版本沉淀</text>
+      <g fill="#059669">
+        <circle cx="90" cy="110" r="7"/><circle cx="150" cy="95" r="5" opacity=".6"/>
+        <circle cx="210" cy="120" r="8"/><circle cx="270" cy="100" r="5" opacity=".6"/>
+        <circle cx="330" cy="125" r="6" opacity=".8"/><circle cx="400" cy="105" r="7"/>
+        <circle cx="110" cy="170" r="6" opacity=".8"/><circle cx="180" cy="160" r="8"/>
+        <circle cx="250" cy="180" r="5" opacity=".6"/><circle cx="320" cy="165" r="7"/>
+        <circle cx="390" cy="185" r="5" opacity=".6"/><circle cx="90" cy="235" r="5" opacity=".6"/>
+        <circle cx="160" cy="225" r="7"/><circle cx="230" cy="245" r="6" opacity=".8"/>
+        <circle cx="300" cy="228" r="8"/><circle cx="370" cy="245" r="6"/>
+        <circle cx="430" cy="225" r="5" opacity=".6"/>
+      </g>
+      <text x="250" y="282" text-anchor="middle" font-size="12" fill="#64748b">一次会话的模式 · 一条失败反例 · 一次资产快照 · 一个被验证的假设</text>
+
+      <!-- middle arrow -->
+      <line x1="480" y1="165" x2="600" y2="165" stroke="#d97706" stroke-width="3" marker-end="url(#arrD)"/>
+      <text x="540" y="150" text-anchor="middle" font-size="13" font-weight="800" fill="#d97706">RSI 连线</text>
+
+      <!-- right: lines -->
+      <rect x="610" y="30" width="480" height="270" rx="18" fill="#fff7e8" stroke="#f3e2bd"/>
+      <text x="850" y="62" text-anchor="middle" font-size="14" font-weight="800" fill="#d97706">RSI · 把点连成线的方法论</text>
+      <g stroke="#d97706" stroke-width="2.5" fill="none">
+        <path d="M 660 240 C 740 200, 800 160, 900 130 S 1030 100, 1060 92" marker-end="url(#arrD)"/>
+      </g>
+      <g fill="#059669">
+        <circle cx="660" cy="240" r="6"/><circle cx="740" cy="200" r="6"/>
+        <circle cx="820" cy="160" r="6"/><circle cx="900" cy="130" r="6"/>
+        <circle cx="980" cy="108" r="6"/>
+      </g>
+      <circle cx="1060" cy="92" r="6" fill="#fff" stroke="#d97706" stroke-width="2.5" stroke-dasharray="3 3"/>
+      <text x="850" y="282" text-anchor="middle" font-size="12" fill="#64748b">归因（点的聚集）· 信用分配（因果链）· 方向（线的斜率）· 推演（线的延长）</text>
+    </svg>
+
+    <div class="cols cols-2">
+      <div class="card soft-green">
+        <h3>点：只记录「发生过什么」</h3>
+        <p class="muted">每一次记忆沉淀都是一枚<strong>带版本、带时间戳、带来源</strong>的点。孤立地看价值有限——<strong>只有点没有线，记忆退化为日志</strong>。</p>
+      </div>
+      <div class="card soft-amber">
+        <h3>线：回答「下一步往哪走」</h3>
+        <p class="muted">RSI 从点列中读出模式、归因与方向，外推下一轮迭代信号——<strong>只有线没有点，推演沦为空想</strong>。点成线，线成势。</p>
+      </div>
+    </div>
+    <div class="pageno">06 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 7 · 星轮定位 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">PART 2 · 星轮实践</div>
+    <h2>星轮：智多星的资产治理与迭代平台</h2>
+    <div class="subtitle">智多星是生产系统，星轮是它的「进化引擎」——Skill 和 Agent 是平台的核心资产</div>
+
+    <svg viewBox="0 0 1120 300" style="width:100%; margin-bottom:16px">
+      <defs>
+        <marker id="arrX" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#d97706"/>
+        </marker>
+      </defs>
+      <!-- 智多星 -->
+      <rect x="40" y="80" width="300" height="140" rx="16" fill="#eef0fe" stroke="#4f46e5" stroke-width="2.5"/>
+      <text x="190" y="122" text-anchor="middle" font-size="20" font-weight="800" fill="#4f46e5">智多星</text>
+      <text x="190" y="148" text-anchor="middle" font-size="12.5" fill="#64748b">内部智能体平台 · 生产环境</text>
+      <text x="190" y="172" text-anchor="middle" font-size="12" fill="#1e293b">资产：全量 Skill + Agent</text>
+      <text x="190" y="192" text-anchor="middle" font-size="12" fill="#1e293b">产出：会话 · 调用 · 更新事件</text>
+
+      <!-- 星轮 -->
+      <rect x="760" y="80" width="320" height="140" rx="16" fill="#fff7e8" stroke="#d97706" stroke-width="2.5"/>
+      <text x="920" y="122" text-anchor="middle" font-size="20" font-weight="800" fill="#d97706">星轮</text>
+      <text x="920" y="148" text-anchor="middle" font-size="12.5" fill="#64748b">资产治理与迭代平台</text>
+      <text x="920" y="172" text-anchor="middle" font-size="12" fill="#1e293b">信号捕捉 · 记忆积累（治理）</text>
+      <text x="920" y="192" text-anchor="middle" font-size="12" fill="#1e293b">快照基线 · 对照优化（RSI）</text>
+
+      <!-- arrows -->
+      <path d="M 345 120 C 500 70, 600 70, 755 120" fill="none" stroke="#d97706" stroke-width="3" marker-end="url(#arrX)"/>
+      <text x="550" y="62" text-anchor="middle" font-size="13.5" font-weight="700" fill="#d97706">每晚定时抓取：会话记录 · 调用统计 · 资产更新</text>
+      <path d="M 755 185 C 600 240, 500 240, 345 185" fill="none" stroke="#059669" stroke-width="3" marker-end="url(#arrX)"/>
+      <text x="550" y="262" text-anchor="middle" font-size="13.5" font-weight="700" fill="#059669">优化建议回流生效 → 次日再抓，飞轮转动</text>
+    </svg>
+
+    <div class="cols cols-2">
+      <div class="card soft-amber">
+        <span class="tag amber">资产治理</span>
+        <p class="muted">捕捉信号——每天的使用数据与更新事件；积累记忆——by 用户、by 资产的点状沉淀。<strong>这是「造点」的过程。</strong></p>
+      </div>
+      <div class="card soft-amber">
+        <span class="tag amber">资产迭代</span>
+        <p class="muted">基于快照与记忆做 RSI 式优化——生成 baseline、对照比较、产出优化建议。<strong>这是「连线」的过程。</strong></p>
+      </div>
+    </div>
+    <div class="pageno">07 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 8 · 星轮数据流 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">PART 2 · 运行机制</div>
+    <h2>星轮数据流：每晚自动转动一圈</h2>
+    <div class="subtitle">抓取 → 快照 → 建基线 → 对照 → 建议 → 回流——上线不是终点，是下一轮进化的起点</div>
+
+    <svg viewBox="0 0 1120 400" style="width:100%">
+      <defs>
+        <marker id="arrF2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#d97706"/>
+        </marker>
+      </defs>
+      <!-- source -->
+      <rect x="30" y="20" width="1060" height="56" rx="12" fill="#eef0fe" stroke="#4f46e5" stroke-width="2"/>
+      <text x="560" y="54" text-anchor="middle" font-size="14.5" font-weight="700" fill="#4f46e5">智多星 · 每日生产数据</text>
+      <line x1="560" y1="76" x2="560" y2="100" stroke="#d97706" stroke-width="2.5" marker-end="url(#arrF2)"/>
+
+      <!-- 三路抓取 -->
+      <g font-size="12.5">
+        <rect x="30" y="106" width="340" height="74" rx="12" fill="#fff" stroke="#e6eaf2"/>
+        <text x="200" y="134" text-anchor="middle" font-weight="700" fill="#1e293b">① 全量会话记录</text>
+        <text x="200" y="158" text-anchor="middle" fill="#64748b">by 用户拉取，供模式挖掘</text>
+        <rect x="390" y="106" width="340" height="74" rx="12" fill="#fff" stroke="#e6eaf2"/>
+        <text x="560" y="134" text-anchor="middle" font-weight="700" fill="#1e293b">② Skill / Agent 调用统计</text>
+        <text x="560" y="158" text-anchor="middle" fill="#64748b">每个资产被调用的次数与分布</text>
+        <rect x="750" y="106" width="340" height="74" rx="12" fill="#fff" stroke="#e6eaf2"/>
+        <text x="920" y="134" text-anchor="middle" font-weight="700" fill="#1e293b">③ 资产更新事件</text>
+        <text x="920" y="158" text-anchor="middle" fill="#64748b">平台上所有 Skill / Agent 的变更</text>
+      </g>
+      <line x1="200" y1="180" x2="500" y2="214" stroke="#d97706" stroke-width="2" marker-end="url(#arrF2)"/>
+      <line x1="560" y1="180" x2="560" y2="214" stroke="#d97706" stroke-width="2" marker-end="url(#arrF2)"/>
+      <line x1="920" y1="180" x2="620" y2="214" stroke="#d97706" stroke-width="2" marker-end="url(#arrF2)"/>
+
+      <!-- 快照 -->
+      <rect x="150" y="220" width="820" height="58" rx="12" fill="#fff7e8" stroke="#d97706" stroke-width="2"/>
+      <text x="560" y="245" text-anchor="middle" font-size="14" font-weight="800" fill="#d97706">资产快照 Asset Snapshot</text>
+      <text x="560" y="266" text-anchor="middle" font-size="12" fill="#64748b">全量 Skill / Agent 的版本化快照 · by 用户视图（谁调用 / 谁创建 / 谁负责）</text>
+      <line x1="560" y1="278" x2="560" y2="302" stroke="#d97706" stroke-width="2.5" marker-end="url(#arrF2)"/>
+
+      <!-- baseline -->
+      <rect x="150" y="308" width="820" height="58" rx="12" fill="#fff" stroke="#d97706" stroke-width="2"/>
+      <text x="560" y="333" text-anchor="middle" font-size="14" font-weight="800" fill="#1e293b">Baseline Frame —— 当前基线 + 下一步优化的比较对象</text>
+      <text x="560" y="354" text-anchor="middle" font-size="12" fill="#64748b">回答的不是「这次更新了吗」，而是「这次更新让系统变好了吗」</text>
+
+      <!-- loop back -->
+      <path d="M 980 337 C 1060 337, 1075 240, 1060 120" fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#arrF2)"/>
+      <text x="1078" y="230" font-size="12" fill="#059669" font-weight="700" transform="rotate(90 1078 230)">对照 · 归因 · 优化建议 → 回流智多星</text>
+    </svg>
+    <div class="pageno">08 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 9 · 快照即点 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">PART 2 · 资产快照与 BASELINE</div>
+    <h2>快照即「点」，快照序列天然成「线」</h2>
+    <div class="subtitle">每一次快照是一枚带时间戳的点；点列连成资产的演化轨迹——RSI 的推演素材由此而来</div>
+
+    <svg viewBox="0 0 1120 210" style="width:100%; margin-bottom:18px">
+      <defs>
+        <marker id="arrS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#059669"/>
+        </marker>
+      </defs>
+      <line x1="60" y1="150" x2="1060" y2="150" stroke="#cbd5e1" stroke-width="2" marker-end="url(#arrS)"/>
+      <g font-size="12" fill="#64748b">
+        <circle cx="140" cy="150" r="10" fill="#059669"/>
+        <text x="140" y="120" text-anchor="middle" font-weight="700" fill="#1e293b">快照 T₁</text>
+        <text x="140" y="182" text-anchor="middle">资产 v1.0 · 调用 320 次</text>
+        <circle cx="380" cy="150" r="10" fill="#059669"/>
+        <text x="380" y="120" text-anchor="middle" font-weight="700" fill="#1e293b">快照 T₂</text>
+        <text x="380" y="182" text-anchor="middle">Skill 更新 · 调用 410 次</text>
+        <circle cx="620" cy="150" r="10" fill="#059669"/>
+        <text x="620" y="120" text-anchor="middle" font-weight="700" fill="#1e293b">快照 T₃</text>
+        <text x="620" y="182" text-anchor="middle">失败率下降 · 新组合出现</text>
+        <circle cx="860" cy="150" r="12" fill="#d97706"/>
+        <text x="860" y="120" text-anchor="middle" font-weight="700" fill="#d97706">Baseline Frame</text>
+        <text x="860" y="184" text-anchor="middle">最近稳定快照 = 比较基准</text>
+      </g>
+      <text x="560" y="44" text-anchor="middle" font-size="13" font-weight="700" fill="#059669">点 → 线：diff(T₁,T₂) + diff(T₂,T₃) = 资产演化轨迹 = 迭代信号的原料</text>
+    </svg>
+
+    <div class="cols cols-3">
+      <div class="card soft-amber">
+        <h3>快照内容</h3>
+        <p class="muted">全量 Skill / Agent 的定义、配置、版本 + 当周期调用统计与使用分布——资产的完整切面。</p>
+      </div>
+      <div class="card soft-amber">
+        <h3>by 用户维度</h3>
+        <p class="muted">同一资产按「谁调用、谁创建、谁负责」切分视图——适用性与问题可以归因到人、到场景。</p>
+      </div>
+      <div class="card soft-amber">
+        <h3>可回滚 · 可溯源</h3>
+        <p class="muted">任何版本可还原；任何一次优化都能追到它基于哪个快照、由什么信号触发。</p>
+      </div>
+    </div>
+    <div class="pageno">09 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 10 · 记忆做法 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">PART 2 · 记忆做法（当前重点建设）</div>
+    <h2>从用户会话中挖「高频模式」，形成点状记忆</h2>
+    <div class="subtitle">两大来源：会话模式挖掘（by 用户）× 资产配置沉淀（三条路径）</div>
+
+    <div class="cols cols-2">
+      <div class="card soft-green">
+        <span class="tag green">来源一 · 会话模式挖掘（by 用户）</span>
+        <p class="muted" style="margin-bottom:10px">拉取每个用户的会话记录，挖掘高频模式：</p>
+        <ul class="clean green">
+          <li><strong>用户偏好</strong>——表达习惯、格式要求、详细程度、交互方式</li>
+          <li><strong>产物形成偏好</strong>——用户最终接受的产出长什么样：报告结构、代码风格、图表口味</li>
+          <li><strong>Skill 使用偏好</strong>——什么场景调用什么 Skill、调用顺序、组合方式</li>
+        </ul>
+      </div>
+      <div class="card soft-green">
+        <span class="tag green">来源二 · 资产配置沉淀（三条路径）</span>
+        <p class="muted" style="margin-bottom:10px">围绕「用户 × 资产」的关系做配置级记忆：</p>
+        <ul class="clean green">
+          <li>用户<strong>调用的</strong> Skill / Agent → 使用画像：高频组合、成功场景</li>
+          <li>用户<strong>创建的</strong> Skill / Agent → 创作画像：风格、惯用结构、质量基线</li>
+          <li>用户<strong>负责的</strong> Skill / Agent → 治理画像：维护节奏、问题热点、下游依赖</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="quote" style="border-color:var(--green); background:var(--green-soft)">
+      这些记忆都是「点」——<strong>版本化、带时间戳、带来源</strong>（哪个用户、哪段会话、何时挖掘）。点会持续积累，等待 RSI 把它们连成线。
+    </div>
+    <div class="pageno">10 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 11 · 从点到线 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">PART 2 · 从点到线</div>
+    <h2>星轮如何把记忆产出为迭代信号</h2>
+    <div class="subtitle">四种「连线」方式，对应 RSI 的归因、信用分配、方向与推演</div>
+
+    <div class="cols cols-2">
+      <div class="card soft-amber">
+        <div class="big-num em-amber">①</div>
+        <h3>点的聚集 → 问题线</h3>
+        <p class="muted">多个用户在同一 Skill 上反复卡住（调用失败、重试、放弃）——点的聚集说明这是<strong>系统性短板</strong>而非偶发个例，优先进入优化队列。</p>
+      </div>
+      <div class="card soft-amber">
+        <div class="big-num em-amber">②</div>
+        <h3>点的对照 → 涨跌线</h3>
+        <p class="muted">资产更新前后的快照 diff + 调用统计变化——回答<strong>这次更新到底带来了什么</strong>：哪些能力涨了、哪些跌了、影响哪些用户。</p>
+      </div>
+      <div class="card soft-amber">
+        <div class="big-num em-amber">③</div>
+        <h3>点的分布 → 机会线</h3>
+        <p class="muted">高频出现但尚未被覆盖的需求模式（用户反复手工做的事）——<strong>新 Skill / 新 Agent 的候选方向</strong>，从真实使用中长出来。</p>
+      </div>
+      <div class="card soft-amber">
+        <div class="big-num em-amber">④</div>
+        <h3>线的延长 → 迭代建议</h3>
+        <p class="muted">产出结构化优化建议：<strong>改哪个资产、改什么、预期影响谁、依据哪些记忆点</strong>——每条建议都能回溯到它的证据点列。</p>
+      </div>
+    </div>
+    <div class="pageno">11 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 12 · 方法论对照 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">PART 2 · 方法论对照</div>
+    <h2>星轮现状 × 飞轮方法论</h2>
+    <div class="subtitle">对照「评测 → 记忆 → 落地 → 控制」四齿闭环与 RRSI 约束，盘点星轮的覆盖度</div>
+
+    <table>
+      <tr><th style="width:30%">飞轮环节 / 原则</th><th style="width:12%">状态</th><th>星轮的做法与位置</th></tr>
+      <tr><td><b>信号捕捉</b>（飞轮的眼睛）</td><td class="st-ok">已运行</td><td class="muted">每晚定时抓取会话记录、Skill/Agent 调用次数、资产更新事件</td></tr>
+      <tr><td><b>记忆积累</b>（点状沉淀）</td><td class="st-doing">建设中</td><td class="muted"><b>当前重点</b>：用户偏好 / 产物偏好 / Skill 使用偏好挖掘 + 调用·创建·负责三条配置沉淀路径</td></tr>
+      <tr><td><b>资产快照与 Baseline</b></td><td class="st-ok">已运行</td><td class="muted">定期全量快照、版本化、by 用户视图；最近稳定快照作为 Baseline Frame</td></tr>
+      <tr><td><b>对照比较与归因</b>（连线）</td><td class="st-doing">建设中</td><td class="muted">快照 diff + 调用变化分析，迭代建议产出中</td></tr>
+      <tr><td><b>候选生成与门控</b>（RSI 筛选）</td><td class="st-plan">规划</td><td class="muted">Diff 模式候选 + 自动门控（语法/回归/显著性）+ 人工确认，防过拟合参考 RRSI 正则化</td></tr>
+      <tr><td><b>灰度与回流</b></td><td class="st-plan">规划</td><td class="muted">建议生效后的效果回流进下一圈快照，闭环持续转动</td></tr>
+    </table>
+
+    <div class="section-note">方法论来源：腾讯《Agent 自进化飞轮》四齿闭环 · RRSI 正则化约束（提案端稀疏预算 / 筛选端泄漏筛查与噪声带）· Agent-Native RSI 的证据分层（L-A → L-D）。</div>
+    <div class="pageno">12 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 13 · 设计哲学 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">PART 2 · 设计哲学</div>
+    <h2>简洁与可扩展优先，人来推第一圈</h2>
+    <div class="subtitle">创新性 · 简洁性 · 可扩展性——首先追求后两者；AI 的迭代速度必须与人类的理解速度对齐</div>
+
+    <div class="cols cols-3" style="margin-bottom:22px">
+      <div class="card soft-purple">
+        <span class="tag purple">风格追求</span>
+        <h3>简洁性 × 可扩展性优先</h3>
+        <p class="muted">其深意囊括奥卡姆剃刀与复杂系统的核心思想——追求 <strong>elegant</strong> 的项目会走得更远，创新性在坚实的简洁之上自然生长。</p>
+      </div>
+      <div class="card soft-purple">
+        <span class="tag purple">冷启动</span>
+        <h3>初始化一定要人工参与</h3>
+        <p class="muted">第一批评测标准、第一条策展规则、安全边界——<strong>飞轮的第一圈必须人推</strong>。规则级记忆写入、资产更新确认、回归处置等关键节点永远不交给 Agent。</p>
+      </div>
+      <div class="card soft-purple">
+        <span class="tag purple">关键 Setup</span>
+        <h3>与人类理解速度对齐</h3>
+        <p class="muted">AI 更新速度远超人工逐行验证速度——所有更改必须<strong>改写成人可消化的富文本</strong>：Diff 一目了然、批量异步审核、自动门控过滤在前，人只做选择题。</p>
+      </div>
+    </div>
+
+    <div class="quote" style="border-color:var(--amber); background:var(--amber-soft)">
+      把海量的更新、极快的迭代速度，变成人类可理解、可消化的形式，并与人类的意图和理解速度对齐——这一步是整个飞轮最关键的 setup。
+    </div>
+    <div class="pageno">13 / 14</div>
+  </div>
+</section>
+
+<!-- ============ Slide 14 · 收束 ============ -->
+<section class="slide">
+  <div class="sheet part2">
+    <div class="kicker">收束</div>
+    <h2>点成线，线成势</h2>
+    <div class="subtitle">智多星负责生产，星轮负责进化</div>
+
+    <div class="cols cols-3" style="margin-bottom:26px">
+      <div class="card soft-green">
+        <div class="big-num em-green">点</div>
+        <h3>Memory 是点</h3>
+        <p class="muted">版本化、带来源、可持续积累的点状沉淀——星轮每晚都在制造这样的点：会话模式、调用统计、资产快照。</p>
+      </div>
+      <div class="card soft-amber">
+        <div class="big-num em-amber">线</div>
+        <h3>RSI 是线</h3>
+        <p class="muted">归因、信用分配、方向与推演——把点连成线：让每一次执行都不白费，每一个教训都不白吃，每一次改进都经过验证。</p>
+      </div>
+      <div class="card soft-indigo">
+        <div class="big-num accent">势</div>
+        <h3>星轮是连线者</h3>
+        <p class="muted">资产治理 × 资产迭代双轮驱动，每晚自己转一圈——点成线，线成势，平台能力在无人值守中持续复利。</p>
+      </div>
+    </div>
+
+    <div class="quote" style="font-size:18px; border-color:var(--amber); background:var(--amber-soft)">
+      Memory 代表过去，RSI 代表未来。<br>
+      星轮把智多星的每一个「做过」沉淀为点，把点连成通往「变好」的线——<span class="em-amber">这就是我们的智能飞轮。</span>
+    </div>
+    <div class="brand">智多星 × 星轮 · 内部智能体平台</div>
+    <div class="pageno">14 / 14</div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
