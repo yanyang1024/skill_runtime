@@ -1,0 +1,133 @@
+{
+  "baseline": "Library version 4",
+  "changes": [
+    {
+      "path": "COMMUNITY_RESEARCH.md",
+      "change": "added"
+    },
+    {
+      "path": "ECOSYSTEM_GUIDE.md",
+      "change": "modified"
+    },
+    {
+      "path": "VALIDATION.json",
+      "change": "added"
+    },
+    {
+      "path": "agents/agents-create-assistant.md",
+      "change": "modified"
+    },
+    {
+      "path": "agents/skill-ecosystem-planner.md",
+      "change": "modified"
+    },
+    {
+      "path": "agents/skill-profiler.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/SKILL.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/agent-with-skill.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/index.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/parallel-master-worker.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/routed-multiagent.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/single-primary.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/analysis-intake.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/frontmatter.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/multi-agent.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/skill-composition.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-creator/SKILL.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-creator/references/consolidation.md",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-creator/references/writing-and-validation.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/SKILL.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/evals/scenarios.json",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/examples/creator-flow.md",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/composition-validation.md",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/consolidation.md",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/design-handoff.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/incremental.md",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/orchestration.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/output-format.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/scenario-checks.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/selection.md",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/synthesis.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/scripts/inventory.py",
+      "change": "added"
+    }
+  ]
+}

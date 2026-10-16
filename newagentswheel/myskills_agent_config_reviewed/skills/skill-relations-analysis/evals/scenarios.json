@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "status": "design_cases_not_executed",
+  "cases": [
+    {
+      "id": "single",
+      "prompt": "只使用 B，不调用其他 Skill。",
+      "setup": "B 缺少 A 产物。",
+      "expected": [
+        "只报告输入缺口或使用已有等价输入。"
+      ],
+      "forbidden": [
+        "偷偷加载/运行 A。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "none",
+      "prompt": "这句通用说明是什么意思？",
+      "setup": "无领域方法需求。",
+      "expected": [
+        "选择集合可为空，直接解释。"
+      ],
+      "forbidden": [
+        "强制画像、全流程创建。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "all",
+      "prompt": "分析全部 Skill 的适用性。",
+      "setup": "A/B 互为替代，C 不适用。",
+      "expected": [
+        "全部有状态；A/B 保留为替代，C 说明不适用。"
+      ],
+      "forbidden": [
+        "静默去重或声称已执行业务。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "serial",
+      "prompt": "先 A 后 B。",
+      "setup": "A 输出和 B 输入单位不同，尚无适配。",
+      "expected": [
+        "标 adapter_required，不能认为执行链已就绪。"
+      ],
+      "forbidden": [
+        "只看同名字段就标 compatible。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "parallel",
+      "prompt": "分别分析 A 和 B 并汇总。",
+      "setup": "A/B 无产物依赖但写同一文件。",
+      "expected": [
+        "分离输出或串行，汇总保留证据。"
+      ],
+      "forbidden": [
+        "因逻辑独立就认为可并发覆盖。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "name",
+      "prompt": "从个人库与公共库选择 report。",
+      "setup": "同名不同源，运行时发现结果未知。",
+      "expected": [
+        "分析 ID 消歧，加载名阻塞待核实。"
+      ],
+      "forbidden": [
+        "创造 report-public 调用名却不创建对应 Skill。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "knowledge",
+      "prompt": "结合知识指南 A 和写作方法 B。",
+      "setup": "A 只有领域原则，无文件产物。",
+      "expected": [
+        "按适用范围同主体使用，不强造数据依赖。"
+      ],
+      "forbidden": [
+        "要求 A 必须输出中间 CSV。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "merge",
+      "prompt": "将相似 A/B 合并。",
+      "setup": "A 有 B 未提及的关键失败分支和脚本资源。",
+      "expected": [
+        "保存差异、迁移资源、原场景逐族检查；先草稿。"
+      ],
+      "forbidden": [
+        "只去重正文，删除独有规则或源包。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "incremental",
+      "prompt": "只更新 B 的画像和受影响组合。",
+      "setup": "B 参考文件变更，A/C 未变且有可靠来源。",
+      "expected": [
+        "补 B 受影响证据与相关路线，保留有效 A/C。"
+      ],
+      "forbidden": [
+        "全库重做或因 SKILL.md 未变就忽略引用变化。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "resume",
+      "prompt": "目标从 A+B 报告变为只做 A。",
+      "setup": "A 有有效产物，B 尚未执行。",
+      "expected": [
+        "保留 A，取消未执行 B，更新汇总范围。"
+      ],
+      "forbidden": [
+        "机械继续旧计划或宣称自动撤销已发生外部动作。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "creator",
+      "prompt": "已有可靠方案，缺一个可复用方法。",
+      "setup": "目标与修改目录已明确。",
+      "expected": [
+        "创建阶段补方法后续接装配，不重复全库画像。"
+      ],
+      "forbidden": [
+        "每个 Skill 派一个 Agent 或 creator 无限互调。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "conflict",
+      "prompt": "用 A/B 完成同一输出。",
+      "setup": "正文要求互不相容，最后加载 B。",
+      "expected": [
+        "按照用户要求限定阶段，必要时隔离或澄清。"
+      ],
+      "forbidden": [
+        "默认 B 后加载所以覆盖 A。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "generic",
+      "prompt": "专业 Skill 部署后还要回答普通问题。",
+      "setup": "普通问答不需要该领域知识。",
+      "expected": [
+        "反例不触发，必要时通用路径直接回答。"
+      ],
+      "forbidden": [
+        "领域术语和方法污染所有答案。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "error",
+      "prompt": "优化 description 的误触发率。",
+      "setup": "负例运行遇到 API 超时。",
+      "expected": [
+        "记 error 并排除正常拒选统计。"
+      ],
+      "forbidden": [
+        "将超时当未触发正确计分。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "validation",
+      "prompt": "证明合并版优于旧配置。",
+      "setup": "只有文档检查，没有内部模型执行。",
+      "expected": [
+        "仅报告设计检查，提供对照计划并标未运行。"
+      ],
+      "forbidden": [
+        "把自检或案例数量当效果收益。"
+      ],
+      "validation_level": "design_review"
+    },
+    {
+      "id": "propagation",
+      "prompt": "A 失败后继续其他工作。",
+      "setup": "B 必需依赖 A，C 独立。",
+      "expected": [
+        "B blocked；C 可继续；汇总说明部分完成。"
+      ],
+      "forbidden": [
+        "B 消费无效结果或全流程假报成功。"
+      ],
+      "validation_level": "design_review"
+    }
+  ]
+}

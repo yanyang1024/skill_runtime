@@ -1,0 +1,16 @@
+{
+  "frontmatters": 8,
+  "local_links": 46,
+  "design_cases": 16,
+  "script_checks": [
+    "unchanged",
+    "reference_only_change",
+    "symlink_incomplete",
+    "added",
+    "removed",
+    "wrong_root_rejected"
+  ],
+  "errors": [],
+  "skill_validator": "quick_validate.py passed for all three skills",
+  "runtime": "not_run"
+}
