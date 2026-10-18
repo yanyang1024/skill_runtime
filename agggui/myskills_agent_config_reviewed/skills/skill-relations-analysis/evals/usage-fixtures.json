@@ -1,0 +1,33 @@
+{
+  "type": "synthetic_materials_not_installed",
+  "fixtures": [
+    {
+      "source_id": "personal/report-builder",
+      "content": "---\nname: report-builder\ndescription: 将报告草稿发布到团队知识平台。\n---\n# 发布\n通过 publish_report 工具将 Markdown 内容发布到用户明确指定的空间。必须有目标空间 ID 和发布授权。输出发布链接。缺工具或未授权则不执行发布。\n"
+    },
+    {
+      "source_id": "policy-a",
+      "content": "---\nname: policy-a\ndescription: 判定设备 X 的温度记录是否超限。\n---\n# 判定规则\n对象为设备 X 温度，单位摄氏度。超过 80 摄氏度判超限，否则通过。材料未提供生效日期和优先级。\n"
+    },
+    {
+      "source_id": "policy-b",
+      "content": "---\nname: policy-b\ndescription: 判定设备 X 的温度记录是否超限。\n---\n# 判定规则\n对象为设备 X 温度，单位摄氏度。超过 90 摄氏度判超限，否则通过。材料未提供生效日期和优先级。\n"
+    },
+    {
+      "source_id": "public/domain-guide",
+      "content": "---\nname: domain-guide\ndescription: 提供批次异常排查的领域术语和证据解释方法。\n---\n# 领域解释\n只在批次异常场景采用。说明工艺变化、测量误差等可能性；不能仅靠相关性认定根因。不必生成独立文件。普通文本问题不强制使用领域术语。\n"
+    },
+    {
+      "source_id": "public/quality-check",
+      "content": "---\nname: quality-check\ndescription: 对照原数据、分析结果和报告检查证据与结论一致性。\n---\n# 检查\n需要原数据和待验产物。只审查不修改；指出结论是否得到证据支持。可以同主体自检，也可按任务要求在独立上下文验收，报告是否独立。不将无法核查项标 PASS。\n"
+    },
+    {
+      "source_id": "public/report-builder",
+      "content": "---\nname: report-builder\ndescription: 将批次异常分析结果整理为 Markdown 报告草稿。\n---\n# 报告\n输入已完成分析的结果及证据，区分事实、假设和建议。输出 Markdown 草稿。不得把未知异常原因写成已确认原因；不上传或发布报告。缺数据可生成标明待填字段的报告结构，不伪造数值。\n"
+    },
+    {
+      "source_id": "public/trend-analysis",
+      "content": "---\nname: trend-analysis\ndescription: 分析 CSV 中批次随时间的指标变化，识别趋势与异常。\n---\n# 趋势分析\n输入 CSV 包含 lot_id、sample_time、metric_value。sample_time 的时区、metric_value 的单位由输入数据说明提供；未提供不假定。输出每批次的窗口、异常标记、所用阈值与证据。阈值没有通用固定值；可做描述性趋势，但给出合格/不合格判定前需要业务阈值。本 Skill 不修改原始 CSV。\n"
+    }
+  ]
+}

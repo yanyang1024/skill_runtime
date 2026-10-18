@@ -1,0 +1,121 @@
+{
+  "baseline": "Library version 5",
+  "changes": [
+    {
+      "path": "ECOSYSTEM_GUIDE.md",
+      "change": "modified"
+    },
+    {
+      "path": "USAGE_REVIEW.md",
+      "change": "added"
+    },
+    {
+      "path": "agents/agents-create-assistant.md",
+      "change": "modified"
+    },
+    {
+      "path": "agents/skill-ecosystem-planner.md",
+      "change": "modified"
+    },
+    {
+      "path": "agents/skill-profiler.md",
+      "change": "modified"
+    },
+    {
+      "path": "agents/skill-relations-master.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/SKILL.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/parallel-master-worker.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/routed-multiagent.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/examples/single-primary.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/analysis-intake.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/frontmatter.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/multi-agent.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/primary-agent.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/subagent.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/agents-creator/references/validation.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-creator/SKILL.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-creator/references/writing-and-validation.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/SKILL.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/evals/usage-cases.json",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/evals/usage-fixtures.json",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/contract.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/design-handoff.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/interaction.md",
+      "change": "added"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/orchestration.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/output-format.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/scenario-checks.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/synthesis.md",
+      "change": "modified"
+    },
+    {
+      "path": "skills/skill-relations-analysis/references/worker-mode.md",
+      "change": "modified"
+    }
+  ]
+}

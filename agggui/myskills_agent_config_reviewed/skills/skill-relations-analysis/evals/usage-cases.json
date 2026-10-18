@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "fixtures": "usage-fixtures.json",
+  "method": "independent_context_walkthrough_and_document_reasoning_not_runtime_eval",
+  "cases": [
+    {
+      "id": "U01",
+      "request": "看看多来源的五份 Skill 能怎么组合",
+      "material_set": [
+        "public",
+        "personal"
+      ],
+      "level": "independent_context_walkthrough",
+      "observation": "完成首轮组合分析，区分同名来源，没有阻塞在索取业务数据。",
+      "evidence_excerpt": "当前没有阻塞首轮分析的问题。",
+      "status": "completed",
+      "limits": [
+        "问题仅写入产物，未调用 question 工具",
+        "不是 OpenCode 集成运行"
+      ]
+    },
+    {
+      "id": "U02",
+      "request": "使用 public 集合生成配置草稿，CSV 运行时再给，不发布，可做检查",
+      "material_set": [
+        "public"
+      ],
+      "level": "independent_context_walkthrough",
+      "observation": "完成配置，无需立即提供 CSV；生成正文混入创建会话限制。",
+      "evidence_excerpt": "当前配置创建不索取 CSV，不运行分析，不创建、上传或发布业务报告。",
+      "status": "completed_with_finding",
+      "followup": "修正创建器阶段隔离规则；独立复测见 U06"
+    },
+    {
+      "id": "U03",
+      "request": "单份 report-builder 静态画像，自包含委托",
+      "material_set": [
+        "public/report-builder"
+      ],
+      "level": "independent_context_walkthrough",
+      "observation": "提取已完成分析结果和证据作为输入，PASS，未要求当前提供业务数据。",
+      "evidence_excerpt": "将已完成的批次异常分析结果及证据转为 Markdown 草稿；上游交接需保留结论确认状态，未要求特定上游 Skill。",
+      "status": "completed",
+      "limits": [
+        "不能据此证明 question 权限在 OpenCode 中生效"
+      ]
+    },
+    {
+      "id": "U04",
+      "request": "将 policy-a/policy-b 的冲突阈值固定进 Agent，业务运行时不再询问",
+      "material_set": [
+        "policy-a",
+        "policy-b"
+      ],
+      "level": "document_reasoning",
+      "independent_rerun": "not_executed_infrastructure_limit",
+      "expected": "primary 问一次适用口径；不猜 80/90，不平均；无关配置继续。",
+      "status": "reasoned_not_behavior_verified"
+    },
+    {
+      "id": "U05",
+      "request": "给 profiler 路径与目标，但没有 task_id/正式画像输出路径",
+      "material_set": [
+        "public/report-builder"
+      ],
+      "level": "document_reasoning",
+      "independent_rerun": "not_executed_infrastructure_limit",
+      "expected": "worker 回传委托缺口；primary 自行补字段，不问用户。",
+      "status": "reasoned_not_behavior_verified"
+    },
+    {
+      "id": "U06",
+      "request": "修订规则后再次生成 U02 配置",
+      "material_set": [
+        "public"
+      ],
+      "level": "document_reasoning",
+      "independent_rerun": "not_executed_infrastructure_limit",
+      "expected": "创建限制留交付说明，未来业务 Agent 在输入齐备后能进入分析。",
+      "status": "reasoned_not_behavior_verified"
+    },
+    {
+      "id": "U07",
+      "request": "两个 worker 回传同一固定阈值问题，另一个缺输出路径",
+      "level": "document_reasoning",
+      "expected": "合并业务问题只问一次；内部路径自行补，保留独立结果。",
+      "status": "reasoned_not_behavior_verified"
+    },
+    {
+      "id": "U08",
+      "request": "只分析同名 report-builder；随后要求修改其中一份但未指明来源",
+      "level": "document_reasoning",
+      "expected": "分析阶段都保留；修改阶段如上下文仍无法消歧，primary 才问来源。",
+      "status": "reasoned_not_behavior_verified"
+    },
+    {
+      "id": "U09",
+      "request": "输入尚不可读的 ZIP，无可用解包工具",
+      "level": "document_reasoning",
+      "expected": "先检查已有可读附件；仍不可读由 primary 精确索取解压目录，不扩工具权限。",
+      "status": "reasoned_not_behavior_verified"
+    },
+    {
+      "id": "U10",
+      "request": "两份短 Skill 有什么差别，只在回复里说",
+      "level": "document_reasoning",
+      "expected": "轻量比较带证据，不要求输出目录或强制落盘九节报告。",
+      "status": "reasoned_not_behavior_verified"
+    },
+    {
+      "id": "U11",
+      "request": "检查默认交互权限及示例",
+      "level": "static_configuration",
+      "expected": "实际 primary 均 question allow，subagent question deny；完整示例同样设置。",
+      "status": "static_pass"
+    },
+    {
+      "id": "U12",
+      "request": "用户将生成目标改为仅比较，不改文件",
+      "level": "document_reasoning",
+      "expected": "停止未进行的配置写入；保留事实、按新目标交付，不重复确认。",
+      "status": "reasoned_not_behavior_verified"
+    }
+  ]
+}
