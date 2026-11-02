@@ -1,0 +1,12 @@
+{
+  "users": {
+    "*": {
+      "allow_tools": ["corp_ocr"],
+      "rate_limit_per_minute": 5
+    },
+    "alice": {
+      "allow_tools": ["corp_ocr", "corp_vision"],
+      "rate_limit_per_minute": 10
+    }
+  }
+}
