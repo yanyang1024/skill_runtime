@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "scope": "Behavior checklist for inline-markup streaming UI under the application's own tag whitelist; no fixed DOM oracle. Do not render probes into unisolated production pages.",
+  "cases": [
+    {
+      "id": "tag_split_across_chunks",
+      "prefixes": [
+        "正文开始<ca",
+        "正文开始<card kind=\"finding\" sev",
+        "正文开始<card kind=\"finding\" severity=\"warn\" title=\"缺失"
+      ],
+      "final_text": "正文开始<card kind=\"finding\" severity=\"warn\" title=\"缺失值\">发现 **3** 个缺失值</card>正文结束",
+      "assertions": [
+        "Partial '<ca' never appears as flickering raw text nor as a broken component.",
+        "Component appears once, with stable identity, only after the open tag is complete and validated.",
+        "Surrounding prose order is preserved."
+      ]
+    },
+    {
+      "id": "unclosed_at_eof",
+      "prefixes": [
+        "结果<card kind=\"finding\" title=\"部分\">已到达内容"
+      ],
+      "final_text": null,
+      "assertions": [
+        "Component is marked partial; message is interrupted, not done.",
+        "Partial component is not submittable/actionable; received text is preserved."
+      ]
+    },
+    {
+      "id": "inside_code_fence_not_parsed",
+      "final_text": "示例：\n\n```xml\n<card kind=\"finding\" title=\"不是组件\"></card>\n```\n",
+      "assertions": [
+        "Markup inside fenced/inline code stays literal text.",
+        "No component node is created from code samples."
+      ]
+    },
+    {
+      "id": "unknown_tag_and_attribute",
+      "final_text": "前文<blink>闪</blink><card kind=\"finding\" onclick=\"alert(1)\" unknown=\"x\" title=\"t\">内容</card>",
+      "assertions": [
+        "Unknown tags render as escaped text and do not interrupt the stream.",
+        "Unknown/event attributes are dropped; no handler executes."
+      ]
+    },
+    {
+      "id": "dangerous_urls_in_attributes",
+      "final_text": "<card kind=\"link\" title=\"x\" href=\"javascript:alert(1)\">点我</card><card kind=\"image\" src=\"https://untrusted.invalid/probe\" title=\"p\"></card>",
+      "assertions": [
+        "javascript: URL is not actionable.",
+        "Under deny-external-image policy no request is made to untrusted.invalid."
+      ]
+    },
+    {
+      "id": "interaction_gating",
+      "steps": [
+        "Stream an <action> proposal component and click it before the closing tag arrives.",
+        "Finish the component, then click again.",
+        "Switch run while the component is open."
+      ],
+      "assertions": [
+        "Early click does nothing; after validation the action goes through app-side confirmation and server checks.",
+        "Stale run cannot update or re-enable the component."
+      ]
+    },
+    {
+      "id": "original_text_export",
+      "assertions": [
+        "Export/save uses original received text, not display-time completion or placeholder markup.",
+        "Snapshot replacement resets parser state without duplicating components."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "scope": "Manual/browser assertions under the chosen renderer and policy; no fixed HTML oracle.",
+  "cases": [
+    {
+      "id": "incomplete_blocks",
+      "prefixes": [
+        "## 报告\n\n**未完",
+        "## 报告\n\n**未完成粗体**\n\n```python\nprint(\"中文\")"
+      ],
+      "final_markdown": "## 报告\n\n**未完成粗体**\n\n```python\nprint(\"中文\")\n```",
+      "assertions": [
+        "No render crash for prefixes; final output reconciles from exact original Markdown.",
+        "Exported content is original data, not display-time repair."
+      ]
+    },
+    {
+      "id": "table_math_cjk",
+      "final_markdown": "价格 $5。中文标点，组合字符 é，emoji 👩🏽‍💻。\n\n|指标|值|\n|---|---|\n|数量|12|\n\n公式（仅启用数学时） $x^2 + y^2$。",
+      "assertions": [
+        "Currency does not become a broken formula.",
+        "Check configured math, CJK wrapping, graphemes, narrow table scroll, and dark contrast."
+      ]
+    },
+    {
+      "id": "late_reference",
+      "prefixes": [
+        "参考 [依据][doc]。"
+      ],
+      "final_markdown": "参考 [依据][doc]。\n\n[doc]: https://example.com/verified",
+      "assertions": [
+        "Later definitions reconcile earlier content; stable blocks do not prevent required updates.",
+        "A displayed reference is verified only through application source mapping."
+      ]
+    },
+    {
+      "id": "untrusted_content",
+      "final_markdown": "<script>window.RENDER_PROBE=true</script>\n\n[链接](javascript:alert(1))\n\n![远程图片](https://untrusted.invalid/probe?value=example)\n\n```html\n<img src=x onerror=alert(1)>\n```",
+      "assertions": [
+        "No script or event handler executes; javascript URL is not actionable.",
+        "Under a deny-external-image policy, rendering creates no request to untrusted.invalid.",
+        "Fenced HTML stays display-only, copy does not execute."
+      ]
+    },
+    {
+      "id": "replacement_and_history",
+      "steps": [
+        "Stream a long message with code/table while reading old messages.",
+        "Replace the current message with a corrected snapshot; switch run during an outstanding request.",
+        "Finish generation while display animation is still draining."
+      ],
+      "assertions": [
+        "History position and selection stay usable; stale runs cannot append.",
+        "Snapshot reset and final original text win; no duplicated content.",
+        "Business terminal state is independent of animation completion."
+      ]
+    }
+  ]
+}

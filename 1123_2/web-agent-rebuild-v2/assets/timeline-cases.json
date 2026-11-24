@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "scope": "Application-level span events for progress bar, inline step cards and waterfall. Event names are examples, not provider standards. Feed into the app's own reducer.",
+  "cases": [
+    {
+      "name": "parallel_tools",
+      "events": [
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s1", "kind": "run", "name": "检查数据", "seq": 1, "message_id": "m1", "started_at": "2026-11-23T10:00:00Z"}},
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s2", "parent_span_id": "s1", "kind": "tool", "name": "读取订单", "seq": 2, "message_id": "m1", "started_at": "2026-11-23T10:00:01Z"}},
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s3", "parent_span_id": "s1", "kind": "tool", "name": "检索政策", "seq": 3, "message_id": "m1", "started_at": "2026-11-23T10:00:01Z"}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s3", "seq": 4, "status": "succeeded", "ended_at": "2026-11-23T10:00:02Z", "duration_ms": 1000}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s2", "seq": 5, "status": "succeeded", "ended_at": "2026-11-23T10:00:03Z", "duration_ms": 2000}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s1", "seq": 6, "status": "succeeded", "ended_at": "2026-11-23T10:00:04Z", "duration_ms": 4000}}
+      ],
+      "expected_application": {
+        "status": "succeeded",
+        "spans": 3,
+        "parallel_pairs": [["s2", "s3"]],
+        "anchors": {"s2": "m1", "s3": "m1"}
+      },
+      "assertions": [
+        "Both tools render on separate rows even though start timestamps are equal.",
+        "Progress summary shows 2 completed steps, not a percentage."
+      ]
+    },
+    {
+      "name": "late_event_after_terminal",
+      "events": [
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s1", "kind": "tool", "name": "写入", "seq": 1, "started_at": "2026-11-23T10:00:00Z"}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s1", "seq": 2, "status": "failed", "error_code": "tool_timeout"}},
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s1", "kind": "tool", "name": "写入", "seq": 3, "started_at": "2026-11-23T10:00:05Z"}}
+      ],
+      "expected_application": {"status": "failed", "spans": 1},
+      "assertions": [
+        "Terminal span never returns to running.",
+        "Failure stays visible in progress bar, summary row and waterfall."
+      ]
+    },
+    {
+      "name": "retry_chain",
+      "events": [
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s1", "kind": "tool", "name": "调用接口", "seq": 1, "started_at": "2026-11-23T10:00:00Z"}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s1", "seq": 2, "status": "failed", "error_code": "upstream_timeout"}},
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s2", "kind": "tool", "name": "调用接口", "retry_of": "s1", "seq": 3, "started_at": "2026-11-23T10:00:03Z"}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s2", "seq": 4, "status": "succeeded", "duration_ms": 900}}
+      ],
+      "expected_application": {"status": "succeeded", "spans": 2, "retry_of": {"s2": "s1"}},
+      "assertions": [
+        "Attempts are not merged into one success; retry relationship is visible.",
+        "Run summary shows one recovered failure, not 'all steps first-try success'."
+      ]
+    },
+    {
+      "name": "missing_terminal_eof",
+      "events": [
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s1", "kind": "run", "name": "分析", "seq": 1, "message_id": "m1", "started_at": "2026-11-23T10:00:00Z"}},
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s2", "parent_span_id": "s1", "kind": "tool", "name": "读取", "seq": 2, "message_id": "m1", "started_at": "2026-11-23T10:00:01Z"}}
+      ],
+      "expected_application": {"status": "interrupted", "open_spans": ["s1", "s2"]},
+      "assertions": [
+        "EOF without run terminal marks run and open spans interrupted.",
+        "No fabricated durations; elapsed time stops at interruption.",
+        "Replay after refresh reconstructs the same spans without re-executing."
+      ]
+    },
+    {
+      "name": "snapshot_dedup",
+      "events": [
+        {"event": "span.started", "data": {"run_id": "r1", "span_id": "s1", "kind": "tool", "name": "读取", "seq": 1, "started_at": "2026-11-23T10:00:00Z"}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s1", "seq": 2, "status": "succeeded", "duration_ms": 500}},
+        {"event": "span.finished", "data": {"run_id": "r1", "span_id": "s1", "seq": 2, "status": "succeeded", "duration_ms": 500}}
+      ],
+      "expected_application": {"status": "succeeded", "spans": 1},
+      "assertions": [
+        "Replayed span_id+seq is deduplicated; step count and totals do not double."
+      ]
+    }
+  ]
+}

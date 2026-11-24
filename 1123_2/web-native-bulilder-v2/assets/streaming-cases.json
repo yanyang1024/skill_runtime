@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "scope": "SSE framing plus an illustrative application protocol; adapt event names to your runtime. Not provider-specific.",
+  "cases": [
+    {
+      "name": "utf8_multiline",
+      "wire": "﻿: heartbeat\r\nevent: text.delta\r\ndata:{\"text\":\"中文👩🏽‍💻\"}\r\n\r\nevent: context.updated\r\ndata: {\"count\":\r\ndata: 1}\r\n\r\nevent: run.completed\r\ndata: {\"status\":\"succeeded\"}\r\n\r\n",
+      "expected_events": [
+        {
+          "event": "text.delta",
+          "data": "{\"text\":\"中文👩🏽‍💻\"}"
+        },
+        {
+          "event": "context.updated",
+          "data": "{\"count\":\n1}"
+        },
+        {
+          "event": "run.completed",
+          "data": "{\"status\":\"succeeded\"}"
+        }
+      ],
+      "expected_application": {
+        "status": "succeeded",
+        "text": "中文👩🏽‍💻"
+      }
+    },
+    {
+      "name": "line_endings",
+      "wire": "event: text.delta\rdata: {\"text\":\"A\"}\r\revent: text.delta\ndata: {\"text\":\"B\"}\n\nevent: run.completed\r\ndata: {\"status\":\"succeeded\"}\r\n\r\n",
+      "expected_events": [
+        {
+          "event": "text.delta",
+          "data": "{\"text\":\"A\"}"
+        },
+        {
+          "event": "text.delta",
+          "data": "{\"text\":\"B\"}"
+        },
+        {
+          "event": "run.completed",
+          "data": "{\"status\":\"succeeded\"}"
+        }
+      ],
+      "expected_application": {
+        "status": "succeeded",
+        "text": "AB"
+      }
+    },
+    {
+      "name": "failure_after_text",
+      "wire": "event: text.delta\ndata: {\"text\":\"部分结果\"}\n\nevent: run.failed\ndata: {\"code\":\"upstream_timeout\"}\n\n",
+      "expected_events": [
+        {
+          "event": "text.delta",
+          "data": "{\"text\":\"部分结果\"}"
+        },
+        {
+          "event": "run.failed",
+          "data": "{\"code\":\"upstream_timeout\"}"
+        }
+      ],
+      "expected_application": {
+        "status": "failed",
+        "text": "部分结果"
+      }
+    },
+    {
+      "name": "missing_terminal",
+      "wire": "event: text.delta\ndata: {\"text\":\"未完成\"}\n\n",
+      "expected_events": [
+        {
+          "event": "text.delta",
+          "data": "{\"text\":\"未完成\"}"
+        }
+      ],
+      "expected_application": {
+        "status": "interrupted",
+        "text": "未完成"
+      }
+    },
+    {
+      "name": "unfinished_frame",
+      "wire": "event: text.delta\ndata: {\"text\":\"不应派发\"}\n",
+      "expected_events": [],
+      "expected_application": {
+        "status": "interrupted",
+        "text": ""
+      }
+    },
+    {
+      "name": "empty_payload_not_done",
+      "wire": "event: context.updated\ndata: {}\n\nevent: text.delta\ndata: {\"text\":\"仍继续\"}\n\nevent: run.completed\ndata: {\"status\":\"succeeded\"}\n\n",
+      "expected_events": [
+        {
+          "event": "context.updated",
+          "data": "{}"
+        },
+        {
+          "event": "text.delta",
+          "data": "{\"text\":\"仍继续\"}"
+        },
+        {
+          "event": "run.completed",
+          "data": "{\"status\":\"succeeded\"}"
+        }
+      ],
+      "expected_application": {
+        "status": "succeeded",
+        "text": "仍继续"
+      }
+    }
+  ]
+}

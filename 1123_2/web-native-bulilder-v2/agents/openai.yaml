@@ -1,0 +1,13 @@
+interface:
+  display_name: Agent Native Web 构建
+  short_description: 从业务场景和已有能力构建 Flask/FastAPI 的候选表单或探索式 Agent Web UI
+  default_prompt: 使用 $web-native-bulilder 根据场景与已有能力，选择候选表单或探索任务模式并实现可运行 Web UI。
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
